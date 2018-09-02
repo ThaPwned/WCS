@@ -1,0 +1,34 @@
+{
+    "create players": "CREATE TABLE IF NOT EXISTS players (`id` INT PRIMARY KEY AUTO_INCREMENT, `uniqueid` VARCHAR(256) UNIQUE, `name` VARCHAR(256), `current_race` VARCHAR(256), `lastconnect` FLOAT)",
+    "create races": "CREATE TABLE IF NOT EXISTS races (`id` INT PRIMARY KEY AUTO_INCREMENT, `name` VARCHAR(256), `playerid` INT, `xp` INT DEFAULT 0, `level` INT DEFAULT 0, `unused` INT DEFAULT 0)",
+    "create skills": "CREATE TABLE IF NOT EXISTS skills (`id` INT PRIMARY KEY AUTO_INCREMENT, `name` VARCHAR(256), `race` VARCHAR(256), `playerid` INT, `level` INT DEFAULT 0)",
+    "create stats races": "CREATE TABLE IF NOT EXISTS stats_races (`id` INT PRIMARY KEY AUTO_INCREMENT, `playerid` INT, `owner` VARCHAR(256), `key` VARCHAR(256), `value` FLOAT)",
+    "create stats items": "CREATE TABLE IF NOT EXISTS stats_items (`id` INT PRIMARY KEY AUTO_INCREMENT, `playerid` INT, `owner` VARCHAR(256), `key` VARCHAR(256), `value` FLOAT)",
+
+    "player offline": "SELECT uniqueid, name FROM players ORDER BY name ASC",
+    "player get": "SELECT id, name, current_race, lastconnect FROM players WHERE uniqueid = %s",
+    "player insert": "INSERT INTO players (uniqueid, name, current_race, lastconnect) VALUES (%s, %s, %s, %s)",
+    "player update": "UPDATE players SET name = %s, current_race = %s, lastconnect = %s WHERE id = %s",
+
+    "race get": "SELECT name, xp, level, unused FROM races WHERE playerid = %s",
+    "race insert": "INSERT INTO races (name, playerid) VALUES (%s, %s)",
+    "race update": "UPDATE races SET xp = CASE {} ELSE xp END, level = CASE {} ELSE level END, unused = CASE {} ELSE unused END WHERE playerid = %s",
+    "race join": "WHEN name = {} THEN {}",
+
+    "skill get": "SELECT name, race, level FROM skills WHERE playerid = %s",
+    "skill insert": "INSERT INTO skills (name, race, playerid) VALUES (%s, %s, %s)",
+    "skill update": "UPDATE skills SET level = CASE {} ELSE level END WHERE playerid = %s",
+    "skill join": "WHEN race = {} AND name = {} THEN {}",
+
+    "stat get": "SELECT owner, `key`, `value` FROM stats_{} WHERE playerid = %s",
+    "stat insert": "INSERT INTO stats_{} (owner, `key`, `value`, playerid) VALUES (%s, %s, %s, %s)",
+    "stat update": "UPDATE stats_{} SET `value` = CASE {} ELSE `value` END WHERE playerid = %s",
+    "stat join": "WHEN owner = {} AND `key` = {} THEN {}",
+
+    "_rank update": "WITH tmp (uniqueid, name, current_race, total_level) AS (SELECT p.uniqueid, p.name, p.current_race, SUM(r.level) AS total_level FROM races r INNER JOIN players p ON p.id = r.playerid GROUP BY playerid) SELECT tt.uniqueid, tt.name, tt.current_race, tt.total_level, (SELECT count(*)+1 FROM tmp AS t WHERE t.total_level > tt.total_level) AS rank FROM tmp AS tt ORDER BY rank ASC",
+    "rank update": "SELECT p.uniqueid, p.name, p.current_race, SUM(r.level) AS total_level FROM races r INNER JOIN players p ON p.id = r.playerid GROUP BY playerid ORDER BY total_level DESC",
+
+    "create database": "CREATE DATABASE IF NOT EXISTS {}",
+    "use database": "USE {}",
+    "toggle warnings": "SET sql_notes = {}"
+}

@@ -1,0 +1,4 @@
+__pycache__
+cfg/
+addons/source-python/plugins/es_emulator
+addons/source-python/plugins/wcs/modules

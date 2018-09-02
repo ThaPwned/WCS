@@ -1,0 +1,1061 @@
+# ../wcs/core/players/entity.py
+
+# ============================================================================
+# >> IMPORTS
+# ============================================================================
+# Python Imports
+#   Collections
+from collections import defaultdict
+#   Itertools
+from itertools import chain
+#   JSON
+from json import dump as json_dump
+from json import load as json_load
+#   Random
+from random import choice
+from random import randint
+from random import uniform
+#   Time
+from time import time
+
+# Source.Python Imports
+#   CVars
+from cvars import ConVar
+#   Entities
+from entities import TakeDamageInfo
+from entities.constants import DamageTypes
+from entities.entity import Entity
+#   Events
+from events import Event
+#   Listeners
+from listeners import OnClientActive
+from listeners import OnClientDisconnect
+from listeners import OnEntityDeleted
+from listeners.tick import Delay
+#   Players
+from players.dictionary import PlayerDictionary
+from players.helpers import index_from_uniqueid
+from players.helpers import index_from_userid
+from players.helpers import uniqueid_from_playerinfo
+from players.helpers import userid_from_index
+from players.helpers import playerinfo_from_index
+
+# WCS Imports
+#   Config
+from ..config import cfg_interval
+#   Constants
+from ..constants import IS_ESC_SUPPORT_ENABLED
+from ..constants import ModuleType
+from ..constants import RaceReason
+from ..constants.paths import CFG_PATH
+#   Database
+from ..database.manager import database_manager
+from ..database.manager import statements
+#   Listeners
+from ..listeners import OnPlayerChangeRace
+from ..listeners import OnPlayerDelete
+from ..listeners import OnPlayerDestroy
+from ..listeners import OnPlayerLevelDown
+from ..listeners import OnPlayerLevelUp
+from ..listeners import OnPlayerQuery
+from ..listeners import OnPlayerReady
+#   Modules
+from ..modules.items.calls import _callbacks as _item_callbacks
+from ..modules.items.manager import item_manager
+from ..modules.races.calls import _callbacks as _race_callbacks
+from ..modules.races.manager import race_manager
+#   Ranks
+from ..ranks import rank_manager
+
+# Is ESC supported?
+if IS_ESC_SUPPORT_ENABLED:
+    # EventScripts Imports
+    #   ES
+    import es
+    #   ESC
+    import esc
+
+    # WCS Imports
+    #   Helpers
+    from ..helpers.esc.vars import cvars
+    from ..helpers.esc.vars import cvar_wcs_dices
+    from ..helpers.esc.vars import cvar_wcs_userid
+
+
+# ============================================================================
+# >> ALL DECLARATION
+# ============================================================================
+__all__ = (
+    'Player',
+)
+
+
+# ============================================================================
+# >> GLOBAL VARIABLES
+# ============================================================================
+if (CFG_PATH / 'privileges.json').isfile():
+    with open(CFG_PATH / 'privileges.json') as inputfile:
+        privileges = json_load(inputfile)
+
+    for x in ('players', ):
+        if x not in privileges:
+            privileges[x] = {}
+else:
+    privileges = {'players':{}}
+
+    with open(CFG_PATH / 'privileges.json', 'w') as outputfile:
+        json_dump(privileges, outputfile, indent=4)
+
+# TODO: Should I even be using this?
+_players = PlayerDictionary()
+
+_global_weapon_entity = None
+_global_bypass = False
+_delays = defaultdict(set)
+
+
+# ============================================================================
+# >> CLASSES
+# ============================================================================
+class _PlayerMeta(type):
+    def __new__(mcs, name, bases, odict):
+        cls = super().__new__(mcs, name, bases, odict)
+        cls._players = {}
+        cls._cache_userids = {}
+        cls._cache_indexes = {}
+
+        return cls
+
+    def __call__(cls, uniqueid):
+        player = cls._players.get(uniqueid)
+
+        if player is None:
+            player = cls._players[uniqueid] = super().__call__(uniqueid)
+
+        return player
+
+
+class _RaceContainer(dict):
+    def __init__(self, wcsplayer):
+        super().__init__()
+
+        self.wcsplayer = wcsplayer
+
+    def __missing__(self, name):
+        assert name in race_manager, f'Invalid race: {name}'
+
+        settings = race_manager[name]
+
+        race = self[name] = _Race(self.wcsplayer, name, 0, 1, 1)
+
+        for skill_name, config in settings.config['skills'].items():
+            race.skills[skill_name] = _Skill(self.wcsplayer, config, skill_name, 0, name)
+            race.skills[skill_name]._type = settings.type
+
+        return race
+
+
+class _ItemContainer(dict):
+    def __init__(self, wcsplayer):
+        super().__init__()
+
+        self.wcsplayer = wcsplayer
+
+        self._maxitems = defaultdict(int)
+
+    def __missing__(self, name):
+        assert name in item_manager, f'Invalid item: {name}'
+
+        item = self[name] = _Item(self.wcsplayer, name)
+
+        return item
+
+
+class _Stats(object):
+    def __init__(self):
+        self._data = defaultdict(int)
+        self._modified = set()
+        self._not_added = set()
+
+    def __getitem__(self, name):
+        return self._data[name]
+
+    def __setitem__(self, name, value):
+        self._modified.add(name)
+
+        if name not in self._data:
+            self._not_added.add(name)
+
+        self._data[name] = value
+
+
+class Player(object, metaclass=_PlayerMeta):
+    def __init__(self, uniqueid):
+        self._uniqueid = uniqueid
+        self._races = _RaceContainer(self)
+        self._items = _ItemContainer(self)
+        self._userid = None
+        self._index = None
+        self._player = None
+        self._ready = False
+        self._is_bot = uniqueid.startswith('BOT_')
+        self._privileges = privileges['players'].get(uniqueid, {})
+
+        self._id = None
+        self._name = None
+        self._current_race = None
+        self._lastconnect = None
+
+        self.data = {}
+
+        try:
+            self._index = index_from_uniqueid(uniqueid)
+        except ValueError:
+            name = None
+        else:
+            self._userid = userid_from_index(self._index)
+
+            Player._cache_userids[self.userid] = self
+            Player._cache_indexes[self.index] = self
+
+            name = playerinfo_from_index(self.index).name
+
+        if not database_manager._unloading:
+            database_manager.execute('player get', (uniqueid, ), callback=self._query_get_player, name=name)
+
+    def _query_get_player(self, result):
+        if database_manager._unloading:
+            return
+
+        data = result.fetchone()
+
+        if data is None:
+            database_manager.execute('player insert', (self.uniqueid, result['name'], race_manager.default_race, time()))
+            database_manager.execute('player get', (self.uniqueid, ), callback=self._query_get_player, name=result['name'])
+            return
+
+        self._id = data[0]
+        self._name = data[1]
+        self._current_race = data[2]
+        self._lastconnect = data[3]
+
+        if self._current_race not in race_manager:
+            self._current_race = race_manager.default_race
+
+        if result['name'] is not None:
+            self._name = result['name']
+
+        database_manager.execute('race get', (self.id, ), callback=self._query_get_races)
+        database_manager.execute('skill get', (self.id, ), callback=self._query_get_skills)
+        database_manager.execute('stat get', (self._id, ), callback=self._query_get_stats, format_args=('races', ), type='races')
+        database_manager.execute('stat get', (self._id, ), callback=self._query_get_stats, format_args=('items', ), type='items')
+        database_manager.callback(self._query_final)
+
+    def _query_get_races(self, result):
+        if database_manager._unloading:
+            return
+
+        data = result.fetchall()
+
+        if data:
+            for name, xp, level, unused in data:
+                if name in race_manager:
+                    self._races[name] = _Race(self, name, xp, level, unused, _added=True)
+
+    def _query_get_skills(self, result):
+        if database_manager._unloading:
+            return
+
+        data = result.fetchall()
+
+        if data:
+            for skill_name, race_name, level in data:
+                settings = race_manager.get(race_name)
+
+                if settings is not None:
+                    if skill_name in settings.config.get('skills', []):
+                        self._races[race_name].skills[skill_name] = _Skill(self, settings.config['skills'][skill_name], skill_name, level, race_name, _added=True)
+                        self._races[race_name].skills[skill_name]._type = settings.type
+
+        for race_name, settings in race_manager.items():
+            race = self._races.get(race_name)
+
+            if race is not None:
+                for skill_name in settings.config.get('skills', []):
+                    if skill_name not in race.skills:
+                        race.skills[skill_name] = _Skill(self, settings.config['skills'][skill_name], skill_name, 0, race_name)
+                        race.skills[skill_name]._type = settings.type
+
+    def _query_get_stats(self, result):
+        if database_manager._unloading:
+            return
+
+        data = result.fetchall()
+
+        if data:
+            if result['type'] == 'races':
+                for owner, key, value in data:
+                    if owner in race_manager:
+                        self.races[owner].stats._data[key] = value
+            else:
+                for owner, key, value in data:
+                    if owner in item_manager:
+                        self.items[owner].stats._data[key] = value
+
+    def _query_final(self, result):
+        if database_manager._unloading:
+            return
+
+        if race_manager.default_race is None:
+            return
+        elif self.active_race.settings.usable_by(self) is not RaceReason.ALLOWED:
+            usable_races = self.available_races
+
+            if not usable_races:
+                self._ready = False
+
+                raise RuntimeError(f'Unable to find a usable race to "{self.name}" ({self.uniqueid}).')
+
+            self._current_race = choice(usable_races)
+
+        self._ready = True
+
+        OnPlayerQuery.manager.notify(self)
+
+        try:
+            # We need to make sure the uniqueid (the player) is in the server
+            index_from_uniqueid(self.uniqueid)
+        except ValueError:
+            pass
+        else:
+            OnPlayerReady.manager.notify(self)
+
+    def _query_save(self, result):
+        # We don't want them to have previous data
+        # This has to be done here, as it'll cause errors if it's done in OnClientDisconnect
+        self.data.clear()
+
+        try:
+            self._index = index_from_uniqueid(self.uniqueid)
+        except ValueError:
+            OnPlayerDestroy.manager.notify(self)
+
+            del Player._players[self.uniqueid]
+
+            self._userid = None
+            self._index = None
+        else:
+            self._userid = userid_from_index(self.index)
+
+    def save(self):
+        assert self.ready
+
+        # TODO: This could use a hand...
+
+        database_manager.execute('player update', (self.name, self._current_race, self._lastconnect, self._id))
+
+        races = []
+        skills = []
+        stats_races = []
+        stats_items = []
+
+        for race_name, race in self._races.items():
+            if not race._added and race._modified:
+                race._added = True
+                races.append((race_name, self.id))
+
+            for skill_name, skill in race.skills.items():
+                if not skill._added and skill._modified:
+                    skill._added = True
+                    skills.append((skill_name, race_name, self.id))
+
+            for stat in race.stats._not_added:
+                stats_races.append((race_name, stat, race.stats[stat], self.id))
+
+            race.stats._not_added.clear()
+            race.stats._modified.clear()
+
+        for item_name, item in self._items.items():
+            for stat in item.stats._not_added:
+                stats_items.append((item_name, stat, item.stats[stat], self.id))
+
+            item.stats._not_added.clear()
+            item.stats._modified.clear()
+
+        if races:
+            database_manager.executemany('race insert', races)
+
+        if skills:
+            database_manager.executemany('skill insert', skills)
+
+        if stats_races:
+            database_manager.executemany('stat insert', stats_races, format_args=('races', ))
+
+        if stats_items:
+            database_manager.executemany('stat insert', stats_items, format_args=('items', ))
+
+        reset = False
+
+        if any([race._modified for race in self._races.values()]):
+            reset = True
+
+            join = statements['race join']
+
+            xp = ' '.join([join.format(race_name, race.xp) for race_name, race in self._races.items() if race._modified])
+            level = ' '.join([join.format(race_name, race.level) for race_name, race in self._races.items() if race._modified])
+            unused = ' '.join([join.format(race_name, race.unused) for race_name, race in self._races.items() if race._modified])
+
+            database_manager.execute('race update', (self._id, ), format_args=(xp, level, unused))
+
+        if any([skill._modified for race in self._races.values() for skill in race.skills.values()]):
+            reset = True
+
+            join = statements['skill join']
+
+            level = ' '.join([join.format(race_name, skill_name, skill.level) for race_name, race in self._races.items() for skill_name, skill in race.skills.items() if skill._modified])
+
+            database_manager.execute('skill update', (self._id, ), format_args=(level, ))
+
+        if any([race.stats._modified for race in self._races.values()]):
+            join = statements['stat join']
+
+            value = ' '.join([join.format(race_name, key, race.stats[key]) for race_name, race in self._races.items() for key in race.stats._modified])
+
+            database_manager.execute('stat update', (self._id, ), format_args=('races', value))
+
+            for race in self._races.values():
+                race.stats._modified.clear()
+
+        if any([item.stats._modified for item in self._items.values()]):
+            join = statements['stat join']
+
+            value = ' '.join([join.format(item_name, key, item.stats[key]) for item_name, item in self._items.items() for key in item.stats._modified])
+
+            database_manager.execute('stat update', (self._id, ), format_args=('items', value))
+
+            for item in self._items.values():
+                item.stats._modified.clear()
+
+        if reset:
+            for race in self._races.values():
+                race._modified = False
+
+                for skill in race.skills.values():
+                    skill._modified = False
+
+    def take_damage(self, damage, attacker, weapon=None, skip_hooks=True):
+        # TODO: This method should not have been called if the victim is already dead
+        assert not self.player.dead
+
+        if not self.player.dead:
+            global _global_bypass
+
+            _global_bypass = skip_hooks
+
+            take_damage_info = TakeDamageInfo()
+            take_damage_info.attacker = attacker
+
+            global _global_weapon_entity
+
+            if _global_weapon_entity is None:
+                _global_weapon_entity = Entity.create('info_target')
+
+            if weapon is None:
+                _global_weapon_entity.set_key_value_string('classname', 'point_hurt')
+            else:
+                _global_weapon_entity.set_key_value_string('classname', f'wcs_{weapon}')
+
+            take_damage_info.weapon = _global_weapon_entity.index
+            take_damage_info.inflictor = _global_weapon_entity.index
+            take_damage_info.damage = damage
+            take_damage_info.type = DamageTypes.GENERIC
+
+            try:
+                self.player.on_take_damage(take_damage_info)
+            finally:
+                _global_bypass = False
+
+    def take_delayed_damage(self, damage, attacker, skip_hooks=True):
+        # TODO: This method should not have been called if the victim is already dead
+        assert not self.player.dead
+
+        attacker = userid_from_index(attacker)
+
+        delay = Delay(0, self._take_delayed_damage, args=(damage, attacker, skip_hooks))
+        delay.args += (delay, )
+
+        _delays[self.userid].add(delay)
+
+    def _take_delayed_damage(self, damage, attacker, skip_hooks, delay):
+        _delays[self.userid].discard(delay)
+
+        assert not self.player.dead
+
+        try:
+            attacker = index_from_userid(attacker)
+        except ValueError:
+            attacker = 0
+
+        self.take_damage(damage, attacker, skip_hooks)
+
+    @property
+    def userid(self):
+        assert self._userid is not None
+
+        return self._userid
+
+    @property
+    def index(self):
+        assert self._index is not None
+
+        return self._index
+
+    @property
+    def online(self):
+        try:
+            index_from_uniqueid(self.uniqueid)
+        except ValueError:
+            return False
+
+        return True
+
+    @property
+    def uniqueid(self):
+        return self._uniqueid
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def ready(self):
+        return self._ready
+
+    @property
+    def privileges(self):
+        return self._privileges
+
+    @property
+    def player(self):
+        if self._player is None:
+            self._player = _players[self.index]
+
+        return self._player
+
+    @property
+    def current_race(self):
+        return self._current_race
+
+    @current_race.setter
+    def current_race(self, value):
+        old = self._current_race
+
+        assert old != value
+        assert value in race_manager
+
+        self.execute('changecmd', define=True)
+
+        self._current_race = value
+
+        OnPlayerChangeRace.manager.notify(self, old, value)
+
+    @property
+    def active_race(self):
+        return self._races[self.current_race]
+
+    @property
+    def races(self):
+        return self._races
+
+    @property
+    def items(self):
+        return self._items
+
+    @property
+    def stats(self):
+        return self.active_race.stats
+
+    @property
+    def skills(self):
+        return self.active_race.skills
+
+    @property
+    def xp(self):
+        return self.active_race.xp
+
+    @xp.setter
+    def xp(self, value):
+        self.active_race.xp = value
+
+    @property
+    def required_xp(self):
+        return self.active_race.required_xp
+
+    @property
+    def level(self):
+        return self.active_race.level
+
+    @level.setter
+    def level(self, value):
+        self.active_race.level = value
+
+    @property
+    def total_level(self):
+        return sum([race.level for race in self._races.values()])
+
+    @property
+    def unused(self):
+        return self.active_race.unused
+
+    @unused.setter
+    def unused(self, value):
+        self.active_race.unused = value
+
+    @property
+    def available_races(self):
+        return [race_name for race_name, settings in race_manager.items() if settings.usable_by(self) is RaceReason.ALLOWED]
+
+    @property
+    def rank(self):
+        return rank_manager[self.uniqueid]
+
+    @property
+    def notify(self):
+        assert self.ready
+        return self.active_race.notify
+
+    @property
+    def execute(self):
+        assert self.ready
+        return self.active_race.execute
+
+    @classmethod
+    def from_index(cls, index):
+        wcsplayer = cls._cache_indexes.get(index)
+
+        if wcsplayer is None:
+            playerinfo = playerinfo_from_index(index)
+            uniqueid = uniqueid_from_playerinfo(playerinfo)
+
+            wcsplayer = cls._cache_indexes[index] = cls(uniqueid)
+
+        return wcsplayer
+
+    @classmethod
+    def from_userid(cls, userid):
+        wcsplayer = cls._cache_userids.get(userid)
+
+        if wcsplayer is None:
+            index = index_from_userid(userid)
+            playerinfo = playerinfo_from_index(index)
+            uniqueid = uniqueid_from_playerinfo(playerinfo)
+
+            wcsplayer = cls._cache_userids[userid] = cls(uniqueid)
+
+        return wcsplayer
+
+
+class _Race(object):
+    def __init__(self, wcsplayer, name, xp, level, unused, _added=False):
+        self.wcsplayer = wcsplayer
+        self.name = name
+        self._xp = xp
+        self._level = level
+        self._unused = unused
+
+        self._added = _added
+        self._modified = False
+        self._stats = _Stats()
+
+        self.skills = {}
+        self.settings = race_manager[name]
+
+    def _upgrade_skills(self):
+        skills = [x for x in self.skills.values() if x.level < x.config['maximum']]
+
+        if skills:
+            levels = defaultdict(int)
+            unused = 0
+
+            for _ in range(self.unused):
+                unused += 1
+
+                skill = choice(skills)
+
+                levels[skill] += 1
+
+                if skill.level + levels[skill] == skill.config['maximum']:
+                    skills.remove(skill)
+
+                    if not skills:
+                        break
+
+            if unused:
+                self.unused -= unused
+
+                for skill, level in levels.items():
+                    skill.level += level
+
+    def notify(self, event, name=None):
+        if name is None:
+            name = event.name
+
+        for skill_name, data in self.settings.config['skills'].items():
+            if data['event'] == name:
+                self.skills[skill_name].execute(event=event)
+
+        for item in self.wcsplayer.items.values():
+            item.notify(event, name)
+
+    def execute(self, name, event=None, define=False):
+        if self.settings.type is ModuleType.SP:
+            callback = _race_callbacks.get(self.name, {}).get(name)
+
+            if callback is not None:
+                if event is None:
+                    callback(self.wcsplayer)
+                else:
+                    callback(event, self.wcsplayer)
+        elif self.settings.type is ModuleType.ESP:
+            callback = es.addons.Blocks.get(f'wcs/modules/races/{self.name}/{name}')
+
+            if callback is not None:
+                if event is None:
+                    callback(self.wcsplayer)
+                else:
+                    callback(es.event_var, self.wcsplayer)
+        elif self.settings.type is ModuleType.ESS:
+            if define:
+                cvar_wcs_userid.set_int(self.wcsplayer.userid)
+
+            addon = esc.addons.get(f'wcs/modules/races/{self.name}')
+
+            if addon is not None:
+                executor = addon.blocks.get(name)
+
+                if executor is not None:
+                    executor.run()
+
+    @property
+    def required_xp(self):
+        return cfg_interval.get_int() * self.level
+
+    @property
+    def xp(self):
+        return self._xp
+
+    @xp.setter
+    def xp(self, value):
+        maximum = self.settings.config['maximum']
+
+        if maximum and self.level >= maximum:
+            raise ValueError('Cannot modify xp of a race which is maxed.')
+
+        self._modified = True
+
+        new_level = self.level
+
+        required_xp = self.required_xp
+        interval = cfg_interval.get_int()
+
+        while value >= required_xp:
+            value -= required_xp
+
+            new_level += 1
+
+            if new_level == maximum:
+                value = 0
+                break
+
+            required_xp += interval
+
+        self._xp = value
+
+        if not new_level == self.level:
+            self.level = new_level
+
+    @property
+    def level(self):
+        return self._level
+
+    @level.setter
+    def level(self, value):
+        maximum = self.settings.config['maximum']
+
+        if maximum and self.level >= maximum and value >= maximum:
+            raise ValueError('Cannot give levels to a race which is maxed.')
+
+        self._modified = True
+
+        from_level = self.level
+
+        self.unused += value - from_level
+
+        self._level = value
+
+        # TODO: Find a proper sound
+        # if self.wcsplayer.current_race == self.name:
+        #     player = self.wcsplayer.player
+
+        #     if player.dead:
+        #         if not self.wcsplayer._is_bot:
+        #             player.play_sound('ambient/machines/teleport1.wav', volume=0.4)
+        #     else:
+        #         player.emit_sound('ambient/machines/teleport1.wav', volume=0.8, attenuation=0.3)
+
+        if value > from_level:
+            OnPlayerLevelUp.manager.notify(self.wcsplayer, self, from_level)
+
+            if self.wcsplayer._is_bot:
+                self._upgrade_skills()
+        else:
+            OnPlayerLevelDown.manager.notify(self.wcsplayer, self, from_level)
+
+    @property
+    def unused(self):
+        return self._unused
+
+    @unused.setter
+    def unused(self, value):
+        self._modified = True
+
+        self._unused = value
+
+    @property
+    def stats(self):
+        return self._stats
+
+
+class _Skill(object):
+    def __init__(self, wcsplayer, config, name, level, race_name, _added=False):
+        self.wcsplayer = wcsplayer
+        self.name = name
+        self.config = config
+
+        self._level = level
+
+        self._race_name = race_name
+        self._added = _added
+        self._modified = False
+
+        self._type = None
+
+    def execute(self, name=None, event=None, define=False):
+        if self.level:
+            if name is None:
+                name = self.name
+
+            variables = {}
+
+            for variable, values in self.config['variables'].items():
+                variables[variable] = values[self.level - 1] if self.level <= len(values) else values[-1]
+
+            if self._type is ModuleType.SP:
+                callback = _race_callbacks.get(self._race_name, {}).get(name)
+
+                if callback is not None:
+                    if event is None:
+                        callback(self.wcsplayer, variables)
+                    else:
+                        callback(event, self.wcsplayer, variables)
+            elif self._type is ModuleType.ESP:
+                callback = es.addons.Blocks.get(f'wcs/modules/items/{self._race_name}/{name}')
+
+                if callback is not None:
+                    if event is None:
+                        callback(self.wcsplayer, variables)
+                    else:
+                        callback(es.event_var, self.wcsplayer, variables)
+            else:
+                addon = esc.addons.get(f'wcs/modules/races/{self._race_name}')
+
+                if addon is not None:
+                    executor = addon.blocks.get(name)
+
+                    if executor is not None:
+                        if define:
+                            cvar_wcs_userid.set_int(self.wcsplayer.userid)
+
+                        for cvar in cvar_wcs_dices:
+                            cvar.set_int(randint(0, 100))
+
+                        for variable, values in variables.items():
+                            variable = f'wcs_{variable}'
+                            cvar = cvars.get(variable)
+
+                            if cvar is None:
+                                cvar = cvars[variable] = ConVar(variable, '0')
+
+                            if isinstance(values, list):
+                                if isinstance(values[0], float) or isinstance(values[1], float):
+                                    cvar.set_float(uniform(*values))
+                                else:
+                                    cvar.set_int(randint(*values))
+                            else:
+                                if isinstance(values, float):
+                                    cvar.set_float(values)
+                                else:
+                                    cvar.set_int(values)
+
+                        executor.run()
+
+    @property
+    def level(self):
+        return self._level
+
+    @level.setter
+    def level(self, value):
+        self._modified = True
+
+        self._level = value
+
+
+class _Item(object):
+    def __init__(self, wcsplayer, name):
+        self.wcsplayer = wcsplayer
+        self.name = name
+
+        self._count = 0
+        self._stats = _Stats()
+
+        self.settings = item_manager[name]
+
+    def notify(self, event, name=None):
+        if name is None:
+            name = event.name
+
+        if self.settings.config['event'] == name:
+            if self.settings.type is ModuleType.SP:
+                _item_callbacks[self.name]['activatecmd'](event, self.wcsplayer)
+            elif self.settings.type is ModuleType.ESP:
+                es.addons.Blocks[f'wcs/modules/items/{self.name}/activatecmd'](es.event_var, self.wcsplayer)
+            else:
+                for cvar in cvar_wcs_dices:
+                    cvar.set_int(randint(0, 100))
+
+                esc.addons[f'wcs/modules/items/{self.name}'].blocks['activatecmd'].run()
+
+    def execute(self, name, event=None, define=False):
+        if self.settings.type is ModuleType.SP:
+            callback = _item_callbacks.get(self.name, {}).get(name)
+
+            if callback is not None:
+                if event is None:
+                    callback(self.wcsplayer)
+                else:
+                    callback(event, self.wcsplayer)
+        elif self.settings.type is ModuleType.ESP:
+            callback = es.addons.Blocks.get(f'wcs/modules/items/{self.name}/{name}')
+
+            if callback is not None:
+                if event is None:
+                    callback(self.wcsplayer)
+                else:
+                    callback(es.event_var, self.wcsplayer)
+        elif self.settings.type is ModuleType.ESS:
+            addon = esc.addons.get(f'wcs/modules/items/{self.name}')
+
+            if addon is not None:
+                executor = addon.blocks.get(name)
+
+                if executor is not None:
+                    if define:
+                        cvar_wcs_userid.set_int(self.wcsplayer.userid)
+
+                    executor.run()
+
+    @property
+    def count(self):
+        return self._count
+
+    @count.setter
+    def count(self, value):
+        assert value >= 0
+        assert self.count + value >= 0
+
+        difference = value - self.count
+
+        for category in self.settings.config['categories']:
+            self.wcsplayer.items._maxitems[category] += difference
+
+        self._count = value
+
+    @property
+    def stats(self):
+        return self._stats
+
+
+# ============================================================================
+# >> LISTENERS
+# ============================================================================
+@OnClientActive
+def on_client_active(index):
+    wcsplayer = Player(uniqueid_from_playerinfo(playerinfo_from_index(index)))
+
+    wcsplayer._userid = userid_from_index(index)
+    wcsplayer._index = index
+
+
+@OnClientDisconnect
+def on_client_disconnect(index):
+    # This can occur if the player leaves the server before OnClientActive was called
+    try:
+        uniqueid = uniqueid_from_playerinfo(playerinfo_from_index(index))
+    except ValueError:
+        return
+
+    wcsplayer = Player(uniqueid)
+
+    # If we failed to get the correct uniqueid for some reason, do not proceed
+    assert wcsplayer.uniqueid == uniqueid, (wcsplayer.uniqueid, uniqueid)
+
+    OnPlayerDelete.manager.notify(wcsplayer)
+
+    for delay in _delays.pop(wcsplayer.userid, []):
+        delay.cancel()
+
+    del Player._cache_userids[wcsplayer.userid]
+    del Player._cache_indexes[wcsplayer.index]
+
+    if wcsplayer.ready:
+        wcsplayer._lastconnect = time()
+        wcsplayer.save()
+
+    database_manager.callback(wcsplayer._query_save)
+
+
+@OnEntityDeleted
+def on_entity_deleted(base_entity):
+    if not base_entity.is_networked():
+        return
+
+    global _global_weapon_entity
+
+    if _global_weapon_entity is not None:
+        if base_entity.index == _global_weapon_entity.index:
+            _global_weapon_entity = None
+
+
+# ============================================================================
+# >> EVENTS
+# ============================================================================
+@Event('round_prestart')
+def on_round_prestart(event):
+    for delay in chain.from_iterable(_delays.values()):
+        delay.cancel()
+
+    _delays.clear()
+
+
+@Event('player_death')
+def on_player_death(event):
+    userid = event['userid']
+
+    for delay in _delays[userid]:
+        delay.cancel()
+
+    del _delays[userid]
