@@ -99,7 +99,7 @@ from .core.translations import menu_strings
 # Is ESC supported?
 if IS_ESC_SUPPORT_ENABLED:
     #   Helpers
-    from .core.helpers.esc.commands import _team_data  # Just to load it
+    from .core.helpers.esc.commands import valid_userid  # Just to load it
 
 # Is Github available?
 if IS_GITHUB_ENABLED:

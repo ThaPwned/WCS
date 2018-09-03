@@ -87,6 +87,7 @@ if IS_ESC_SUPPORT_ENABLED:
 # ============================================================================
 __all__ = (
     'Player',
+    'team_data',
 )
 
 
@@ -101,10 +102,22 @@ if (CFG_PATH / 'privileges.json').isfile():
         if x not in privileges:
             privileges[x] = {}
 else:
-    privileges = {'players':{}}
+    privileges = {
+        'players':{
+            'dummy':{
+                'wcsadmin': 1,
+                'wcsadmin_githubaccess': 1,
+                'wcsadmin_managementaccess': 1,
+                'wcsadmin_raceaccess': 1,
+                'vip_raceaccess': 1
+            }
+        }
+    }
 
     with open(CFG_PATH / 'privileges.json', 'w') as outputfile:
         json_dump(privileges, outputfile, indent=4)
+
+team_data = {2:{}, 3:{}}
 
 # TODO: Should I even be using this?
 _players = PlayerDictionary()

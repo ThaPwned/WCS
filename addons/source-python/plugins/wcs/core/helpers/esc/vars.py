@@ -46,3 +46,9 @@ if (CFG_PATH / 'var.txt').isfile():
         for variable in [x.strip() for x in inputfile.readlines() if not x.startswith('//') and x.strip()]:
             if variable not in cvars:
                 cvars[variable] = ConVar(variable, '0')
+else:
+    with open(CFG_PATH / 'var.txt', 'w') as outputfile:
+        outputfile.write('// Place all the server variables you want to set under here.\n')
+        outputfile.write('// This is only necessary for ESS races.\n')
+        outputfile.write('//\n')
+        outputfile.write('// Lines with // in front of it will not be read.\n')

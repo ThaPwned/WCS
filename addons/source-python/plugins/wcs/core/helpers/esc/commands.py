@@ -23,10 +23,9 @@ from players.entity import Player
 from players.helpers import index_from_userid
 
 # WCS Imports
-#   Helpers
-from . import _team_data
 #   Players
 from ...players.entity import Player as WCSPlayer
+from ...players.entity import team_data
 
 
 # ============================================================================
@@ -46,7 +45,7 @@ def valid_userid_and_team(userid):
     new_userid = valid_userid(userid)
 
     if new_userid is None:
-        if userid in _team_data:
+        if userid in ('T', 'CT'):
             return userid
 
         return None
@@ -356,8 +355,8 @@ def wcsgroup_get_command(command_info, key:str, var:ConVar, userid:valid_userid_
         var.set_int(0)
         return
 
-    if userid in _team_data:
-        value = _team_data[userid].get(key, '0')
+    if isinstance(userid, str):
+        value = team_data[{'T':2, 'CT':3}[userid]].get(key, '0')
     else:
         wcsplayer = WCSPlayer.from_userid(userid)
 
@@ -371,8 +370,8 @@ def wcsgroup_set_command(command_info, key:str, userid:valid_userid_and_team, va
     if userid is None:
         return
 
-    if userid in _team_data:
-        _team_data[userid][key] = value
+    if isinstance(userid, str):
+        team_data[{'T':2, 'CT':3}[userid]][key] = value
     else:
         wcsplayer = WCSPlayer.from_userid(userid)
 
