@@ -543,20 +543,20 @@ def wcsadmin_github_options_menu_build(menu, client):
 
     menu[0].text.tokens['name'] = name
 
-    if status is not GithubStatus.UNINSTALLED and not GithubStatus.INSTALLED:
-        cycle = wcsplayer.data.get('_internal_wcsadmin_github_cycle', 0)
-
-        menu[2].text.tokens['cycle'] = '.' * (cycle % 3 + 1)
-
-        cycle += 1
-
-        wcsplayer.data['_internal_wcsadmin_github_cycle'] = cycle
-
     menu[2].selectable = menu[2].highlight = status is GithubStatus.UNINSTALLED
     menu[3].selectable = menu[3].highlight = status is GithubStatus.INSTALLED
     menu[4].selectable = menu[4].highlight = status is GithubStatus.INSTALLED
 
     menu[5].text = menu_strings[f'wcsadmin_github_options_menu status {status.value}']
+
+    if status is not GithubStatus.UNINSTALLED and not GithubStatus.INSTALLED:
+        cycle = wcsplayer.data.get('_internal_wcsadmin_github_cycle', 0)
+
+        menu[5].text.tokens['cycle'] = '.' * (cycle % 3 + 1)
+
+        cycle += 1
+
+        wcsplayer.data['_internal_wcsadmin_github_cycle'] = cycle
 
     if option['last_updated'] is None:
         menu[6].text = menu_strings['wcsadmin_github_options_menu last updated never']
