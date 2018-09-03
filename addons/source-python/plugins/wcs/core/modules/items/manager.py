@@ -35,8 +35,8 @@ class ItemSetting(_BaseSetting):
     def __init__(self, name):
         super().__init__(name, ITEM_PATH)
 
-    def execute(self, name):
-        super().execute(name, 'items', _callbacks)
+    def execute(self, name, *args):
+        super().execute(name, 'items', _callbacks, args)
 
     def usable_by(self, wcsplayer):
         data = {'reason':None}

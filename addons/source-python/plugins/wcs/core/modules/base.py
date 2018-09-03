@@ -261,17 +261,17 @@ class _BaseSetting(object):
         container._category_menus[category].append(PagedOption(self.strings['name'], self.name))
         container._info_category_menus[category].append(PagedOption(self.strings['name'], self.name))
 
-    def execute(self, name, module, callbacks):
+    def execute(self, name, module, callbacks, args):
         if self.type is ModuleType.SP:
             callback = callbacks.get(self.name, {}).get(name, None)
 
             if callback is not None:
-                callback()
+                callback(*args)
         elif self.type is ModuleType.ESP:
             callback = es.addons.Blocks.get(f'wcs/modules/{module}/{self.name}/{name}')
 
             if callback is not None:
-                callback()
+                callback(*args)
         else:
             addon = esc.addons.get(f'wcs/modules/{module}/{self.name}')
 

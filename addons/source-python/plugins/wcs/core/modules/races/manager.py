@@ -54,8 +54,8 @@ class RaceSetting(_BaseSetting):
 
             config['required'] = config.get('required', 0)
 
-    def execute(self, name):
-        super().execute(name, 'races', _callbacks)
+    def execute(self, name, *args):
+        super().execute(name, 'races', _callbacks, args)
 
     def usable_by(self, wcsplayer):
         data = {'reason':None}
