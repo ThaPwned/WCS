@@ -13,9 +13,6 @@ from json import load
 from queue import Queue
 #   Threading
 from threading import Thread
-#   Time
-from time import mktime
-from time import strptime
 #   Warnings
 from warnings import filterwarnings
 
@@ -62,8 +59,6 @@ __all__ = (
 filterwarnings('ignore', category=ResourceWarning, message='unclosed.*<ssl.SSLSocket.*>')
 
 _output = Queue()
-
-_github_time_format = '%a, %d %b %Y %H:%M:%S GMT'
 
 github_installing_failed_message = SayText2(chat_strings['github installing failed'])
 github_installing_success_message = SayText2(chat_strings['github installing success'])
@@ -114,11 +109,16 @@ class _GithubManager(dict):
             _repo = self._connect()
             modules = _repo.get_contents('')
 
+            modules_left = {}
+
             for module in [x.name for x in modules if x.name in self]:
                 contents = _repo.get_contents(module)
                 path = MODULE_PATH / module
+                modules_left[module] = []
 
                 for content in contents:
+                    modules_left[module].append(content.name)
+
                     wcs_install_path = path / content.name / '.wcs_install'
 
                     if wcs_install_path.isfile():
@@ -130,7 +130,29 @@ class _GithubManager(dict):
 
                         last_updated = None
 
-                    self[module][content.name] = {'status':status, 'last_modified':mktime(strptime(content.last_modified, _github_time_format)), 'last_updated':last_updated}
+                    self[module][content.name] = {'status':status, 'last_updated':last_updated}
+
+            commits = _repo.get_commits()
+
+            for commit in commits:
+                last_modified = commit.commit.committer.date.timestamp()
+
+                for file_ in commit.files:
+                    tmp = file_.filename.split('/')
+                    module = tmp[0]
+
+                    if module in modules_left:
+                        name = tmp[1]
+
+                        if name in modules_left[module]:
+                            self[module][name]['last_modified'] = last_modified
+                            modules_left[module].remove(name)
+
+                            if not modules_left[module]:
+                                del modules_left[module]
+
+                if not modules_left:
+                    break
 
             _output.put((OnGithubRefreshed.manager.notify, self['races'], self['items']))
         except:
