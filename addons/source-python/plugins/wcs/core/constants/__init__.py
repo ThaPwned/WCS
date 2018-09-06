@@ -12,6 +12,7 @@ from json import load
 
 # WCS Imports
 #   Constants
+from .info import info
 from .paths import CFG_PATH
 
 
@@ -75,12 +76,18 @@ IS_ESC_SUPPORT_ENABLED = True
 
 if (CFG_PATH / 'github.json').isfile():
     with open(CFG_PATH / 'github.json') as inputfile:
-        GITHUB_ACCESS_TOKEN = load(inputfile).get('access_token', None)
+        data = load(inputfile)
+
+    GITHUB_ACCESS_TOKEN = data.get('access_token', None)
+    GITHUB_REPOSITORIES = data.get('repositories', [])
 else:
     with open(CFG_PATH / 'github.json', 'w') as outputfile:
-        dump({'access_token':None}, outputfile)
+        dump({'access_token':None, 'repositories':[]}, outputfile, indent=4)
 
     GITHUB_ACCESS_TOKEN = None
+    GITHUB_REPOSITORIES = []
+
+GITHUB_REPOSITORIES.insert(0, f'{info.author.replace(" ", "")}/WCS-Contents')
 
 IS_GITHUB_ENABLED = GITHUB_ACCESS_TOKEN is not None
 

@@ -25,8 +25,8 @@ from players.helpers import index_from_userid
 # WCS Imports
 #   Constants
 from ..constants import GITHUB_ACCESS_TOKEN
+from ..constants import GITHUB_REPOSITORIES
 from ..constants import GithubStatus
-from ..constants.info import info
 from ..constants.paths import MODULE_PATH
 from ..constants.paths import MODULE_PATH_ES
 #   Helpers
@@ -98,15 +98,10 @@ class _GithubManager(dict):
                 else:
                     items()
 
-    def _connect(self):
-        _github = Github(GITHUB_ACCESS_TOKEN)
-        _repo = _github.get_repo(f'{info.author.replace(" ", "")}/WCS-Contents')
-
-        return _repo
-
     def _refresh(self):
         try:
-            _repo = self._connect()
+            _github = Github(GITHUB_ACCESS_TOKEN)
+            _repo = _github.get_repo(GITHUB_REPOSITORIES[0])
             modules = _repo.get_contents('')
 
             modules_left = {}
@@ -161,7 +156,8 @@ class _GithubManager(dict):
 
     def _install(self, module, name, userid):
         try:
-            _repo = self._connect()
+            _github = Github(GITHUB_ACCESS_TOKEN)
+            _repo = _github.get_repo(GITHUB_REPOSITORIES[0])
 
             self._download(_repo, f'{module}/{name}')
 
@@ -177,7 +173,8 @@ class _GithubManager(dict):
 
     def _update(self, module, name, userid):
         try:
-            _repo = self._connect()
+            _github = Github(GITHUB_ACCESS_TOKEN)
+            _repo = _github.get_repo(GITHUB_REPOSITORIES[0])
 
             path = MODULE_PATH / module / name
             config_path = path / 'config.json'
