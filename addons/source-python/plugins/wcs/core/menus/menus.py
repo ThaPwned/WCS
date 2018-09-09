@@ -26,8 +26,6 @@ from ..listeners import OnGithubInstalled
 from ..listeners import OnGithubUpdated
 from ..listeners import OnGithubUninstalled
 from ..listeners import OnPlayerQuery
-# from ..listeners import OnPluginItemLoad
-# from ..listeners import OnPluginRaceLoad
 #   Menus
 from . import main_menu
 from . import shopmenu_menu
@@ -54,26 +52,15 @@ from . import wcsadmin_menu
 from . import wcsadmin_management_menu
 from . import wcsadmin_management_races_menu
 from . import wcsadmin_management_items_menu
-from . import wcsadmin_management_editor_menu
-from . import wcsadmin_management_race_categories_menu
-from . import wcsadmin_management_item_categories_menu
+from . import wcsadmin_management_races_add_menu
+from . import wcsadmin_management_items_add_menu
+from . import wcsadmin_management_races_editor_menu
+from . import wcsadmin_management_items_editor_menu
 from . import wcsadmin_github_menu
 from . import wcsadmin_github_races_menu
 from . import wcsadmin_github_items_menu
 from . import wcsadmin_github_options_menu
-# from .base import PagedPageCountMenu
-# from .build import changerace_menu_build
-# from .build import shopmenu_menu_build
-# from .close import raceinfo_menu_close
-# from .select import changerace_menu_select
-# from .select import raceinfo_menu_select
-# from .select import shopinfo_menu_select
-# from .select import shopmenu_menu_select
-#   Modules
-# from ..modules.items.manager import item_manager
-# from ..modules.races.manager import race_manager
-# #   Translations
-# from ..translations import categories_strings
+#   Translations
 from ..translations import menu_strings
 
 
@@ -98,6 +85,10 @@ raceinfo_skills_menu.title = menu_strings['raceinfo_skills_menu title']
 playerinfo_menu.title = menu_strings['playerinfo_menu title']
 playerinfo_detail_skills_menu.title = menu_strings['playerinfo_detail_skills_menu title']
 wcstop_menu.title = menu_strings['wcstop_menu title']
+wcsadmin_management_races_menu.title = menu_strings['wcsadmin_management_races_menu title']
+wcsadmin_management_items_menu.title = menu_strings['wcsadmin_management_items_menu title']
+wcsadmin_management_races_add_menu.title = menu_strings['wcsadmin_management_races_add_menu title']
+wcsadmin_management_items_add_menu.title = menu_strings['wcsadmin_management_items_add_menu title']
 wcsadmin_github_races_menu.title = menu_strings['wcsadmin_github_races_menu title']
 wcsadmin_github_items_menu.title = menu_strings['wcsadmin_github_items_menu title']
 
@@ -239,7 +230,6 @@ wcstop_detail_menu.extend(
         Text(menu_strings['wcstop_detail_menu line 1']),
         Text(menu_strings['wcstop_detail_menu line 2']),
         Text(menu_strings['wcstop_detail_menu line 3']),
-        # Text(menu_strings['wcstop_detail_menu line 4']),
         Text(' '),
         Text(' '),
         Text(' '),
@@ -292,12 +282,15 @@ welcome_menu.extend(
 
 welcome_menu[15].text.tokens['slot'] = BUTTON_CLOSE_SLOT
 
+
+# ============================================================================
+# >> ADMIN MENU FILLER
+# ============================================================================
 wcsadmin_menu.extend(
     [
         Text(menu_strings['wcsadmin_menu title']),
         Text(' '),
-        # SimpleOption(1, menu_strings['wcsadmin_menu management'], wcsadmin_management_menu),
-        Text(' '),
+        SimpleOption(1, menu_strings['wcsadmin_menu management'], wcsadmin_management_menu),
         SimpleOption(2, menu_strings['wcsadmin_menu github'], wcsadmin_github_menu),
         Text(' '),
         Text(' '),
@@ -315,8 +308,8 @@ wcsadmin_management_menu.extend(
         Text(' '),
         SimpleOption(1, menu_strings['wcsadmin_management_menu races'], wcsadmin_management_races_menu),
         SimpleOption(2, menu_strings['wcsadmin_management_menu items'], wcsadmin_management_items_menu),
-        SimpleOption(3, menu_strings['wcsadmin_management_menu race categories'], wcsadmin_management_race_categories_menu, selectable=False, highlight=False),
-        SimpleOption(4, menu_strings['wcsadmin_management_menu item categories'], wcsadmin_management_item_categories_menu, selectable=False, highlight=False),
+        Text(' '),
+        Text(' '),
         Text(' '),
         Text(' '),
         SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_menu),
@@ -325,30 +318,44 @@ wcsadmin_management_menu.extend(
     ]
 )
 
-wcsadmin_management_editor_menu.extend(
+wcsadmin_management_races_editor_menu.extend(
     [
+        Text(menu_strings['wcsadmin_management_races_editor_menu title']),
         Text(' '),
-        Text(menu_strings['wcsadmin_management_editor_menu name']),
-        Text(menu_strings['wcsadmin_management_editor_menu place']),
-        SimpleOption(2, menu_strings['wcsadmin_management_editor_menu up'], -1),
-        SimpleOption(3, menu_strings['wcsadmin_management_editor_menu down'], 1),
-        Text(' '),
+        SimpleOption(1, menu_strings['wcsadmin_management_races_editor_menu toggle 0']),
+        SimpleOption(2, menu_strings['wcsadmin_management_races_editor_menu remove']),
         Text(' '),
         Text(' '),
-        SimpleOption(BUTTON_BACK, menu_strings['back']),
+        Text(' '),
+        Text(' '),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_management_races_menu),
         Text(' '),
         SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
     ]
 )
 
-wcsadmin_management_editor_menu.currents = {'races':[], 'items':[]}
+wcsadmin_management_items_editor_menu.extend(
+    [
+        Text(menu_strings['wcsadmin_management_items_editor_menu title']),
+        Text(' '),
+        SimpleOption(1, menu_strings['wcsadmin_management_items_editor_menu toggle 0']),
+        SimpleOption(2, menu_strings['wcsadmin_management_items_editor_menu remove']),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_management_items_menu),
+        Text(' '),
+        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+    ]
+)
 
 wcsadmin_github_menu.extend(
     [
         Text(menu_strings['wcsadmin_github_menu title']),
         Text(' '),
-        SimpleOption(1, menu_strings['wcsadmin_github_menu races'], selectable=False, highlight=False),
-        SimpleOption(2, menu_strings['wcsadmin_github_menu items'], selectable=False, highlight=False),
+        SimpleOption(1, menu_strings['wcsadmin_github_menu races'], wcsadmin_github_races_menu, selectable=False, highlight=False),
+        SimpleOption(2, menu_strings['wcsadmin_github_menu items'], wcsadmin_github_items_menu, selectable=False, highlight=False),
         Text(' '),
         Text(' '),
         Text(' '),
@@ -394,23 +401,25 @@ def on_github_refresh():
 def on_github_refreshed(races, items):
     for name, data in races.items():
         option = PagedOption(name, name)
-        wcsadmin_github_races_menu.append(option)
 
-        if data['last_updated'] is not None:
+        if data['last_updated'] is None:
+            option.text = f'+{option.text}'
+        else:
             if data['last_updated'] < data['last_modified']:
-                option.text = f'* {option.text}'
-            else:
-                option.highlight = False
+                option.text = f'*{option.text}'
+
+        wcsadmin_github_races_menu.append(option)
 
     for name, data in items.items():
         option = PagedOption(name, name)
-        wcsadmin_github_items_menu.append(option)
 
-        if data['last_updated'] is not None:
+        if data['last_updated'] is None:
+            option.text = f'+{option.text}'
+        else:
             if data['last_updated'] < data['last_modified']:
-                option.text = f'* {option.text}'
-            else:
-                option.highlight = False
+                option.text = f'*{option.text}'
+
+        wcsadmin_github_items_menu.append(option)
 
     if races:
         wcsadmin_github_menu[2].selectable = wcsadmin_github_menu[2].highlight = True
@@ -421,17 +430,17 @@ def on_github_refreshed(races, items):
 
 @OnGithubInstalled
 def on_github_installed(module, name, userid):
-    _update_menu(module, name, time(), False)
+    _update_menu(module, name, time())
 
 
 @OnGithubUpdated
 def on_github_updated(module, name, userid):
-    _update_menu(module, name, time(), False)
+    _update_menu(module, name, time())
 
 
 @OnGithubUninstalled
 def on_github_uninstalled(module, name, userid):
-    _update_menu(module, name, None, True)
+    _update_menu(module, name, None)
 
 
 @OnPlayerQuery
@@ -444,7 +453,7 @@ def on_player_query(wcsplayer):
 # ============================================================================
 # >> FUNCTIONS
 # ============================================================================
-def _update_menu(module, name, now, highlight):
+def _update_menu(module, name, now):
     from ..helpers.github import github_manager
 
     menu = wcsadmin_github_races_menu if module == 'races' else wcsadmin_github_items_menu
@@ -453,8 +462,7 @@ def _update_menu(module, name, now, highlight):
         if option.value == name:
             github_manager[module][name]['last_updated'] = now
 
-            option.text = name
-            option.highlight = highlight
+            option.text = ('+' if now is None else '') + name
 
             break
 

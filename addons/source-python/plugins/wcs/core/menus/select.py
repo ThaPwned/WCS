@@ -4,9 +4,8 @@
 # >> IMPORTS
 # ============================================================================
 # Python Imports
-#   Copy
-from copy import deepcopy
 #   JSON
+from json import dump
 from json import load
 
 # Source.Python Imports
@@ -25,8 +24,6 @@ from ..constants import GithubStatus
 from ..constants import ItemReason
 from ..constants import RaceReason
 from ..constants.paths import CFG_PATH
-from ..constants.paths import ITEM_PATH
-from ..constants.paths import RACE_PATH
 #   Helpers
 from ..helpers.overwrites import SayText2
 #   Menus
@@ -51,7 +48,10 @@ from . import wcsadmin_menu
 from . import wcsadmin_management_menu
 from . import wcsadmin_management_races_menu
 from . import wcsadmin_management_items_menu
-from . import wcsadmin_management_editor_menu
+from . import wcsadmin_management_races_add_menu
+from . import wcsadmin_management_items_add_menu
+from . import wcsadmin_management_races_editor_menu
+from . import wcsadmin_management_items_editor_menu
 from . import wcsadmin_github_menu
 from . import wcsadmin_github_races_menu
 from . import wcsadmin_github_items_menu
@@ -63,7 +63,6 @@ from ..modules.races.manager import race_manager
 from ..players.entity import Player
 #   Translations
 from ..translations import chat_strings
-from ..translations import menu_strings
 
 # Is Github available?
 if IS_GITHUB_ENABLED:
@@ -109,8 +108,7 @@ def shopmenu_menu_select(menu, client, option):
     settings = item_manager[option.value]
 
     if settings.usable_by(wcsplayer) is ItemReason.ALLOWED:
-        # TODO: Add this back in before release
-        # wcsplayer.player.cash -= settings.config['cost']
+        wcsplayer.player.cash -= settings.config['cost']
 
         item_bought_message.send(client, name=settings.strings['name'])
 
@@ -316,6 +314,9 @@ def wcstop_detail_menu_select(menu, client, option):
     return option.value
 
 
+# ============================================================================
+# >> ADMIN SELECT CALLBACKS
+# ============================================================================
 @wcsadmin_menu.register_select_callback
 def wcsadmin_menu_select(menu, client, option):
     return option.value
@@ -323,58 +324,6 @@ def wcsadmin_menu_select(menu, client, option):
 
 @wcsadmin_management_menu.register_select_callback
 def wcsadmin_management_menu_select(menu, client, option):
-    if option.choice_index in (1, 2):
-        new_menu = option.value
-
-        new_menu.clear()
-
-        if option.choice_index == 1:
-            available_items = [x.basename() for x in RACE_PATH.listdir()]
-
-            wcsplayer = Player.from_index(client)
-
-            wcsplayer.data['_internal_wcsadmin_editor'] = 1
-            module = wcsplayer.data['_internal_wcsadmin_editor_module'] = 'races'
-
-            new_string = menu_strings['wcsadmin_management_races_menu new']
-            disabled_string = menu_strings['wcsadmin_management_races_menu disabled']
-        else:
-            available_items = [x.basename() for x in ITEM_PATH.listdir()]
-
-            wcsplayer = Player.from_index(client)
-
-            wcsplayer.data['_internal_wcsadmin_editor'] = 0
-            module = wcsplayer.data['_internal_wcsadmin_editor_module'] = 'items'
-
-            new_string = menu_strings['wcsadmin_management_items_menu new']
-            disabled_string = menu_strings['wcsadmin_management_items_menu disabled']
-
-        if (CFG_PATH / f'{module}.json').isfile():
-            with open(CFG_PATH / f'{module}.json') as inputfile:
-                current_items = load(inputfile).get(module, [])
-        else:
-            current_items = []
-
-        wcsadmin_management_editor_menu.currents[module].clear()
-        wcsadmin_management_editor_menu.currents[module].extend(current_items)
-
-        for value in [x for x in available_items if x not in current_items]:
-            if value in current_items or '_' + value in current_items:
-                continue
-
-            new_option = PagedOption(deepcopy(new_string), value)
-            new_option.text.tokens['name'] = value
-            new_menu.append(new_option)
-
-        for value in current_items:
-            if value.startswith('_'):
-                new_option = PagedOption(deepcopy(disabled_string), value)
-                new_option.text.tokens['name'] = value[1:]
-            else:
-                new_option = PagedOption(value, value)
-
-            new_menu.append(new_option)
-
     return option.value
 
 
@@ -382,68 +331,133 @@ def wcsadmin_management_menu_select(menu, client, option):
 def wcsadmin_management_races_menu_select(menu, client, option):
     wcsplayer = Player.from_index(client)
 
-    wcsplayer.data['_internal_wcsadmin_editor_value'] = option.value
+    if isinstance(option.value, str):
+        wcsplayer.data['_internal_wcsadmin_editor_value'] = option.value
 
-    return wcsadmin_management_editor_menu
+        return wcsadmin_management_races_editor_menu
+
+    return wcsadmin_management_races_add_menu
 
 
-@wcsadmin_management_editor_menu.register_select_callback
-def wcsadmin_management_editor_menu_select(menu, client, option):
+@wcsadmin_management_items_menu.register_select_callback
+def wcsadmin_management_items_menu_select(menu, client, option):
     wcsplayer = Player.from_index(client)
 
-    if option.choice_index in (2, 3):
-        if wcsplayer.data['_internal_wcsadmin_editor']:
-            name = wcsplayer.data['_internal_wcsadmin_editor_value']
-            index = menu.currents['races'].index(name)
+    if isinstance(option.value, str):
+        wcsplayer.data['_internal_wcsadmin_editor_value'] = option.value
 
-            menu.currents['races'].remove(name)
-            menu.currents['races'].insert(index + option.value, name)
+        return wcsadmin_management_items_editor_menu
 
-            for i, other_option in enumerate(wcsadmin_management_races_menu):
-                if other_option.value == name:
-                    wcsadmin_management_races_menu.remove(other_option)
-                    wcsadmin_management_races_menu.insert(i + option.value, other_option)
-                    break
+    return wcsadmin_management_items_add_menu
 
-        # If there's multiple players editing the menu
-        for index in menu._player_pages:
-            if menu.is_active_menu(index):
-                menu._refresh(index)
-    elif option.choice_index == BUTTON_BACK:
-        if wcsplayer.data['_internal_wcsadmin_editor']:
-            return wcsadmin_management_races_menu
 
-        return wcsadmin_management_items_menu
+@wcsadmin_management_races_add_menu.register_select_callback
+def wcsadmin_management_races_add_menu_select(menu, client, option):
+    with open(CFG_PATH / 'races.json') as inputfile:
+        data = load(inputfile)
+
+    data['races'].append(option.value)
+
+    with open(CFG_PATH / 'races.json', 'w') as outputfile:
+        dump(data, outputfile, indent=4)
+
+    menu.remove(option)
+
+    wcsadmin_management_races_menu.append(PagedOption(option.value, option.value))
+
+    if not menu:
+        return menu.parent_menu
 
     return menu
 
 
-@wcsadmin_github_menu.register_select_callback
-def wcsadmin_github_menu_select(menu, client, option):
+@wcsadmin_management_items_add_menu.register_select_callback
+def wcsadmin_management_items_add_menu_select(menu, client, option):
+    with open(CFG_PATH / 'items.json') as inputfile:
+        data = load(inputfile)
+
+    data['items'].append(option.value)
+
+    with open(CFG_PATH / 'items.json', 'w') as outputfile:
+        dump(data, outputfile, indent=4)
+
+    menu.remove(option)
+
+    wcsadmin_management_items_menu.append(PagedOption(option.value, option.value))
+
+    if not menu:
+        return menu.parent_menu
+
+    return menu
+
+
+@wcsadmin_management_races_editor_menu.register_select_callback
+def wcsadmin_management_races_editor_menu_select(menu, client, option):
     wcsplayer = Player.from_index(client)
 
     if option.choice_index == 1:
-        wcsplayer.data['_internal_wcsadmin_github_module'] = 1
+        value = wcsplayer.data['_internal_wcsadmin_editor_value']
 
-        return wcsadmin_github_races_menu
+        if value.startswith('_'):
+            new_value = value[1:]
+        else:
+            new_value = '_' + value
+
+        with open(CFG_PATH / 'races.json') as inputfile:
+            data = load(inputfile)
+
+        for i, name in enumerate(data['races']):
+            if name == value:
+                data['races'].pop(i)
+                data['races'].insert(i, new_value)
+                break
+
+        with open(CFG_PATH / 'races.json', 'w') as outputfile:
+            dump(data, outputfile, indent=4)
+
+        wcsplayer.data['_internal_wcsadmin_editor_value'] = new_value
+
+        return menu
     elif option.choice_index == 2:
-        wcsplayer.data['_internal_wcsadmin_github_module'] = 0
+        value = wcsplayer.data['_internal_wcsadmin_editor_value']
 
-        return wcsadmin_github_items_menu
+        with open(CFG_PATH / 'races.json') as inputfile:
+            data = load(inputfile)
 
+        for i, name in enumerate(data['races']):
+            if name == value:
+                data['races'].pop(i)
+                break
+
+        with open(CFG_PATH / 'races.json', 'w') as outputfile:
+            dump(data, outputfile, indent=4)
+
+        return wcsadmin_management_races_menu
+
+    return option.value
+
+
+@wcsadmin_github_menu.register_select_callback
+def wcsadmin_github_menu_select(menu, client, option):
     return option.value
 
 
 @wcsadmin_github_races_menu.register_select_callback
 def wcsadmin_github_races_menu_select(menu, client, option):
-    Player.from_index(client).data['_internal_wcsadmin_github_name'] = option.value
+    wcsplayer = Player.from_index(client)
+
+    wcsplayer.data['_internal_wcsadmin_github_name'] = option.value
+    wcsplayer.data['_internal_wcsadmin_github_module'] = 1
 
     return wcsadmin_github_options_menu
 
 
 @wcsadmin_github_items_menu.register_select_callback
 def wcsadmin_github_items_menu_select(menu, client, option):
-    Player.from_index(client).data['_internal_wcsadmin_github_name'] = option.value
+    wcsplayer = Player.from_index(client)
+
+    wcsplayer.data['_internal_wcsadmin_github_name'] = option.value
+    wcsplayer.data['_internal_wcsadmin_github_module'] = 0
 
     return wcsadmin_github_options_menu
 

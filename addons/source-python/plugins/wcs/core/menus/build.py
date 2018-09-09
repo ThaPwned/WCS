@@ -8,6 +8,8 @@
 from copy import deepcopy
 #   Enum
 from enum import IntEnum
+#   JSON
+from json import load
 #   Textwrap
 from textwrap import wrap
 #   Time
@@ -34,6 +36,9 @@ from ..constants import TIME_FORMAT
 from ..constants import GithubStatus
 from ..constants import ItemReason
 from ..constants import RaceReason
+from ..constants.paths import CFG_PATH
+from ..constants.paths import ITEM_PATH
+from ..constants.paths import RACE_PATH
 #   Listeners
 from ..listeners import OnIsItemUsableText
 from ..listeners import OnIsRaceUsableText
@@ -56,7 +61,12 @@ from . import playerinfo_detail_stats_menu
 from . import wcstop_menu
 from . import wcstop_detail_menu
 from . import wcsadmin_menu
-from . import wcsadmin_management_editor_menu
+from . import wcsadmin_management_races_menu
+from . import wcsadmin_management_items_menu
+from . import wcsadmin_management_races_add_menu
+from . import wcsadmin_management_items_add_menu
+from . import wcsadmin_management_races_editor_menu
+from . import wcsadmin_management_items_editor_menu
 from . import wcsadmin_github_options_menu
 #   Modules
 from ..modules.items.manager import item_manager
@@ -517,6 +527,9 @@ def wcstop_detail_menu_build(menu, client):
         menu[4].text.tokens['name'] = settings.strings['name']
 
 
+# ============================================================================
+# >> ADMIN BUILD CALLBACKS
+# ============================================================================
 @wcsadmin_menu.register_build_callback
 def wcsadmin_menu_build(menu, client):
     wcsplayer = Player.from_index(client)
@@ -525,22 +538,90 @@ def wcsadmin_menu_build(menu, client):
     menu[3].selectable = menu[3].highlight = IS_GITHUB_ENABLED and wcsplayer.privileges.get('wcsadmin_githubaccess', False) and (github_manager['races'] or github_manager['items'])
 
 
-@wcsadmin_management_editor_menu.register_build_callback
-def wcsadmin_management_editor_menu_build(menu, client):
+@wcsadmin_management_races_menu.register_build_callback
+def wcsadmin_management_races_menu_build(menu, client):
+    if (CFG_PATH / 'races.json').isfile():
+        with open(CFG_PATH / 'races.json') as inputfile:
+            current_races = load(inputfile).get('races', [])
+    else:
+        current_races = []
+
+    menu.clear()
+
+    option = PagedOption(menu_strings['wcsadmin_management_races_menu add'])
+    option.selectable = option.highlight = any(x for x in (x.basename() for x in RACE_PATH.listdir()) if x not in current_races and '_' + x not in current_races)
+    menu.append(option)
+
+    for value in current_races:
+        menu.append(PagedOption(f'-{value[1:]}' if value.startswith('_') else value, value))
+
+
+@wcsadmin_management_items_menu.register_build_callback
+def wcsadmin_management_items_menu_build(menu, client):
+    if (CFG_PATH / 'items.json').isfile():
+        with open(CFG_PATH / 'items.json') as inputfile:
+            current_items = load(inputfile).get('items', [])
+    else:
+        current_items = []
+
+    menu.clear()
+
+    option = PagedOption(menu_strings['wcsadmin_management_items_menu add'])
+    option.selectable = option.highlight = any(x for x in (x.basename() for x in ITEM_PATH.listdir()) if x not in current_items and '_' + x not in current_items)
+    menu.append(option)
+
+    for value in current_items:
+        menu.append(PagedOption(value, value))
+
+
+@wcsadmin_management_races_add_menu.register_build_callback
+def wcsadmin_management_races_add_menu_build(menu, client):
+    if (CFG_PATH / 'races.json').isfile():
+        with open(CFG_PATH / 'races.json') as inputfile:
+            current_races = load(inputfile).get('races', [])
+    else:
+        current_races = []
+
+    menu.clear()
+
+    available_races = [x.basename() for x in RACE_PATH.listdir()]
+
+    for value in [x for x in available_races if x not in current_races and '_' + x not in current_races]:
+        menu.append(PagedOption(value, value))
+
+
+@wcsadmin_management_items_add_menu.register_build_callback
+def wcsadmin_management_items_add_menu_build(menu, client):
+    if (CFG_PATH / 'items.json').isfile():
+        with open(CFG_PATH / 'items.json') as inputfile:
+            current_items = load(inputfile).get('items', [])
+    else:
+        current_items = []
+
+    menu.clear()
+
+    available_items = [x.basename() for x in ITEM_PATH.listdir()]
+
+    for value in [x for x in available_items if x not in current_items and '_' + x not in current_items]:
+        menu.append(PagedOption(value, value))
+
+
+@wcsadmin_management_races_editor_menu.register_build_callback
+def wcsadmin_management_races_editor_menu_build(menu, client):
     wcsplayer = Player.from_index(client)
-
     name = wcsplayer.data['_internal_wcsadmin_editor_value']
-    module = 'races' if wcsplayer.data['_internal_wcsadmin_editor'] else 'items'
 
-    exist = name in menu.currents[module]
-    index = menu.currents[module].index(name)
+    menu[0].text.tokens['name'] = name[1:] if name.startswith('_') else name
+    menu[2].text = menu_strings[f'wcsadmin_management_races_editor_menu toggle {int(name.startswith("_"))}']
 
-    menu[0].text = menu_strings[f'wcsadmin_management_editor_menu title {wcsplayer.data["_internal_wcsadmin_editor"]}']
-    menu[1].text.tokens['name'] = name[1:] if name.startswith('_') else name
-    menu[2].text.tokens['current'] = index + 1
-    menu[2].text.tokens['total'] = len(menu.currents[module])
-    menu[3].selectable = menu[3].highlight = exist and index > 0
-    menu[4].selectable = menu[4].highlight = exist and index < len(menu.currents[module]) - 1
+
+@wcsadmin_management_items_editor_menu.register_build_callback
+def wcsadmin_management_items_editor_menu_build(menu, client):
+    wcsplayer = Player.from_index(client)
+    name = wcsplayer.data['_internal_wcsadmin_editor_value']
+
+    menu[0].text.tokens['name'] = name[1:] if name.startswith('_') else name
+    menu[2].text = menu_strings[f'wcsadmin_management_items_editor_menu toggle {int(name.startswith("_"))}']
 
 
 @wcsadmin_github_options_menu.register_build_callback

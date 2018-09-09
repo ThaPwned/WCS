@@ -48,7 +48,10 @@ wcsadmin_menu = SimpleMenu()
 wcsadmin_management_menu = SimpleMenu()
 wcsadmin_management_races_menu = PagedPageCountMenu()
 wcsadmin_management_items_menu = PagedPageCountMenu()
-wcsadmin_management_editor_menu = SimpleMenu()
+wcsadmin_management_races_add_menu = PagedPageCountMenu()
+wcsadmin_management_items_add_menu = PagedPageCountMenu()
+wcsadmin_management_races_editor_menu = SimpleMenu()
+wcsadmin_management_items_editor_menu = SimpleMenu()
 wcsadmin_management_race_categories_menu = PagedPageCountMenu()
 wcsadmin_management_item_categories_menu = PagedPageCountMenu()
 wcsadmin_github_menu = SimpleMenu()
@@ -66,12 +69,14 @@ raceinfo_skills_menu.parent_menu = raceinfo_detail_menu
 playerinfo_menu.parent_menu = main_menu
 playerinfo_detail_skills_menu.parent_menu = playerinfo_detail_menu
 playerinfo_detail_stats_menu.parent_menu = playerinfo_detail_menu
-wcsadmin_github_races_menu.parent_menu = wcsadmin_github_menu
-wcsadmin_github_items_menu.parent_menu = wcsadmin_github_menu
 wcsadmin_management_races_menu.parent_menu = wcsadmin_management_menu
 wcsadmin_management_items_menu.parent_menu = wcsadmin_management_menu
+wcsadmin_management_races_add_menu.parent_menu = wcsadmin_management_races_menu
+wcsadmin_management_items_add_menu.parent_menu = wcsadmin_management_items_menu
 wcsadmin_management_race_categories_menu.parent_menu = wcsadmin_management_menu
 wcsadmin_management_item_categories_menu.parent_menu = wcsadmin_management_menu
+wcsadmin_github_races_menu.parent_menu = wcsadmin_github_menu
+wcsadmin_github_items_menu.parent_menu = wcsadmin_github_menu
 
 
 # ============================================================================
