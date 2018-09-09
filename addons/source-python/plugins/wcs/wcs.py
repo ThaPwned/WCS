@@ -8,8 +8,11 @@
 from collections import defaultdict
 #   Copy
 from copy import deepcopy
+#   Enum
+from enum import IntEnum
 #   Time
 from time import sleep
+from time import time
 
 # Source.Python Imports
 #   Commands
@@ -50,6 +53,8 @@ from .core.config import cfg_top_stolen_notify
 #   Constants
 from .core.constants import IS_ESC_SUPPORT_ENABLED
 from .core.constants import IS_GITHUB_ENABLED
+from .core.constants import ModuleType
+from .core.constants import SkillReason
 #   Database
 from .core.database.manager import database_manager
 from .core.database.thread import _repeat
@@ -58,6 +63,7 @@ from .core.database.thread import _thread
 from .core.helpers.events import FakeEvent
 from .core.helpers.overwrites import SayText2
 #   Listeners
+from .core.listeners import OnIsSkillExecutableText
 from .core.listeners import OnPlayerAbilityOff
 from .core.listeners import OnPlayerAbilityOn
 from .core.listeners import OnPlayerDelete
@@ -128,6 +134,11 @@ gain_level_message = SayText2(chat_strings['gain level'])
 maximum_level_message = SayText2(chat_strings['maximum level'])
 no_unused_message = SayText2(chat_strings['no unused'])
 no_access_message = SayText2(chat_strings['no access'])
+ability_team_message = SayText2(chat_strings['ability team'])
+ability_dead_message = SayText2(chat_strings['ability dead'])
+ability_deactivated_message = SayText2(chat_strings['ability deactivated'])
+ability_cooldown_message = SayText2(chat_strings['ability cooldown'])
+ability_level_message = SayText2(chat_strings['ability level'])
 top_public_announcement_message = SayText2(chat_strings['top public announcement'])
 top_private_announcement_message = SayText2(chat_strings['top private announcement'])
 top_stolen_notify_message = SayText2(chat_strings['top stolen notify'])
@@ -618,23 +629,44 @@ def say_command_showxp(command):
 @TypedClientCommand('+ability')
 def client_ability_plus_command(command, ability:int=1, *args:str):
     wcsplayer = Player.from_index(command.index)
-    active_race = wcsplayer.active_race
 
-    i = 1
+    if wcsplayer.ready:
+        active_race = wcsplayer.active_race
 
-    for skill_name in active_race.settings.config['skills']:
-        skill = active_race.skills[skill_name]
+        i = 1
 
-        if skill.config['event'] == 'player_ability':
-            if ability == i:
-                OnPlayerAbilityOn.manager.notify(wcsplayer, skill, args)
+        for skill_name in active_race.settings.config['skills']:
+            skill = active_race.skills[skill_name]
 
-                with FakeEvent(f'{skill_name}_on', userid=wcsplayer.userid, args=args) as event:
-                    skill.execute(event.name, event)
+            if skill.config['event'] == 'player_ability':
+                if ability == i:
+                    reason = skill.is_executable()
 
-                break
+                    if reason is SkillReason.ALLOWED:
+                        OnPlayerAbilityOn.manager.notify(wcsplayer, skill, args)
 
-            i += 1
+                        with FakeEvent(f'{skill_name}_on', userid=wcsplayer.userid, args=args) as event:
+                            skill.execute(event.name, event)
+                    elif reason is SkillReason.TEAM:
+                        ability_team_message.send(command.index)
+                    elif reason is SkillReason.DEAD:
+                        ability_dead_message.send(command.index)
+                    elif reason is SkillReason.DEACTIVATED:
+                        ability_deactivated_message.send(command.index)
+                    elif reason is SkillReason.COOLDOWN:
+                        ability_cooldown_message.send(command.index, cooldown=skill.cooldown_seconds, left=skill.cooldown - time())
+                    elif reason is SkillReason.LEVEL:
+                        ability_level_message.send(command.index)
+                    elif isinstance(reason, IntEnum):
+                        data = {'reason':reason}
+
+                        OnIsSkillExecutableText.manager.notify(wcsplayer, skill, data)
+                    else:
+                        raise ValueError(f'Invalid reason: {reason}')
+
+                    break
+
+                i += 1
 
     return CommandReturn.BLOCK
 
@@ -642,23 +674,24 @@ def client_ability_plus_command(command, ability:int=1, *args:str):
 @TypedClientCommand('-ability')
 def client_ability_minus_command(command, ability:int=1, *args:str):
     wcsplayer = Player.from_index(command.index)
-    active_race = wcsplayer.active_race
+    if wcsplayer.ready:
+        active_race = wcsplayer.active_race
 
-    i = 1
+        i = 1
 
-    for skill_name in active_race.settings.config['skills']:
-        skill = active_race.skills[skill_name]
+        for skill_name in active_race.settings.config['skills']:
+            skill = active_race.skills[skill_name]
 
-        if skill.config['event'] == 'player_ability':
-            if ability == i:
-                OnPlayerAbilityOff.manager.notify(wcsplayer, skill, args)
+            if skill.config['event'] == 'player_ability':
+                if ability == i:
+                    OnPlayerAbilityOff.manager.notify(wcsplayer, skill, args)
 
-                with FakeEvent(f'{skill_name}_off', userid=wcsplayer.userid, args=args) as event:
-                    skill.execute(event.name, event)
+                    with FakeEvent(f'{skill_name}_off', userid=wcsplayer.userid, args=args) as event:
+                        skill.execute(event.name, event)
 
-                break
+                    break
 
-            i += 1
+                i += 1
 
     return CommandReturn.BLOCK
 
@@ -666,13 +699,39 @@ def client_ability_minus_command(command, ability:int=1, *args:str):
 @TypedClientCommand('ability')
 def client_ability_command(command):
     wcsplayer = Player.from_index(command.index)
-    active_race = wcsplayer.active_race
 
-    for skill in active_race.skills.values():
-        if skill.config['event'] == 'player_ability':
-            skill.execute('player_ability', define=True)
+    if wcsplayer.ready:
+        active_race = wcsplayer.active_race
 
-            break
+        for skill in active_race.skills.values():
+            if skill.config['event'] == 'player_ability':
+                reason = skill.is_executable()
+
+                if reason is SkillReason.ALLOWED:
+                    # Only used for ESS races - SP and ESP races should set the cooldown directly
+                    # TODO: Races should handle the cooldown directly
+                    if skill._type is ModuleType.ESS:
+                        skill.cooldown = time() + skill.cooldown_seconds
+
+                    skill.execute('player_ability', define=True)
+                elif reason is SkillReason.TEAM:
+                    ability_team_message.send(command.index)
+                elif reason is SkillReason.DEAD:
+                    ability_dead_message.send(command.index)
+                elif reason is SkillReason.DEACTIVATED:
+                    ability_deactivated_message.send(command.index)
+                elif reason is SkillReason.COOLDOWN:
+                    ability_cooldown_message.send(command.index, cooldown=skill.cooldown_seconds, left=skill.cooldown - time())
+                elif reason is SkillReason.LEVEL:
+                    ability_level_message.send(command.index)
+                elif isinstance(reason, IntEnum):
+                    data = {'reason':reason}
+
+                    OnIsSkillExecutableText.manager.notify(wcsplayer, skill, data)
+                else:
+                    raise ValueError(f'Invalid reason: {reason}')
+
+                break
 
     return CommandReturn.BLOCK
 
@@ -680,13 +739,39 @@ def client_ability_command(command):
 @TypedClientCommand('ultimate')
 def client_ultimate_command(command):
     wcsplayer = Player.from_index(command.index)
-    active_race = wcsplayer.active_race
 
-    for skill in active_race.skills.values():
-        if skill.config['event'] == 'player_ultimate':
-            skill.execute('player_ultimate', define=True)
+    if wcsplayer.ready:
+        active_race = wcsplayer.active_race
 
-            break
+        for skill in active_race.skills.values():
+            if skill.config['event'] == 'player_ultimate':
+                reason = skill.is_executable()
+
+                if reason is SkillReason.ALLOWED:
+                    # Only used for ESS races - SP and ESP races should set the cooldown directly
+                    # TODO: Races should handle the cooldown directly
+                    if skill._type is ModuleType.ESS:
+                        skill.cooldown = time() + skill.cooldown_seconds
+
+                    skill.execute('player_ultimate', define=True)
+                elif reason is SkillReason.TEAM:
+                    ability_team_message.send(command.index)
+                elif reason is SkillReason.DEAD:
+                    ability_dead_message.send(command.index)
+                elif reason is SkillReason.DEACTIVATED:
+                    ability_deactivated_message.send(command.index)
+                elif reason is SkillReason.COOLDOWN:
+                    ability_cooldown_message.send(command.index, cooldown=skill.cooldown_seconds, left=skill.cooldown - time())
+                elif reason is SkillReason.LEVEL:
+                    ability_level_message.send(command.index)
+                elif isinstance(reason, IntEnum):
+                    data = {'reason':reason}
+
+                    OnIsSkillExecutableText.manager.notify(wcsplayer, skill, data)
+                else:
+                    raise ValueError(f'Invalid reason: {reason}')
+
+                break
 
     return CommandReturn.BLOCK
 

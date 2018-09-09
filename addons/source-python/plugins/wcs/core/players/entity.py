@@ -47,11 +47,13 @@ from ..config import cfg_interval
 from ..constants import IS_ESC_SUPPORT_ENABLED
 from ..constants import ModuleType
 from ..constants import RaceReason
+from ..constants import SkillReason
 from ..constants.paths import CFG_PATH
 #   Database
 from ..database.manager import database_manager
 from ..database.manager import statements
 #   Listeners
+from ..listeners import OnIsSkillExecutable
 from ..listeners import OnPlayerChangeRace
 from ..listeners import OnPlayerDelete
 from ..listeners import OnPlayerDestroy
@@ -124,6 +126,7 @@ _players = PlayerDictionary()
 
 _global_weapon_entity = None
 _global_bypass = False
+_round_started = True
 _delays = defaultdict(set)
 
 
@@ -850,6 +853,7 @@ class _Skill(object):
         self.config = config
 
         self._level = level
+        self._cooldown = 0
 
         self._race_name = race_name
         self._added = _added
@@ -916,6 +920,32 @@ class _Skill(object):
 
                         executor.run()
 
+    def is_executable(self):
+        data = {'reason':None}
+
+        OnIsSkillExecutable.manager.notify(self.wcsplayer, self, data)
+
+        if data['reason'] is not None:
+            return data['reason']
+
+        if self.wcsplayer.player.team_index < 2:
+            return SkillReason.TEAM
+
+        if self.wcsplayer.player.dead:
+            return SkillReason.DEAD
+
+        if not _round_started:
+            return SkillReason.DEACTIVATED
+
+        if self.cooldown_seconds:
+            if self.cooldown > time():
+                return SkillReason.COOLDOWN
+
+        if not self.level:
+            return SkillReason.LEVEL
+
+        return SkillReason.ALLOWED
+
     @property
     def level(self):
         return self._level
@@ -925,6 +955,18 @@ class _Skill(object):
         self._modified = True
 
         self._level = value
+
+    @property
+    def cooldown(self):
+        return self._cooldown
+
+    @cooldown.setter
+    def cooldown(self, value):
+        self._cooldown = value
+
+    @property
+    def cooldown_seconds(self):
+        return self.config['cooldown'][self.level - 1]
 
 
 class _Item(object):
@@ -1057,15 +1099,27 @@ def on_entity_deleted(base_entity):
 # >> EVENTS
 # ============================================================================
 @Event('round_prestart')
-def on_round_prestart(event):
+def round_prestart(event):
     for delay in chain.from_iterable(_delays.values()):
         delay.cancel()
 
     _delays.clear()
 
 
+@Event('round_freeze_end')
+def round_freeze_end(event):
+    global _round_started
+    _round_started = True
+
+
+@Event('round_end')
+def round_end(event):
+    global _round_started
+    _round_started = False
+
+
 @Event('player_death')
-def on_player_death(event):
+def player_death(event):
     userid = event['userid']
 
     for delay in _delays[userid]:

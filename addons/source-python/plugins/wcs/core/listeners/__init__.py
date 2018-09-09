@@ -23,6 +23,8 @@ __all__ = (
     'OnIsItemUsableText',
     'OnIsRaceUsable',
     'OnIsRaceUsableText',
+    'OnIsSkillExecutable',
+    'OnIsSkillExecutableText',
     'OnPlayerAbilityOff',
     'OnPlayerAbilityOn',
     'OnPlayerChangeRace',
@@ -79,6 +81,14 @@ class OnIsRaceUsable(ListenerManagerDecorator):
 
 
 class OnIsRaceUsableText(ListenerManagerDecorator):
+    manager = ListenerManager()
+
+
+class OnIsSkillExecutable(ListenerManagerDecorator):
+    manager = ListenerManager()
+
+
+class OnIsSkillExecutableText(ListenerManagerDecorator):
     manager = ListenerManager()
 
 

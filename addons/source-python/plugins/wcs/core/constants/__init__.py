@@ -26,6 +26,7 @@ __all__ = (
     'TIME_FORMAT',
     'GithubStatus',
     'ItemReason',
+    'SkillReason',
     'ModuleType',
     'RaceReason',
 )
@@ -48,6 +49,15 @@ class ItemReason(IntEnum):
     TOO_MANY_CATEGORY = 4
     WRONG_STATUS = 5
     REQUIRED_LEVEL = 6
+
+
+class SkillReason(IntEnum):
+    ALLOWED = 0
+    LEVEL = 1
+    COOLDOWN = 2
+    DEACTIVATED = 3
+    DEAD = 4
+    TEAM = 5
 
 
 class RaceReason(IntEnum):
