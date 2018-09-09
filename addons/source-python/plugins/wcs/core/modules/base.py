@@ -157,7 +157,12 @@ class _BaseManager(dict):
         self[name] = instance
 
         if instance.type is ModuleType.SP:
-            self[name].module = import_module(f'wcs.modules.{module}.{name}')
+            try:
+                self[name].module = import_module(f'wcs.modules.{module}.{name}')
+            except:
+                del self[name]
+
+                raise
         else:
             es.load(f'wcs/modules/{module}/{name}')
 
