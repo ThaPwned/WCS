@@ -18,6 +18,8 @@ from json import dump as json_dump
 from os import strerror
 #   Sys
 from sys import modules
+#   Warnings
+from warnings import warn
 
 # Source.Python Imports
 #   Core
@@ -148,7 +150,13 @@ class _BaseManager(dict):
     def _load(self, name, module, path, path_es, listener):
         assert name not in self, name
 
-        instance = self.instance(name)
+        try:
+            instance = self.instance(name)
+        except:
+            warn(f'Unable to load {name}.')
+
+            raise
+
         instance.type = self._get_value_module_type(name, path, path_es)
 
         if instance.type is None:
