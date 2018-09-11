@@ -26,6 +26,8 @@ from warnings import warn
 from core import GAME_NAME
 from core import AutoUnload
 from core import WeakAutoUnload
+#   Engines
+from engines.precache import Model
 #   Hooks
 from hooks.exceptions import except_hooks
 #   Menus
@@ -40,6 +42,8 @@ from translations.strings import LangStrings
 from ..constants import IS_ESC_SUPPORT_ENABLED
 from ..constants import ModuleType
 from ..constants.paths import CFG_PATH
+#   Helpers
+from ..helpers.effects import effects_manager
 #   Menus
 from ..menus.base import PagedPageCountMenu
 #   Translations
@@ -296,6 +300,40 @@ class _BaseSetting(object):
 
     def get_game_entry(self, entry):
         return self.config['games'].get(GAME_NAME, self.config['games']['default'])[entry]
+
+    def get_effect_entry(self, entry):
+        config = self.config['effects'][entry]
+        effect = effects_manager[config['type']]
+
+        for key, value in config['args'].items():
+            if value is None:
+                continue
+
+            if isinstance(value, str):
+                if value.startswith('$'):
+                    current = None
+
+                    for next_key in value[1:].split('.'):
+                        if current is None:
+                            current = self.config[next_key]
+                        else:
+                            if next_key == 'GAME_NAME':
+                                if GAME_NAME in current:
+                                    next_key = GAME_NAME
+                                else:
+                                    next_key = 'default'
+
+                            current = current[next_key]
+
+                    value = current
+
+                # It's probably a model
+                if '/' in value or '\\' in value:
+                    value = Model(value)
+
+            setattr(effect, key, value)
+
+        return effect
 
     def add_to_category(self, category):
         raise NotImplementedError()
