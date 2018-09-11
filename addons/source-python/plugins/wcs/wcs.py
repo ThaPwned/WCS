@@ -10,6 +10,8 @@ from collections import defaultdict
 from copy import deepcopy
 #   Enum
 from enum import IntEnum
+#   Random
+from random import choice
 #   Time
 from time import sleep
 from time import time
@@ -54,6 +56,7 @@ from .core.config import cfg_top_stolen_notify
 from .core.constants import IS_ESC_SUPPORT_ENABLED
 from .core.constants import IS_GITHUB_ENABLED
 from .core.constants import ModuleType
+from .core.constants import RaceReason
 from .core.constants import SkillReason
 #   Database
 from .core.database.manager import database_manager
@@ -93,6 +96,7 @@ from .core.menus.select import main_menu_select  # Just to load it
 from .core.modules.items.manager import item_manager
 from .core.modules.races.manager import race_manager
 #   Players
+from .core.players import team_data
 from .core.players.entity import Player
 from .core.players.filters import PlayerIter
 from .core.players.filters import PlayerReadyIter
@@ -132,6 +136,8 @@ gain_xp_headshot_message = SayText2(chat_strings['gain xp headshot'])
 gain_xp_knife_message = SayText2(chat_strings['gain xp knife'])
 gain_level_message = SayText2(chat_strings['gain level'])
 maximum_level_message = SayText2(chat_strings['maximum level'])
+force_change_team_message = SayText2(chat_strings['force change team'])
+force_change_team_limit_message = SayText2(chat_strings['force change team limit'])
 no_unused_message = SayText2(chat_strings['no unused'])
 no_access_message = SayText2(chat_strings['no access'])
 ability_team_message = SayText2(chat_strings['ability team'])
@@ -257,6 +263,90 @@ def round_start(event):
 def round_end(event):
     for _, wcsplayer in PlayerReadyIter(not_filters=['un', 'spec']):
         wcsplayer.execute('roundendcmd', event, define=True)
+
+
+@Event('player_team')
+def player_team(event):
+    userid = event['userid']
+    wcsplayer = Player.from_userid(userid)
+
+    if wcsplayer.ready:
+        team = event['team']
+        oldteam = event['oldteam']
+
+        key = f'_internal_{wcsplayer.current_race}_limit_allowed'
+
+        if team >= 2:
+            reason = RaceReason.ALLOWED
+
+            restrictteam = wcsplayer.active_race.settings.config.get('restrictteam')
+
+            if restrictteam:
+                if not restrictteam == team:
+                    reason = RaceReason.TEAM
+
+            if reason is RaceReason.ALLOWED:
+                teamlimit = wcsplayer.active_race.settings.config.get('teamlimit')
+
+                if teamlimit:
+                    limit = team_data[team].get(key, [])
+
+                    if teamlimit <= len(limit) and userid not in limit:
+                        reason = RaceReason.TEAM_LIMIT
+
+            if reason is RaceReason.ALLOWED:
+                if key not in team_data[team]:
+                    team_data[team][key] = []
+
+                team_data[team][key].append(userid)
+            else:
+                usable_races = wcsplayer.available_races
+
+                for name in usable_races.copy():
+                    config = race_manager[name].config
+
+                    restrictteam = config.get('restrictteam')
+
+                    if restrictteam:
+                        if not restrictteam == team:
+                            usable_races.remove(name)
+                            continue
+
+                    teamlimit = config.get('teamlimit')
+
+                    if teamlimit:
+                        limit = team_data[team].get(f'_internal_{name}_limit_allowed', [])
+
+                        if teamlimit <= len(limit) and userid not in limit:
+                            usable_races.remove(name)
+                            continue
+
+                if not usable_races:
+                    wcsplayer._ready = False
+                    wcsplayer._current_race = None
+
+                    raise RuntimeError(f'Unable to find a usable race to "{wcsplayer.name}".')
+
+                new_race = choice(usable_races)
+                old_race = wcsplayer.current_race
+
+                wcsplayer.current_race = new_race
+
+                if f'_internal_{new_race}_limit_allowed' not in team_data[team]:
+                    team_data[team][f'_internal_{new_race}_limit_allowed'] = []
+
+                team_data[team][f'_internal_{new_race}_limit_allowed'].append(userid)
+
+                if reason is RaceReason.TEAM:
+                    force_change_team_message.send(wcsplayer.index, old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
+                else:
+                    force_change_team_limit_message.send(wcsplayer.index, count=len(team_data[team][key]), old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
+
+        if oldteam >= 2:
+            team_data[oldteam][key].remove(userid)
+
+            if not team_data[oldteam][key]:
+                del team_data[oldteam][key]
 
 
 @Event('player_spawn')

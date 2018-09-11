@@ -24,8 +24,8 @@ from players.helpers import index_from_userid
 
 # WCS Imports
 #   Players
+from ...players import team_data
 from ...players.entity import Player as WCSPlayer
-from ...players.entity import team_data
 
 
 # ============================================================================

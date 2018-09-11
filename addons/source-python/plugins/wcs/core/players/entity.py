@@ -66,6 +66,8 @@ from ..modules.items.calls import _callbacks as _item_callbacks
 from ..modules.items.manager import item_manager
 from ..modules.races.calls import _callbacks as _race_callbacks
 from ..modules.races.manager import race_manager
+#   Players
+from . import team_data
 #   Ranks
 from ..ranks import rank_manager
 
@@ -89,7 +91,6 @@ if IS_ESC_SUPPORT_ENABLED:
 # ============================================================================
 __all__ = (
     'Player',
-    'team_data',
 )
 
 
@@ -119,7 +120,6 @@ else:
     with open(CFG_PATH / 'privileges.json', 'w') as outputfile:
         json_dump(privileges, outputfile, indent=4)
 
-team_data = {2:{}, 3:{}}
 
 # TODO: Should I even be using this?
 _players = PlayerDictionary()
@@ -324,13 +324,16 @@ class Player(object, metaclass=_PlayerMeta):
 
         if race_manager.default_race is None:
             return
-        elif self.active_race.settings.usable_by(self) is not RaceReason.ALLOWED:
+
+        online = self.online
+
+        if online and self.active_race.settings.usable_by(self) is not RaceReason.ALLOWED:
             usable_races = self.available_races
 
             if not usable_races:
                 self._ready = False
 
-                raise RuntimeError(f'Unable to find a usable race to "{self.name}" ({self.uniqueid}).')
+                raise RuntimeError(f'Unable to find a usable race to "{self.name}".')
 
             self._current_race = choice(usable_races)
 
@@ -338,12 +341,18 @@ class Player(object, metaclass=_PlayerMeta):
 
         OnPlayerQuery.manager.notify(self)
 
-        try:
-            # We need to make sure the uniqueid (the player) is in the server
-            index_from_uniqueid(self.uniqueid)
-        except ValueError:
-            pass
-        else:
+        # We need to make sure the uniqueid (the player) is in the server
+        if online:
+            team = self.player.team_index
+
+            if team >= 2:
+                key = f'_internal_{self._current_race}_limit_allowed'
+
+                if key not in team_data[team]:
+                    team_data[team][key] = []
+
+                team_data[team][key].append(self.userid)
+
             OnPlayerReady.manager.notify(self)
 
     def _query_save(self, result):

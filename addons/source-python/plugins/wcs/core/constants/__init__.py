@@ -64,10 +64,11 @@ class RaceReason(IntEnum):
     ALLOWED = 0
     REQUIRED_LEVEL = 1
     MAXIMUM_LEVEL = 2
-    TEAM = 3
-    PRIVATE = 4
-    MAP = 5
-    VIP = 6
+    TEAM_LIMIT = 3
+    TEAM = 4
+    PRIVATE = 5
+    MAP = 6
+    VIP = 7
 
 
 class GithubStatus(IntEnum):
