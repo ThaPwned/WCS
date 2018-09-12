@@ -298,7 +298,8 @@ def player_team(event):
                 if key not in team_data[team]:
                     team_data[team][key] = []
 
-                team_data[team][key].append(userid)
+                if userid not in team_data[team][key]:
+                    team_data[team][key].append(userid)
             else:
                 usable_races = wcsplayer.available_races
 
@@ -332,17 +333,11 @@ def player_team(event):
 
                 wcsplayer.current_race = new_race
 
-                if f'_internal_{new_race}_limit_allowed' not in team_data[team]:
-                    team_data[team][f'_internal_{new_race}_limit_allowed'] = []
-
-                team_data[team][f'_internal_{new_race}_limit_allowed'].append(userid)
-
                 if reason is RaceReason.TEAM:
                     force_change_team_message.send(wcsplayer.index, old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
                 else:
                     force_change_team_limit_message.send(wcsplayer.index, count=len(team_data[team][key]), old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
-
-        if oldteam >= 2:
+        elif oldteam >= 2:
             team_data[oldteam][key].remove(userid)
 
             if not team_data[oldteam][key]:

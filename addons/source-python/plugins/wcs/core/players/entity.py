@@ -584,6 +584,19 @@ class Player(object, metaclass=_PlayerMeta):
 
         self.execute('changecmd', define=True)
 
+        team = self.player.team
+
+        if team >= 2:
+            team_data[team][f'_internal_{old}_limit_allowed'].remove(self.userid)
+
+            if not team_data[team][f'_internal_{old}_limit_allowed']:
+                del team_data[team][f'_internal_{old}_limit_allowed']
+
+            if f'_internal_{value}_limit_allowed' not in team_data[team]:
+                team_data[team][f'_internal_{value}_limit_allowed'] = []
+
+            team_data[team][f'_internal_{value}_limit_allowed'].append(self.userid)
+
         self._current_race = value
 
         OnPlayerChangeRace.manager.notify(self, old, value)

@@ -211,6 +211,8 @@ def changerace_menu_select(menu, client, option):
         player = wcsplayer.player
 
         if not player.dead:
+            player.godmode = False
+
             player.client_command('kill', True)
     else:
         return menu

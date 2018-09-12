@@ -72,6 +72,7 @@ from . import wcsadmin_github_options_menu
 from ..modules.items.manager import item_manager
 from ..modules.races.manager import race_manager
 #   Players
+from ..players import team_data
 from ..players.entity import Player
 from ..players.filters import PlayerReadyIter
 #   Ranks
@@ -270,6 +271,10 @@ def changerace_menu_build(menu, client):
             elif reason is RaceReason.MAXIMUM_LEVEL:
                 option.text = deepcopy(menu_strings['changerace_menu maximum level'])
                 option.text.tokens['level'] = settings.config['maximum']
+                option.selectable = option.highlight = False
+            elif reason is RaceReason.TEAM_LIMIT:
+                option.text = deepcopy(menu_strings['changerace_menu team limit'])
+                option.text.tokens['count'] = len(team_data[wcsplayer.player.team][f'_internal_{option.value}_limit_allowed'])
                 option.selectable = option.highlight = False
             elif reason is RaceReason.TEAM:
                 option.text = deepcopy(menu_strings['changerace_menu team'])
