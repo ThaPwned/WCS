@@ -99,11 +99,13 @@ __all__ = ()
 def main_menu_build(menu, client):
     wcsplayer = Player.from_index(client)
 
-    menu[1].selectable = menu[1].highlight = wcsplayer.ready
+    menu[1].selectable = menu[1].highlight = wcsplayer.ready and bool(item_manager)
+    menu[2].selectable = menu[2].highlight = bool(item_manager)
     menu[4].selectable = menu[4].highlight = wcsplayer.ready
     menu[5].selectable = menu[5].highlight = wcsplayer.ready
     menu[6].selectable = menu[6].highlight = wcsplayer.ready and wcsplayer.unused > 0
-    menu[8].selectable = menu[8].highlight = wcsplayer.ready
+    menu[8].selectable = menu[8].highlight = wcsplayer.ready and bool(race_manager)
+    menu[9].selectable = menu[9].highlight = bool(race_manager)
 
 
 @shopmenu_menu.register_build_callback
@@ -199,11 +201,9 @@ def showskills_menu_build(menu, client):
     menu.title.tokens['name'] = active_race.settings.strings['name']
     menu.description.tokens['unused'] = active_race.unused
 
-    # for name, skill in active_race.skills.items():
     for skill_name in settings.config['skills']:
         skill = active_race.skills[skill_name]
         option = PagedOption(deepcopy(menu_strings['showskills_menu line']), selectable=False)
-        # option.text.tokens['name'] = active_race.settings.strings[name]
         option.text.tokens['name'] = settings.strings[skill_name]
         option.text.tokens['level'] = skill.level
         option.text.tokens['maximum'] = skill.config['maximum']
@@ -221,11 +221,10 @@ def spendskills_menu_build(menu, client):
 
     menu.description.tokens['unused'] = active_race.unused
 
-    # for name, skill in active_race.skills.items():
     for skill_name, config in settings.config['skills'].items():
         skill = active_race.skills[skill_name]
-        maximum = config['maximum']  # skill.config['maximum']
-        required = config['required']  # skill.config['required']
+        maximum = config['maximum']
+        required = config['required']
 
         if skill.level >= maximum:
             option = PagedOption(deepcopy(menu_strings['spendskills_menu max']), selectable=False, highlight=False)
@@ -233,13 +232,11 @@ def spendskills_menu_build(menu, client):
             option = PagedOption(deepcopy(menu_strings['spendskills_menu required']), selectable=False, highlight=False)
             option.text.tokens['required'] = required
         else:
-            # option = PagedOption(deepcopy(menu_strings['spendskills_menu skill']), (active_race.name, skill.name))
             option = PagedOption(deepcopy(menu_strings['spendskills_menu skill']), (active_race.name, skill_name))
             option.selectable = option.highlight = active_race.unused > 0
             option.text.tokens['level'] = skill.level
             option.text.tokens['maxlevel'] = maximum
 
-        # option.text.tokens['name'] = active_race.settings.strings[name]
         option.text.tokens['name'] = settings.strings[skill_name]
 
         menu.append(option)
