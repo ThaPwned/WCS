@@ -77,6 +77,7 @@ class _GithubManager(dict):
 
         self._counter = 0
         self._repeat = Repeat(self._tick)
+        self._refreshing = False
 
         self._threads = []
 
@@ -285,6 +286,11 @@ class _GithubManager(dict):
                     outputfile.write(repository.get_contents(content.path).decoded_content)
 
     def refresh(self):
+        if self._refreshing:
+            return
+
+        self._refreshing = True
+
         if not self._counter:
             self._repeat.start(0.1)
 
@@ -374,6 +380,8 @@ def on_github_failed(module, name, userid, task):
 
 @OnGithubRefreshed
 def on_github_refreshed(races, items):
+    github_manager._refreshing = False
+
     _remove_dead_threads()
 
 
