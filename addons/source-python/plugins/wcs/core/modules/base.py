@@ -28,8 +28,11 @@ from core import AutoUnload
 from core import WeakAutoUnload
 #   Engines
 from engines.precache import Model
+from engines.server import global_vars
 #   Hooks
 from hooks.exceptions import except_hooks
+#   Listeners
+from listeners import OnLevelInit
 #   Menus
 from menus import PagedOption
 #   Plugins
@@ -63,6 +66,12 @@ if IS_ESC_SUPPORT_ENABLED:
 # >> ALL DECLARATION
 # ============================================================================
 __all__ = ()
+
+
+# ============================================================================
+# >> GLOBAL VARIABLES
+# ============================================================================
+_models = defaultdict(dict)
 
 
 # ============================================================================
@@ -329,7 +338,9 @@ class _BaseSetting(object):
 
                 # It's probably a model
                 if '/' in value or '\\' in value:
-                    value = Model(value)
+                    _models[self][key] = Model(value)
+
+                    continue
 
             setattr(effect, key, value)
 
@@ -360,3 +371,17 @@ def _remove_unload_instances(name):
         PluginManager._unload_auto_unload_instances(WeakAutoUnload._module_instances[name].values())
         # Remove the skill from the PluginManager
         del WeakAutoUnload._module_instances[name]
+
+
+# ============================================================================
+# >> LISTENERS
+# ============================================================================
+@OnLevelInit
+def on_level_init(map_name=None):
+    for effect in _models:
+        for key, value in _models[effect].items():
+            setattr(effect, key, value)
+
+
+if global_vars.map_name:
+    on_level_init()
