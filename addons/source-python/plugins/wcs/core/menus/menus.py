@@ -13,7 +13,6 @@ from menus import PagedOption
 from menus import SimpleOption
 from menus import Text
 from menus.radio import BUTTON_BACK
-from menus.radio import BUTTON_CLOSE
 from menus.radio import BUTTON_CLOSE_SLOT
 
 # WCS Imports
@@ -111,7 +110,7 @@ main_menu.extend(
         Text('-------------------'),
         SimpleOption(8, menu_strings['main_menu line 8'], playerinfo_menu),
         Text('-------------------'),
-        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -126,7 +125,7 @@ shopinfo_detail_menu.extend(
         Text(' '),
         SimpleOption(BUTTON_BACK, menu_strings['back']),
         Text(' '),
-        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -139,7 +138,7 @@ resetskills_menu.extend(
         SimpleOption(2, menu_strings['no'], main_menu),
         SimpleOption(BUTTON_BACK, menu_strings['back'], main_menu),
         Text(' '),
-        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -156,7 +155,7 @@ raceinfo_detail_menu.extend(
         SimpleOption(4, menu_strings['raceinfo_detail_menu next'], 1),
         SimpleOption(BUTTON_BACK, menu_strings['back'], raceinfo_menu),
         Text(' '),
-        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -166,7 +165,7 @@ raceinfo_skills_detail_menu.extend(
         Text(menu_strings['raceinfo_skills_detail_menu description']),
         SimpleOption(BUTTON_BACK, menu_strings['back'], raceinfo_skills_menu),
         Text(' '),
-        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -176,7 +175,7 @@ raceinfo_race_detail_menu.extend(
         Text(' '),
         SimpleOption(BUTTON_BACK, menu_strings['back'], raceinfo_detail_menu),
         Text(' '),
-        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -203,7 +202,7 @@ playerinfo_detail_menu.extend(
         Text('-' * 25),
         SimpleOption(BUTTON_BACK, menu_strings['back'], playerinfo_menu),
         Text(' '),
-        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -219,7 +218,7 @@ playerinfo_detail_stats_menu.extend(
         Text('-' * 25),
         SimpleOption(BUTTON_BACK, menu_strings['back'], playerinfo_detail_menu),
         Text(' '),
-        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -235,7 +234,7 @@ wcstop_detail_menu.extend(
         Text(' '),
         SimpleOption(BUTTON_BACK, menu_strings['back'], wcstop_menu),
         Text(' '),
-        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -255,7 +254,7 @@ wcshelp_menu.extend(
         Text(menu_strings['wcshelp_menu line 11']),
         Text(menu_strings['wcshelp_menu line 12']),
         Text(menu_strings['wcshelp_menu line 13']),
-        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -276,7 +275,7 @@ welcome_menu.extend(
         Text(' '),
         SimpleOption(3, menu_strings['welcome_menu line 10']),
         Text(' '),
-        SimpleOption(BUTTON_CLOSE, menu_strings['welcome_menu line 11']),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['welcome_menu line 11']),
     ]
 )
 
@@ -298,7 +297,7 @@ wcsadmin_menu.extend(
         Text(' '),
         Text(' '),
         Text(' '),
-        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -314,7 +313,7 @@ wcsadmin_management_menu.extend(
         Text(' '),
         SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_menu),
         Text(' '),
-        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -330,7 +329,7 @@ wcsadmin_management_races_editor_menu.extend(
         Text(' '),
         SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_management_races_menu),
         Text(' '),
-        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -346,7 +345,7 @@ wcsadmin_management_items_editor_menu.extend(
         Text(' '),
         SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_management_items_menu),
         Text(' '),
-        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -362,7 +361,7 @@ wcsadmin_github_menu.extend(
         Text(' '),
         SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_menu),
         Text(' '),
-        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -378,7 +377,7 @@ wcsadmin_github_options_menu.extend(
         Text(menu_strings['wcsadmin_github_options_menu last modified']),
         SimpleOption(BUTTON_BACK, menu_strings['back']),
         Text(' '),
-        SimpleOption(BUTTON_CLOSE, menu_strings['close'], highlight=False)
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
