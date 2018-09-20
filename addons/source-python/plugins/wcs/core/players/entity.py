@@ -330,9 +330,6 @@ class Player(object, metaclass=_PlayerMeta):
         if database_manager._unloading:
             return
 
-        if race_manager.default_race is None:
-            return
-
         online = self.online
 
         if online and self.active_race.settings.usable_by(self) is not RaceReason.ALLOWED:

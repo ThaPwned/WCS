@@ -104,8 +104,8 @@ def main_menu_build(menu, client):
     menu[4].selectable = menu[4].highlight = wcsplayer.ready
     menu[5].selectable = menu[5].highlight = wcsplayer.ready
     menu[6].selectable = menu[6].highlight = wcsplayer.ready and wcsplayer.unused > 0
-    menu[8].selectable = menu[8].highlight = wcsplayer.ready and bool(race_manager)
-    menu[9].selectable = menu[9].highlight = bool(race_manager)
+    menu[8].selectable = menu[8].highlight = wcsplayer.ready and bool(race_manager) and (len(race_manager) > 1 or None not in race_manager)
+    menu[9].selectable = menu[9].highlight = bool(race_manager) and (len(race_manager) > 1 or None not in race_manager)
 
 
 @shopmenu_menu.register_build_callback

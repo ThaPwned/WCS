@@ -44,6 +44,28 @@ __all__ = (
 # ============================================================================
 # >> CLASSES
 # ============================================================================
+class _FakeRace(_BaseSetting):
+    def __init__(self):
+        self.name = 'none'
+        self.type = None
+        self.module = None
+
+        self.config = {'required': 0, 'maximum': 0, 'restrictmap': [], 'restrictitem': [], 'restrictweapon': [], 'restrictteam': 0, 'teamlimit': 0, 'author': 'Tha Pwned', 'allowonly': [], 'skills': {}}
+
+        self.strings = {'name':'None', 'description':'Add some races'}
+
+        self.config['categories'] = []
+
+    def execute(self, *args):
+        pass
+
+    def usable_by(self, *args):
+        return RaceReason.ALLOWED
+
+    def add_to_category(self, *args):
+        pass
+
+
 class RaceSetting(_BaseSetting):
     def __init__(self, name):
         super().__init__(name, RACE_PATH)
@@ -163,6 +185,8 @@ class _RaceManager(_BaseManager):
             self._default_race = [*self][0]
             warn(f'Unable to find the default race "{default_race}". Using "{self._default_race}" as temporary default race.')
         else:
+            self[None] = _FakeRace()
+
             warn(f'No races found (ESC: {IS_ESC_SUPPORT_ENABLED}) - limited access.')
 
     def unload(self, name):
