@@ -142,3 +142,7 @@ class OnPluginRaceLoad(ListenerManagerDecorator):
 
 class OnPluginUnload(ListenerManagerDecorator):
     manager = ListenerManager()
+
+
+class OnTakeDamage(ListenerManagerDecorator):
+    manager = ListenerManager()

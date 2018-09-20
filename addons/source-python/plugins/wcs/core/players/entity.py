@@ -21,10 +21,15 @@ from time import time
 # Source.Python Imports
 #   CVars
 from cvars import ConVar
+#   Engines
+from engines.server import global_vars
 #   Entities
 from entities import TakeDamageInfo
 from entities.constants import DamageTypes
 from entities.entity import Entity
+from entities.helpers import index_from_pointer
+from entities.hooks import EntityCondition
+from entities.hooks import EntityPreHook
 #   Events
 from events import Event
 #   Listeners
@@ -32,6 +37,8 @@ from listeners import OnClientActive
 from listeners import OnClientDisconnect
 from listeners import OnEntityDeleted
 from listeners.tick import Delay
+#   Memory
+from memory import make_object
 #   Players
 from players.dictionary import PlayerDictionary
 from players.helpers import index_from_uniqueid
@@ -61,6 +68,7 @@ from ..listeners import OnPlayerLevelDown
 from ..listeners import OnPlayerLevelUp
 from ..listeners import OnPlayerQuery
 from ..listeners import OnPlayerReady
+from ..listeners import OnTakeDamage
 #   Modules
 from ..modules.items.calls import _callbacks as _item_callbacks
 from ..modules.items.manager import item_manager
@@ -1115,6 +1123,25 @@ def on_entity_deleted(base_entity):
     if _global_weapon_entity is not None:
         if base_entity.index == _global_weapon_entity.index:
             _global_weapon_entity = None
+
+
+@EntityPreHook(EntityCondition.is_player, 'on_take_damage')
+def pre_on_take_damage(stack):
+    if _global_bypass:
+        return
+
+    info = make_object(TakeDamageInfo, stack[1])
+    attacker = info.attacker
+
+    if 0 < attacker <= global_vars.max_clients:
+        wcsattacker = Player.from_index(attacker)
+    else:
+        wcsattacker = None
+
+    index = index_from_pointer(stack[0])
+    wcsvictim = Player.from_index(index)
+
+    OnTakeDamage.manager.notify(wcsvictim, wcsattacker, info)
 
 
 # ============================================================================

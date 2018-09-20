@@ -37,6 +37,8 @@ from listeners.tick import RepeatStatus
 from menus import Text
 #   Players
 from players.helpers import index_from_uniqueid
+#   Weapons
+from weapons.entity import Weapon
 
 # WCS Imports
 #   Config
@@ -74,6 +76,7 @@ from .core.listeners import OnPlayerLevelUp
 from .core.listeners import OnPlayerRankUpdate
 from .core.listeners import OnPlayerReady
 from .core.listeners import OnPluginUnload
+from .core.listeners import OnTakeDamage
 #   Menus
 from .core.menus import shopmenu_menu
 from .core.menus import shopinfo_menu
@@ -574,6 +577,35 @@ def on_player_ready(wcsplayer):
                 delay = Delay(5, _send_message_and_remove, (welcome_menu, wcsplayer))
                 delay.args += (delay, )
                 _delays[wcsplayer].add(delay)
+
+
+@OnTakeDamage
+def on_take_damage(wcsvictim, wcsattacker, info):
+    if wcsattacker is not None:
+        if wcsvictim is not wcsattacker:
+            if wcsvictim.ready:
+                if info.attacker == info.inflictor:
+                    weapon = wcsattacker.player.active_weapon
+                else:
+                    weapon = Weapon(info.inflictor)
+
+                if weapon.class_name not in ('point_hurt', 'worldspawn') and not weapon.class_name.startswith('wcs_'):
+                    # TODO: Make this the same as player_hurt (info.damage is not the real, calculated damage that is dealt, so don't know when a player is getting killed)
+                    # TODO: Keep using weapon.class_name (weapon_<name>) or use weapon_manager[weapon.class_name].basename (<name>)?
+                    if not wcsvictim.player.team_index == wcsattacker.player.team_index:
+                        with FakeEvent('pre_player_victim', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon.class_name, info=info) as event:
+                            wcsvictim.notify(event)
+
+                        if wcsattacker.ready:
+                            with FakeEvent('pre_player_attacker', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon.class_name, info=info) as event:
+                                wcsattacker.notify(event)
+
+                    with FakeEvent('pre_player_hurt', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon.class_name, info=info) as event:
+                        wcsvictim.notify(event)
+
+                    if wcsattacker.ready:
+                        with FakeEvent('pre_player_hurt', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon.class_name, info=info) as event:
+                            wcsattacker.notify(event)
 
 
 # ============================================================================
