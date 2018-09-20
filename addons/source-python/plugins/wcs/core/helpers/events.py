@@ -42,7 +42,7 @@ class FakeEvent(object):
             tmp = self._variables.copy()
 
             for variable, value in tmp.items():
-                if not isinstance(value, (str, int, float)):
+                if isinstance(value, (list, tuple)):
                     tmp[variable] = ','.join([str(x) for x in value])
 
             self._tmp = current_event_vars.copy()
