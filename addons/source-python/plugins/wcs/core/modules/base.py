@@ -249,18 +249,18 @@ class _BaseSetting(object):
             return
 
         if module:
-            from ...menus.build import changerace_menu_build as menu_choice_build
-            from ...menus.close import raceinfo_menu_close as menu_info_close
-            from ...menus.select import changerace_menu_select as menu_choice_select
-            from ...menus.select import raceinfo_menu_select as menu_info_select
+            from ..menus.build import changerace_menu_build as menu_choice_build
+            from ..menus.close import raceinfo_menu_close as menu_info_close
+            from ..menus.select import changerace_menu_select as menu_choice_select
+            from ..menus.select import raceinfo_menu_select as menu_info_select
 
             menu_choice_name = 'changerace_menu'
             menu_info_name = 'raceinfo_menu'
         else:
             menu_info_close = None
-            from ...menus.build import shopmenu_menu_build as menu_choice_build
-            from ...menus.select import shopmenu_menu_select as menu_choice_select
-            from ...menus.select import shopinfo_menu_select as menu_info_select
+            from ..menus.build import shopmenu_menu_build as menu_choice_build
+            from ..menus.select import shopmenu_menu_select as menu_choice_select
+            from ..menus.select import shopinfo_menu_select as menu_info_select
 
             menu_choice_name = 'changerace_menu'
             menu_info_name = 'raceinfo_menu'
