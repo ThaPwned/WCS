@@ -907,7 +907,7 @@ class _Skill(object):
                     else:
                         callback(event, self.wcsplayer, variables)
             elif self._type is ModuleType.ESP:
-                callback = es.addons.Blocks.get(f'wcs/modules/items/{self._race_name}/{name}')
+                callback = es.addons.Blocks.get(f'wcs/modules/races/{self._race_name}/{name}')
 
                 if callback is not None:
                     if event is None:
