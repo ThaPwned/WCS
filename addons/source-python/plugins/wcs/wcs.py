@@ -113,6 +113,9 @@ from .core.translations import menu_strings
 if IS_ESC_SUPPORT_ENABLED:
     #   Helpers
     from .core.helpers.esc.commands import valid_userid  # Just to load it
+    #   Modules
+    from .core.modules.oldesc import parse_items
+    from .core.modules.oldesc import parse_races
 
 # Is Github available?
 if IS_GITHUB_ENABLED:
@@ -165,6 +168,10 @@ def load():
         github_manager.refresh()
 
     database_manager.connect()
+
+    if IS_ESC_SUPPORT_ENABLED:
+        race_manager.update(parse_races())
+        item_manager.update(parse_items())
 
     race_manager.load_all()
     item_manager.load_all()
@@ -827,7 +834,7 @@ def client_ability_command(command):
                 if reason is SkillReason.ALLOWED:
                     # Only used for ESS races - SP and ESP races should set the cooldown directly
                     # TODO: Races should handle the cooldown directly
-                    if skill._type is ModuleType.ESS:
+                    if skill._type is ModuleType.ESS or skill._type is ModuleType.ESS_OLD:
                         skill.cooldown = time() + skill.cooldown_seconds
 
                     skill.execute('player_ability', define=True)
@@ -867,7 +874,7 @@ def client_ultimate_command(command):
                 if reason is SkillReason.ALLOWED:
                     # Only used for ESS races - SP and ESP races should set the cooldown directly
                     # TODO: Races should handle the cooldown directly
-                    if skill._type is ModuleType.ESS:
+                    if skill._type is ModuleType.ESS or skill._type is ModuleType.ESS_OLD:
                         skill.cooldown = time() + skill.cooldown_seconds
 
                     skill.execute('player_ultimate', define=True)

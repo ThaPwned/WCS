@@ -29,6 +29,7 @@ from core import WeakAutoUnload
 #   Engines
 from engines.precache import Model
 from engines.server import global_vars
+from engines.server import queue_command_string
 #   Hooks
 from hooks.exceptions import except_hooks
 #   Listeners
@@ -298,7 +299,7 @@ class _BaseSetting(object):
 
             if callback is not None:
                 callback(*args)
-        else:
+        elif self.type is ModuleType.ESS:
             addon = esc.addons.get(f'wcs/modules/{module}/{self.name}')
 
             if addon is not None:
@@ -306,6 +307,11 @@ class _BaseSetting(object):
 
                 if executor is not None:
                     executor.run()
+        elif self.type is ModuleType.ESS_OLD:
+            cmd = self.cmds.get(name)
+
+            if cmd is not None and cmd:
+                queue_command_string(cmd)
 
     def get_game_entry(self, entry):
         return self.config['games'].get(GAME_NAME, self.config['games']['default'])[entry]

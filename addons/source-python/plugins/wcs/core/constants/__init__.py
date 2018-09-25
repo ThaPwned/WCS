@@ -39,6 +39,7 @@ class ModuleType(IntEnum):
     SP = 0
     ESP = 1
     ESS = 2
+    ESS_OLD = 3
 
 
 class ItemReason(IntEnum):

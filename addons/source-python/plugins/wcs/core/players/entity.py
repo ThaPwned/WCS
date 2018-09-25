@@ -23,6 +23,7 @@ from time import time
 from cvars import ConVar
 #   Engines
 from engines.server import global_vars
+from engines.server import queue_command_string
 #   Entities
 from entities import TakeDamageInfo
 from entities.constants import DamageTypes
@@ -782,6 +783,11 @@ class _Race(object):
 
                 if executor is not None:
                     executor.run()
+        elif self.settings.type is ModuleType.ESS_OLD:
+            cmd = self.settings.cmds.get(name)
+
+            if cmd is not None and cmd:
+                queue_command_string(cmd)
 
     @property
     def required_xp(self):
@@ -914,7 +920,7 @@ class _Skill(object):
                         callback(self.wcsplayer, variables)
                     else:
                         callback(es.event_var, self.wcsplayer, variables)
-            else:
+            elif self._type is ModuleType.ESS:
                 addon = esc.addons.get(f'wcs/modules/races/{self._race_name}')
 
                 if addon is not None:
@@ -946,6 +952,26 @@ class _Skill(object):
                                     cvar.set_int(values)
 
                         executor.run()
+            elif self._type is ModuleType.ESS_OLD:
+                if define:
+                    cvar_wcs_userid.set_int(self.wcsplayer.userid)
+
+                for cvar in cvar_wcs_dices:
+                    cvar.set_int(randint(0, 100))
+
+                try:
+                    command = self.config['cmds']['setting'][self.level - 1]
+                except IndexError:
+                    command = self.config['cmds']['setting'][-1]
+
+                if command:
+                    queue_command_string(command)
+
+                for key in ('cmd', 'sfx'):
+                    command = self.config['cmds'][key]
+
+                    if command:
+                        queue_command_string(command)
 
     def is_executable(self):
         data = {'reason':None}
@@ -1015,11 +1041,19 @@ class _Item(object):
                 _item_callbacks[self.name]['activatecmd'](event, self.wcsplayer)
             elif self.settings.type is ModuleType.ESP:
                 es.addons.Blocks[f'wcs/modules/items/{self.name}/activatecmd'](es.event_var, self.wcsplayer)
-            else:
+            elif self.settings.type is ModuleType.ESS:
                 for cvar in cvar_wcs_dices:
                     cvar.set_int(randint(0, 100))
 
                 esc.addons[f'wcs/modules/items/{self.name}'].blocks['activatecmd'].run()
+            elif self.settings.type is ModuleType.ESS_OLD:
+                for cvar in cvar_wcs_dices:
+                    cvar.set_int(randint(0, 100))
+
+                cmd = self.settings.cmds.get('activatecmd')
+
+                if cmd is not None and cmd:
+                    queue_command_string(cmd)
 
     def execute(self, name, event=None, define=False):
         if self.settings.type is ModuleType.SP:
@@ -1049,6 +1083,14 @@ class _Item(object):
                         cvar_wcs_userid.set_int(self.wcsplayer.userid)
 
                     executor.run()
+        elif self.settings.type is ModuleType.ESS_OLD:
+            cmd = self.settings.cmds.get(name)
+
+            if cmd is not None and cmd:
+                if define:
+                    cvar_wcs_userid.set_int(self.wcsplayer.userid)
+
+                queue_command_string(cmd)
 
     @property
     def count(self):
