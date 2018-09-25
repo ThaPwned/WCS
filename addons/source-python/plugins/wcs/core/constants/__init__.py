@@ -85,6 +85,12 @@ class GithubStatus(IntEnum):
 # Allow ESC races/items
 IS_ESC_SUPPORT_ENABLED = True
 
+try:
+    import es
+    import esc
+except ImportError:
+    IS_ESC_SUPPORT_ENABLED = False
+
 if (CFG_PATH / 'github.json').isfile():
     with open(CFG_PATH / 'github.json') as inputfile:
         data = load(inputfile)
