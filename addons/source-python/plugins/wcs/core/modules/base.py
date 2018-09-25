@@ -338,9 +338,10 @@ class _BaseSetting(object):
 
                 # It's probably a model
                 if '/' in value or '\\' in value:
-                    _models[self][key] = Model(value)
+                    value = _models[self][key] = Model(value)
 
-                    continue
+                    if not global_vars.map_name:
+                        continue
 
             setattr(effect, key, value)
 
