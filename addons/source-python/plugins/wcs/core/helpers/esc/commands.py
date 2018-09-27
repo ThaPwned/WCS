@@ -29,6 +29,12 @@ from ...players.entity import Player as WCSPlayer
 
 
 # ============================================================================
+# >> GLOBAL VARIABLES
+# ============================================================================
+_aliases = {}
+
+
+# ============================================================================
 # >> HELPER FUNCTIONS
 # ============================================================================
 def valid_userid(userid):
@@ -402,3 +408,12 @@ def wcs_nearcoord_command(command_info, var:str, players:convert_identifier_to_p
     for player in players:
         if vector.get_distance(player.origin) <= distance:
             queue_command_string(f'es_xset {var} {player.userid};{command}')
+
+
+@TypedServerCommand('wcs_xalias')
+def wcs_xalias_command(command_info, alias:str, command:str=None):
+    if command is None:
+        queue_command_string(_aliases[alias])
+    else:
+        _aliases[alias] = command
+

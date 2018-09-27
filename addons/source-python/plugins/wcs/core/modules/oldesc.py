@@ -15,6 +15,8 @@ from re import compile as re_compile
 #   Constants
 from ..constants import ModuleType
 from ..constants.paths import CFG_PATH
+#   Helpers
+from ..helpers.esc.commands import _aliases
 #   Modules
 from .items.manager import ItemSetting
 from .items.manager import item_manager
@@ -27,6 +29,7 @@ from ..translations import categories_strings
 # >> ALL DECLARATION
 # ============================================================================
 __all__ = (
+    'parse_items',
     'parse_races',
 )
 
@@ -83,6 +86,10 @@ def parse_races():
         imported = ConfigObj(CFG_PATH / 'races.ini')
 
         for name, data in imported.items():
+            for alias, value in data.items():
+                if alias.startswith('racealias_'):
+                    _aliases[alias] = value
+
             fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
             settings = races[fixed_name] = ImportedRace(fixed_name)
 
@@ -151,6 +158,10 @@ def parse_races():
                 else:
                     skill['maximum'] = numberoflevels[i]
 
+                for alias, value in data[f'skill{i + 1}'].items():
+                    if alias.startswith('racealias_'):
+                        _aliases[alias] = value
+
             settings.strings['name'] = _LanguageString(name)
             settings.strings['description'] = _LanguageString(data['desc'].replace(r'\n', ''))
 
@@ -186,6 +197,10 @@ def parse_items():
 
             for name, data in imported[category].items():
                 if name not in ('desc', 'maxitems'):
+                    for alias, value in data.items():
+                        if alias.startswith('shopalias_'):
+                            _aliases[alias] = value
+
                     fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
                     settings = items[fixed_name] = ImportedItem(fixed_name)
 
