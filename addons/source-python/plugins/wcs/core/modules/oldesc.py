@@ -111,7 +111,6 @@ def parse_races():
 
             settings.config['author'] = data['author']
             settings.config['allowonly'] = data['allowonly'].split('|') if data['allowonly'] else []
-            settings.config['category'] = (data['category'].split('|') if data['category'] and not data['category'] == '0' else []) if 'category' in data else []
 
             skills = settings.config['skills'] = {}
 
@@ -165,15 +164,16 @@ def parse_races():
             settings.strings['name'] = _LanguageString(name)
             settings.strings['description'] = _LanguageString(data['desc'].replace(r'\n', ''))
 
-            category = data.get('category')
+            categories = (data['category'].split('|') if data['category'] and not data['category'] == '0' else []) if 'category' in data else []
 
-            if category:
-                fixed_category = FIX_NAME.sub('', category.lower().replace(' ', '_'))
+            if categories:
+                for category in categories:
+                    fixed_category = FIX_NAME.sub('', category.lower().replace(' ', '_'))
 
-                if fixed_category not in categories_strings:
-                    categories_strings[fixed_category] = _LanguageString(category)
+                    if fixed_category not in categories_strings:
+                        categories_strings[fixed_category] = _LanguageString(category)
 
-                settings.add_to_category(fixed_category)
+                    settings.add_to_category(fixed_category)
             else:
                 settings.add_to_category(None)
 
