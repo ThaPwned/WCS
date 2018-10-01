@@ -3,6 +3,10 @@
 # ============================================================================
 # >> IMPORTS
 # ============================================================================
+# Python Imports
+#   String
+from string import Template
+
 # Source.Python Imports
 #   Commands
 from commands.typed import TypedServerCommand
@@ -18,11 +22,22 @@ from filters.players import PlayerIter
 from listeners.tick import Delay
 #   Mathlib
 from mathlib import Vector
+#   Messages
+from messages import HudMsg
+from messages import SayText2
 #   Players
 from players.entity import Player
 from players.helpers import index_from_userid
+#   Translations
+from translations.strings import LangStrings
 
 # WCS Imports
+#   Constants
+from ...constants import COLOR_DARKGREEN
+from ...constants import COLOR_DEFAULT
+from ...constants import COLOR_GREEN
+from ...constants import COLOR_LIGHTGREEN
+from ...constants.paths import TRANSLATION_PATH
 #   Players
 from ...players import team_data
 from ...players.entity import Player as WCSPlayer
@@ -32,6 +47,15 @@ from ...players.entity import Player as WCSPlayer
 # >> GLOBAL VARIABLES
 # ============================================================================
 _aliases = {}
+
+if (TRANSLATION_PATH / 'strings.ini').isfile():
+    _strings = LangStrings(TRANSLATION_PATH / 'strings')
+
+    for key in _strings:
+        for language, message in _strings[key].items():
+            _strings[key][language] = message.replace('#default', COLOR_DEFAULT).replace('#green', COLOR_GREEN).replace('#lightgreen', COLOR_LIGHTGREEN).replace('#darkgreen', COLOR_DARKGREEN)
+else:
+    _strings = None
 
 
 # ============================================================================
@@ -110,6 +134,35 @@ def valid_operators(operators=('=', '+', '-')):
 
 def validate_userid_after_delay(callback, userid, *args, validator=convert_userid_to_player):
     callback(None, validator(userid), *args)
+
+
+def _format_message(userid, name, args):
+    if _strings is None:
+        return tuple(), None
+
+    text = _strings.get(name)
+
+    if text is None:
+        return tuple(), None
+
+    if userid.isdigit():
+        try:
+            players = (Player.from_userid(int(userid)), )
+        except ValueError:
+            return tuple(), None
+    else:
+        players = convert_identifier_to_players(userid)
+
+    if args:
+        tokens = {}
+
+        for i in range(0, len(args), 2):
+            tokens[args[i]] = args[i + 1]
+
+        for language, message in text.items():
+            text[language] = Template(message).substitute(tokens)
+
+    return players, text
 
 
 # ============================================================================
@@ -445,4 +498,20 @@ def wcs_xalias_command(command_info, alias:str, command:str=None):
 @TypedServerCommand('wcs_decimal')
 def wcs_decimal_command(command_info, var:ConVar, value:float):
     var.set_int(int(round(value)))
+
+
+@TypedServerCommand('wcs_xtell')
+def wcs_xtell_command(command_info, userid:str, name:str, *args:str):
+    players, message = _format_message(userid, name, args)
+
+    for player in players:
+        SayText2(message[message.get(player.language, 'en')]).send(player.index)
+
+
+@TypedServerCommand('wcs_xcentertell')
+def wcs_xcentertell_command(command_info, userid:str, name:str, *args:str):
+    players, message = _format_message(userid, name, args)
+
+    for player in players:
+        HudMsg(message[message.get(player.language, 'en')], y=0.2).send(player.index)
 
