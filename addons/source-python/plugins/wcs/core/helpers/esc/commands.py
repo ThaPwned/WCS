@@ -417,3 +417,8 @@ def wcs_xalias_command(command_info, alias:str, command:str=None):
     else:
         _aliases[alias] = command
 
+
+@TypedServerCommand('wcs_decimal')
+def wcs_decimal_command(command_info, var:ConVar, value:float):
+    var.set_int(int(round(value)))
+
