@@ -410,6 +410,22 @@ def wcs_nearcoord_command(command_info, var:str, players:convert_identifier_to_p
             queue_command_string(f'es_xset {var} {player.userid};{command}')
 
 
+@TypedServerCommand('wcs_givexp')
+def wcs_givexp_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:int):
+    if wcsplayer is None:
+        return
+
+    wcsplayer.xp += value
+
+
+@TypedServerCommand('wcs_givelevel')
+def wcs_givelevel_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:int):
+    if wcsplayer is None:
+        return
+
+    wcsplayer.level += value
+
+
 @TypedServerCommand('wcs_xalias')
 def wcs_xalias_command(command_info, alias:str, command:str=None):
     if command is None:
