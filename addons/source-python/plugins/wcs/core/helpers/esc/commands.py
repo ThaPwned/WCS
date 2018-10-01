@@ -410,6 +410,14 @@ def wcs_nearcoord_command(command_info, var:str, players:convert_identifier_to_p
             queue_command_string(f'es_xset {var} {player.userid};{command}')
 
 
+@TypedServerCommand('wcs_changerace')
+def wcs_changerace_command(command_info, wcsplayer:convert_userid_to_wcsplayer, name:str):
+    if wcsplayer is None:
+        return
+
+    wcsplayer.current_race = name
+
+
 @TypedServerCommand('wcs_givexp')
 def wcs_givexp_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:int):
     if wcsplayer is None:
