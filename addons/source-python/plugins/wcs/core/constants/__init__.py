@@ -10,6 +10,10 @@ from enum import IntEnum
 from json import dump
 from json import load
 
+# Source.Python Imports
+#   Core
+from core import SOURCE_ENGINE_BRANCH
+
 # WCS Imports
 #   Constants
 from .info import info
@@ -20,6 +24,10 @@ from .paths import CFG_PATH
 # >> ALL DECLARATION
 # ============================================================================
 __all__ = (
+    'COLOR_DARKGREEN',
+    'COLOR_DEFAULT',
+    'COLOR_GREEN',
+    'COLOR_LIGHTGREEN',
     'GITHUB_ACCESS_TOKEN',
     'IS_ESC_SUPPORT_ENABLED',
     'IS_GITHUB_ENABLED',
@@ -112,3 +120,15 @@ IS_GITHUB_ENABLED = GITHUB_ACCESS_TOKEN is not None
 TIME_FORMAT = '%H:%M:%S %d/%m/%Y'
 # TODO: Or should it be?
 # TIME_FORMAT = '%a %d %b %Y, %H:%M:%S'
+
+# Copied from EventScripts Emulator (es_emulator/helpers.py#90-99)
+if SOURCE_ENGINE_BRANCH == 'csgo':
+    COLOR_DEFAULT = '\1'
+    COLOR_GREEN = '\4'
+    COLOR_LIGHTGREEN = '\5'
+    COLOR_DARKGREEN = '\6'
+else:
+    COLOR_DEFAULT = '\1'
+    COLOR_GREEN = '\4'
+    COLOR_LIGHTGREEN = '\3'
+    COLOR_DARKGREEN = '\5'

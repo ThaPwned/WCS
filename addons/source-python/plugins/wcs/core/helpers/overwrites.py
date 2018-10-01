@@ -3,39 +3,24 @@
 # ============================================================================
 # >> IMPORTS
 # ============================================================================
-# Source.Python
-#   Core
-from core import SOURCE_ENGINE_BRANCH
+# Source.Python Imports
 #   Messages
 from messages import SayText2 as _SayText2
+
+# WCS Imports
+#   Constants
+from ...constants import COLOR_DARKGREEN
+from ...constants import COLOR_DEFAULT
+from ...constants import COLOR_GREEN
+from ...constants import COLOR_LIGHTGREEN
 
 
 # ============================================================================
 # >> ALL DECLARATION
 # ============================================================================
 __all__ = (
-    'COLOR_DARKGREEN',
-    'COLOR_DEFAULT',
-    'COLOR_GREEN',
-    'COLOR_LIGHTGREEN',
     'SayText2',
 )
-
-
-# ============================================================================
-# >> GLOBAL VARIABLES
-# ============================================================================
-# Copied from EventScripts Emulator (es_emulator/helpers.py#90-99)
-if SOURCE_ENGINE_BRANCH == 'csgo':
-    COLOR_DEFAULT = '\1'
-    COLOR_GREEN = '\4'
-    COLOR_LIGHTGREEN = '\5'
-    COLOR_DARKGREEN = '\6'
-else:
-    COLOR_DEFAULT = '\1'
-    COLOR_GREEN = '\4'
-    COLOR_LIGHTGREEN = '\3'
-    COLOR_DARKGREEN = '\5'
 
 
 # ============================================================================
