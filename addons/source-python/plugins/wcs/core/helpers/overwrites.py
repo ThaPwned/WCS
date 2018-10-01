@@ -9,10 +9,10 @@ from messages import SayText2 as _SayText2
 
 # WCS Imports
 #   Constants
-from ...constants import COLOR_DARKGREEN
-from ...constants import COLOR_DEFAULT
-from ...constants import COLOR_GREEN
-from ...constants import COLOR_LIGHTGREEN
+from ..constants import COLOR_DARKGREEN
+from ..constants import COLOR_DEFAULT
+from ..constants import COLOR_GREEN
+from ..constants import COLOR_LIGHTGREEN
 
 
 # ============================================================================
