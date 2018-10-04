@@ -54,6 +54,7 @@ from .core.config import cfg_top_announcement_enable
 from .core.config import cfg_top_public_announcement
 from .core.config import cfg_top_min_rank_announcement
 from .core.config import cfg_top_stolen_notify
+from .core.config import cfg_bot_random_race
 #   Constants
 from .core.constants import IS_ESC_SUPPORT_ENABLED
 from .core.constants import IS_GITHUB_ENABLED
@@ -480,6 +481,17 @@ def player_death(event):
                             _delays[wcsattacker].add(delay)
 
                         active_race.xp += value
+
+    if wcsvictim._is_bot:
+        if cfg_bot_random_race.get_int():
+            if wcsvictim.ready:
+                usable_races = wcsvictim.available_races
+
+                if wcsvictim.current_race in usable_races:
+                    usable_races.remove(wcsvictim.current_race)
+
+                if usable_races:
+                    wcsvictim.current_race = choice(usable_races)
 
 
 @Event('player_say')

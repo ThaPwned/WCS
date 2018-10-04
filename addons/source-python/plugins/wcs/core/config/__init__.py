@@ -54,3 +54,4 @@ with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as co
     cfg_top_public_announcement = config.cvar('top_public_announcement', '1', config_strings['top_public_announcement'])
     cfg_top_min_rank_announcement = config.cvar('top_min_rank_announcement', '10', config_strings['top_min_rank_announcement'])
     cfg_top_stolen_notify = config.cvar('top_stolen_notify', '1', config_strings['top_stolen_notify'])
+    cfg_bot_random_race = config.cvar('bot_random_race', '1', config_strings['bot_random_race'])

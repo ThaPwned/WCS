@@ -51,6 +51,7 @@ from players.helpers import playerinfo_from_index
 # WCS Imports
 #   Config
 from ..config import cfg_interval
+from ..config import cfg_bot_random_race
 #   Constants
 from ..constants import IS_ESC_SUPPORT_ENABLED
 from ..constants import ModuleType
@@ -333,15 +334,16 @@ class Player(object, metaclass=_PlayerMeta):
 
         online = self.online
 
-        if online and self.active_race.settings.usable_by(self) is not RaceReason.ALLOWED:
-            usable_races = self.available_races
+        if online:
+            if self.active_race.settings.usable_by(self) is not RaceReason.ALLOWED or (self._is_bot and cfg_bot_random_race.get_int()):
+                usable_races = self.available_races
 
-            if not usable_races:
-                self._ready = False
+                if not usable_races:
+                    self._ready = False
 
-                raise RuntimeError(f'Unable to find a usable race to "{self.name}".')
+                    raise RuntimeError(f'Unable to find a usable race to "{self.name}".')
 
-            self._current_race = choice(usable_races)
+                self._current_race = choice(usable_races)
 
         self._ready = True
 
