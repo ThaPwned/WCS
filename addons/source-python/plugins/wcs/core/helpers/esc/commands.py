@@ -8,6 +8,8 @@
 from string import Template
 
 # Source.Python Imports
+#   Colors
+from colors import Color
 #   Commands
 from commands.typed import TypedServerCommand
 #   CVars
@@ -461,6 +463,20 @@ def wcs_nearcoord_command(command_info, var:str, players:convert_identifier_to_p
     for player in players:
         if vector.get_distance(player.origin) <= distance:
             queue_command_string(f'es_xset {var} {player.userid};{command}')
+
+
+@TypedServerCommand('wcs_color')
+def wcs_color_command(command_info, player:convert_userid_to_player, red:int, green:int, blue:int, alpha:int=255, weapons:int=0):
+    if player is None:
+        return
+
+    color = Color(red, green, blue, alpha)
+
+    player.color = color
+
+    if weapons:
+        for weapon in player.weapons():
+            weapon.color = color
 
 
 @TypedServerCommand('wcs_changerace')

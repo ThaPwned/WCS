@@ -112,8 +112,6 @@ from .core.translations import menu_strings
 
 # Is ESC supported?
 if IS_ESC_SUPPORT_ENABLED:
-    #   Helpers
-    from .core.helpers.esc.commands import valid_userid  # Just to load it
     #   Modules
     from .core.modules.oldesc import parse_items
     from .core.modules.oldesc import parse_races
