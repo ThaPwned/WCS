@@ -1001,6 +1001,12 @@ class _Skill(object):
 
         return SkillReason.ALLOWED
 
+    def reset_cooldown(self, value=None):
+        if value is None:
+            value = self.cooldown_seconds
+
+        self.cooldown = time() + value
+
     @property
     def level(self):
         return self._level
