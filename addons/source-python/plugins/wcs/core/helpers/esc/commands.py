@@ -531,3 +531,20 @@ def wcs_xcentertell_command(command_info, userid:str, name:str, *args:str):
     for player in players:
         HudMsg(message[message.get(player.language, 'en')], y=0.2).send(player.index)
 
+
+@TypedServerCommand('wcs_getinfo')
+def wcs_getinfo_command(command_info, wcsplayer:convert_userid_to_wcsplayer, var:ConVar, attribute:str, key:str):
+    if wcsplayer is None:
+        var.set_int(0)
+        return
+
+    if key == 'race':
+        if attribute == 'realname':
+            var.set_string(wcsplayer.active_race.name)
+        elif attribute == 'name':
+            var.set_string(wcsplayer.active_race.settings.strings['name'])
+    elif key == 'player':
+        if attribute == 'realcurrace':
+            var.set_string(wcsplayer.active_race.name)
+        elif attribute == 'currace':
+            var.set_string(wcsplayer.active_race.settings.strings['name'])
