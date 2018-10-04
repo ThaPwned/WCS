@@ -36,7 +36,6 @@ from events import Event
 #   Listeners
 from listeners import OnClientActive
 from listeners import OnClientDisconnect
-from listeners import OnEntityDeleted
 from listeners.tick import Delay
 #   Memory
 from memory import make_object
@@ -78,6 +77,7 @@ from ..modules.races.calls import _callbacks as _race_callbacks
 from ..modules.races.manager import race_manager
 #   Players
 from . import team_data
+from . import set_weapon_name
 #   Ranks
 from ..ranks import rank_manager
 
@@ -134,7 +134,6 @@ else:
 # TODO: Should I even be using this?
 _players = PlayerDictionary()
 
-_global_weapon_entity = None
 _global_bypass = False
 _round_started = True
 _delays = defaultdict(set)
@@ -488,18 +487,13 @@ class Player(object, metaclass=_PlayerMeta):
             take_damage_info = TakeDamageInfo()
             take_damage_info.attacker = attacker
 
-            global _global_weapon_entity
-
-            if _global_weapon_entity is None:
-                _global_weapon_entity = Entity.create('info_target')
-
             if weapon is None:
-                _global_weapon_entity.set_key_value_string('classname', 'point_hurt')
+                index = set_weapon_name('point_hurt', None)
             else:
-                _global_weapon_entity.set_key_value_string('classname', f'wcs_{weapon}')
+                index = set_weapon_name(weapon)
 
-            take_damage_info.weapon = _global_weapon_entity.index
-            take_damage_info.inflictor = _global_weapon_entity.index
+            take_damage_info.weapon = index
+            take_damage_info.inflictor = index
             take_damage_info.damage = damage
             take_damage_info.type = DamageTypes.GENERIC
 
@@ -1158,18 +1152,6 @@ def on_client_disconnect(index):
         wcsplayer.save()
 
     database_manager.callback(wcsplayer._query_save)
-
-
-@OnEntityDeleted
-def on_entity_deleted(base_entity):
-    if not base_entity.is_networked():
-        return
-
-    global _global_weapon_entity
-
-    if _global_weapon_entity is not None:
-        if base_entity.index == _global_weapon_entity.index:
-            _global_weapon_entity = None
 
 
 @EntityPreHook(EntityCondition.is_player, 'on_take_damage')
