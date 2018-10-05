@@ -532,6 +532,19 @@ def wcs_xcentertell_command(command_info, userid:str, name:str, *args:str):
         HudMsg(message[message.get(player.language, 'en')], y=0.2).send(player.index)
 
 
+@TypedServerCommand('wcs_centermsg')
+def wcs_centermsg_command(command_info, *message:str):
+    HudMsg(' '.join(message), y=0.2).send()
+
+
+@TypedServerCommand('wcs_centertell')
+def wcs_centertell_command(command_info, player:convert_userid_to_player, *message:str):
+    if player is None:
+        return
+
+    HudMsg(' '.join(message), y=0.2).send(player.index)
+
+
 @TypedServerCommand('wcs_getinfo')
 def wcs_getinfo_command(command_info, wcsplayer:convert_userid_to_wcsplayer, var:ConVar, attribute:str, key:str):
     if wcsplayer is None:
