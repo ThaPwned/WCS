@@ -117,6 +117,16 @@ def convert_identifier_to_players(filter_):
         yield player
 
 
+def convert_userid_identifier_to_players(filter_):
+    if filter_.isdigit():
+        try:
+            yield Player.from_userid(int(filter_))
+        except ValueError:
+            yield StopIteration()
+    else:
+        return convert_identifier_to_players(filter_)
+
+
 def real_value(value):
     try:
         return int(value)
@@ -454,6 +464,12 @@ def wcs_get_skill_level_command(command_info, wcsplayer:convert_userid_to_wcspla
         return
 
     var.set_int(active_race.skills[skills[index]].level)
+
+
+@TypedServerCommand(['wcs_foreach', 'player'])
+def wcs_foreach_command(command_info, var:str, players:convert_userid_identifier_to_players, command:str):
+    for player in players:
+        queue_command_string(f'es_xset {var} {player.userid};{command}')
 
 
 @TypedServerCommand('wcs_nearcoord')
