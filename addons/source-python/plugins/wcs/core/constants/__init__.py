@@ -9,6 +9,8 @@ from enum import IntEnum
 #   JSON
 from json import dump
 from json import load
+#   Warnings
+from warnings import warn
 
 # Source.Python Imports
 #   Core
@@ -99,6 +101,8 @@ try:
     import esc
 except ImportError:
     IS_ESC_SUPPORT_ENABLED = False
+
+    warn('IS_ESC_SUPPORT_ENABLED was set to True but EventScripts was not found')
 
 if (CFG_PATH / 'github.json').isfile():
     with open(CFG_PATH / 'github.json') as inputfile:
