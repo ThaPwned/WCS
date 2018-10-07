@@ -168,6 +168,10 @@ def parse_races():
 
             if categories:
                 for category in categories:
+                    if category == '0':
+                        settings.add_to_category(None)
+                        continue
+
                     fixed_category = FIX_NAME.sub('', category.lower().replace(' ', '_'))
 
                     if fixed_category not in categories_strings:
