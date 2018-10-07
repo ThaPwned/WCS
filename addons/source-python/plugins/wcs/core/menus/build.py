@@ -228,9 +228,9 @@ def spendskills_menu_build(menu, client):
 
         if skill.level >= maximum:
             option = PagedOption(deepcopy(menu_strings['spendskills_menu max']), selectable=False, highlight=False)
-        elif active_race.level < required:
+        elif active_race.level < required[skill.level]:
             option = PagedOption(deepcopy(menu_strings['spendskills_menu required']), selectable=False, highlight=False)
-            option.text.tokens['required'] = required
+            option.text.tokens['required'] = required[skill.level]
         else:
             option = PagedOption(deepcopy(menu_strings['spendskills_menu skill']), (active_race.name, skill_name))
             option.selectable = option.highlight = active_race.unused > 0

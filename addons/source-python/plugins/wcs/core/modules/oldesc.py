@@ -130,7 +130,7 @@ def parse_races():
 
                 skill['event'] = skillcfg[i]
 
-                skill['required'] = int(skillneeded[i])
+                skill['required'] = [int(skillneeded[i])] * numberoflevels[i]
 
                 if 'cooldown' in data[f'skill{i + 1}']:
                     skill['cooldown'] = list(map(lambda x: float(x) if '.' in x else int(x), data[f'skill{i + 1}']['cooldown'].split('|')))

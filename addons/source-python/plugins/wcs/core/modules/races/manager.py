@@ -78,6 +78,9 @@ class RaceSetting(_BaseSetting):
 
             config['required'] = config.get('required', 0)
 
+            if isinstance(config['required'], int):
+                config['required'] = [config['required']] * config['maximum']
+
             if 'cooldown' in config:
                 if not isinstance(config['cooldown'], (list, tuple)):
                     config['cooldown'] = [config['cooldown']] * config['maximum']
