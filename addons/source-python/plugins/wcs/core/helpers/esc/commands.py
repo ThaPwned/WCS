@@ -527,6 +527,14 @@ def wcs_xalias_command(command_info, alias:str, command:str=None):
         _aliases[alias] = command
 
 
+@TypedServerCommand('wcs_dalias')
+def wcs_dalias_command(command_info, alias:str, *args:str):
+    for i, value in enumerate(args, 1):
+        ConVar(f'wcs_tmp{i}').set_string(value)
+
+    queue_command_string(_aliases[alias])
+
+
 @TypedServerCommand('wcs_decimal')
 def wcs_decimal_command(command_info, var:ConVar, value:float):
     var.set_int(int(round(value)))
