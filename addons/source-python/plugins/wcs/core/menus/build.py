@@ -306,12 +306,10 @@ def raceinfo_detail_menu_build(menu, client):
     name = wcsplayer.data['_internal_raceinfo']
     settings = race_manager[name]
 
-    category_menu = wcsplayer.data.get('_internal_raceinfo_category')
+    all_races = race_manager._category_to_values[wcsplayer.data.get('_internal_raceinfo_category')]
 
-    if category_menu is None:
-        all_races = [*race_manager]
-    else:
-        all_races = race_manager._category_to_values[category_menu.name]
+    if name not in all_races:
+        all_races = race_manager._category_to_values[None]
 
     index = all_races.index(name)
 

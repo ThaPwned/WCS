@@ -197,8 +197,6 @@ def changerace_menu_select(menu, client, option):
     wcsplayer = Player.from_index(client)
 
     if isinstance(option.value, PagedMenu):
-        wcsplayer.data['_internal_changerace'] = option.value.name
-
         return option.value
 
     settings = race_manager[option.value]
@@ -223,7 +221,7 @@ def raceinfo_menu_select(menu, client, option):
     wcsplayer = Player.from_index(client)
 
     if isinstance(option.value, PagedMenu):
-        wcsplayer.data['_internal_raceinfo_category'] = option.value
+        wcsplayer.data['_internal_raceinfo_category'] = option.value.name
 
         return option.value
 
@@ -236,23 +234,25 @@ def raceinfo_menu_select(menu, client, option):
 def raceinfo_detail_menu_select(menu, client, option):
     if option.choice_index in (3, 4, BUTTON_BACK):
         wcsplayer = Player.from_index(client)
-        category_menu = wcsplayer.data.get('_internal_raceinfo_category')
+        name = wcsplayer.data.get('_internal_raceinfo')
+        category = wcsplayer.data.get('_internal_raceinfo_category')
 
-        if category_menu is None:
-            all_races = [*race_manager]
-        else:
-            all_races = race_manager._category_to_values[category_menu.name]
+        all_races = race_manager._category_to_values[category]
 
-        index = all_races.index(wcsplayer.data['_internal_raceinfo'])
+        if name not in all_races:
+            category = None
+            all_races = race_manager._category_to_values[None]
+
+        index = all_races.index(name)
 
         if option.choice_index == BUTTON_BACK:
-            category_menu = wcsplayer.data.pop('_internal_raceinfo_category', None)
-
-            if category_menu is None:
+            if category is None:
                 option.value.set_player_page(client, index // MAX_ITEM_COUNT)
                 return option.value
 
-            return category_menu
+            race_manager._info_category_menus[category].set_player_page(client, index // MAX_ITEM_COUNT)
+
+            return race_manager._info_category_menus[category]
 
         index += option.value
 
