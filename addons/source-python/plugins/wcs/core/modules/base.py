@@ -16,6 +16,8 @@ from json import load as json_load
 from json import dump as json_dump
 #   OS
 from os import strerror
+#   Shlex
+from shlex import split
 #   Sys
 from sys import modules
 #   Warnings
@@ -29,7 +31,7 @@ from core import WeakAutoUnload
 #   Engines
 from engines.precache import Model
 from engines.server import global_vars
-from engines.server import queue_command_string
+from engines.server import execute_server_command
 #   Hooks
 from hooks.exceptions import except_hooks
 #   Listeners
@@ -308,10 +310,11 @@ class _BaseSetting(object):
                 if executor is not None:
                     executor.run()
         elif self.type is ModuleType.ESS_OLD:
-            cmd = self.cmds.get(name)
+            commands = self.cmds.get(name)
 
-            if cmd is not None and cmd:
-                queue_command_string(cmd)
+            if commands is not None and commands:
+                for cmd in commands.split(';'):
+                    execute_server_command(*split(cmd))
 
     def get_game_entry(self, entry):
         return self.config['games'].get(GAME_NAME, self.config['games']['default'])[entry]

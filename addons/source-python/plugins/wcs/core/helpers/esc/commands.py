@@ -4,6 +4,8 @@
 # >> IMPORTS
 # ============================================================================
 # Python Imports
+#   Shlex
+from shlex import split
 #   String
 from string import Template
 
@@ -15,7 +17,7 @@ from commands.typed import TypedServerCommand
 #   CVars
 from cvars import ConVar
 #   Engines
-from engines.server import queue_command_string
+from engines.server import execute_server_command
 #   Entities
 from entities.constants import MoveType
 #   Filters
@@ -469,7 +471,8 @@ def wcs_get_skill_level_command(command_info, wcsplayer:convert_userid_to_wcspla
 @TypedServerCommand(['wcs_foreach', 'player'])
 def wcs_foreach_command(command_info, var:str, players:convert_userid_identifier_to_players, command:str):
     for player in players:
-        queue_command_string(f'es_xset {var} {player.userid};{command}')
+        for cmd in [f'es_xset {var} {player.userid}'] + command.split(';'):
+            execute_server_command(*split(cmd))
 
 
 @TypedServerCommand('wcs_nearcoord')
@@ -478,7 +481,8 @@ def wcs_nearcoord_command(command_info, var:str, players:convert_identifier_to_p
 
     for player in players:
         if vector.get_distance(player.origin) <= distance:
-            queue_command_string(f'es_xset {var} {player.userid};{command}')
+            for cmd in [f'es_xset {var} {player.userid}'] + command.split(';'):
+                execute_server_command(*split(cmd))
 
 
 @TypedServerCommand('wcs_color')
@@ -522,7 +526,8 @@ def wcs_givelevel_command(command_info, wcsplayer:convert_userid_to_wcsplayer, v
 @TypedServerCommand('wcs_xalias')
 def wcs_xalias_command(command_info, alias:str, command:str=None):
     if command is None:
-        queue_command_string(_aliases[alias])
+        for cmd in _aliases[alias].split(';'):
+            execute_server_command(*split(cmd))
     else:
         _aliases[alias] = command
 
@@ -532,7 +537,8 @@ def wcs_dalias_command(command_info, alias:str, *args:str):
     for i, value in enumerate(args, 1):
         ConVar(f'wcs_tmp{i}').set_string(value)
 
-    queue_command_string(_aliases[alias])
+    for cmd in _aliases[alias].split(';'):
+        execute_server_command(*split(cmd))
 
 
 @TypedServerCommand('wcs_decimal')

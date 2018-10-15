@@ -15,6 +15,8 @@ from json import load as json_load
 from random import choice
 from random import randint
 from random import uniform
+#   Shlex
+from shlex import split
 #   Time
 from time import time
 
@@ -23,7 +25,7 @@ from time import time
 from cvars import ConVar
 #   Engines
 from engines.server import global_vars
-from engines.server import queue_command_string
+from engines.server import execute_server_command
 #   Entities
 from entities import TakeDamageInfo
 from entities.constants import DamageTypes
@@ -780,10 +782,11 @@ class _Race(object):
                 if executor is not None:
                     executor.run()
         elif self.settings.type is ModuleType.ESS_OLD:
-            cmd = self.settings.cmds.get(name)
+            commands = self.settings.cmds.get(name)
 
-            if cmd is not None and cmd:
-                queue_command_string(cmd)
+            if commands is not None and commands:
+                for cmd in commands.split(';'):
+                    execute_server_command(*split(cmd))
 
     @property
     def required_xp(self):
@@ -956,18 +959,20 @@ class _Skill(object):
                     cvar.set_int(randint(0, 100))
 
                 try:
-                    command = self.config['cmds']['setting'][self.level - 1]
+                    commands = self.config['cmds']['setting'][self.level - 1]
                 except IndexError:
-                    command = self.config['cmds']['setting'][-1]
+                    commands = self.config['cmds']['setting'][-1]
 
-                if command:
-                    queue_command_string(command)
+                if commands:
+                    for cmd in commands.split(';'):
+                        execute_server_command(*split(cmd))
 
                 for key in ('cmd', 'sfx'):
-                    command = self.config['cmds'][key]
+                    commands = self.config['cmds'][key]
 
-                    if command:
-                        queue_command_string(command)
+                    if commands:
+                        for cmd in commands.split(';'):
+                            execute_server_command(*split(cmd))
 
     def is_executable(self):
         data = {'reason':None}
@@ -1052,10 +1057,11 @@ class _Item(object):
                 for cvar in cvar_wcs_dices:
                     cvar.set_int(randint(0, 100))
 
-                cmd = self.settings.cmds.get('activatecmd')
+                commands = self.settings.cmds.get('activatecmd')
 
-                if cmd is not None and cmd:
-                    queue_command_string(cmd)
+                if commands is not None and commands:
+                    for cmd in commands.split(';'):
+                        execute_server_command(*split(cmd))
 
     def execute(self, name, event=None, define=False):
         if self.settings.type is ModuleType.SP:
@@ -1086,13 +1092,14 @@ class _Item(object):
 
                     executor.run()
         elif self.settings.type is ModuleType.ESS_OLD:
-            cmd = self.settings.cmds.get(name)
+            commands = self.settings.cmds.get(name)
 
-            if cmd is not None and cmd:
+            if commands is not None and commands:
                 if define:
                     cvar_wcs_userid.set_int(self.wcsplayer.userid)
 
-                queue_command_string(cmd)
+                for cmd in commands.split(';'):
+                    execute_server_command(*split(cmd))
 
     @property
     def count(self):
