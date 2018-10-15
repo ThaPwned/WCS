@@ -569,6 +569,19 @@ def wcs_centertell_command(command_info, player:convert_userid_to_player, *messa
     HudMsg(' '.join(message), y=0.2).send(player.index)
 
 
+@TypedServerCommand('wcs_dealdamage')
+def wcs_dealdamage_command(command_info, wcstarget:convert_userid_to_wcsplayer, attacker:valid_userid, damage:int, weapon:str=None):
+    if wcstarget is None:
+        return
+
+    if attacker is None:
+        attacker = 0
+    else:
+        attacker = index_from_userid(attacker)
+
+    wcstarget.take_damage(damage, attacker=attacker, weapon=weapon)
+
+
 @TypedServerCommand('wcs_getinfo')
 def wcs_getinfo_command(command_info, wcsplayer:convert_userid_to_wcsplayer, var:ConVar, attribute:str, key:str):
     if wcsplayer is None:
