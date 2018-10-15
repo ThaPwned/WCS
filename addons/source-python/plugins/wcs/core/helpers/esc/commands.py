@@ -582,6 +582,19 @@ def wcs_dealdamage_command(command_info, wcstarget:convert_userid_to_wcsplayer, 
     wcstarget.take_damage(damage, attacker=attacker, weapon=weapon)
 
 
+@TypedServerCommand('wcs_getcolors')
+def wcs_getcolors_command(command_info, player:convert_userid_to_player, red:ConVar, green:ConVar, blue:ConVar, alpha:ConVar):
+    if player is None:
+        return
+
+    color = player.color
+
+    red.set_int(color.r)
+    green.set_int(color.g)
+    blue.set_int(color.b)
+    alpha.set_int(color.a)
+
+
 @TypedServerCommand('wcs_getinfo')
 def wcs_getinfo_command(command_info, wcsplayer:convert_userid_to_wcsplayer, var:ConVar, attribute:str, key:str):
     if wcsplayer is None:
