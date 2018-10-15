@@ -420,11 +420,8 @@ def on_github_refreshed(races, items):
 
         wcsadmin_github_items_menu.append(option)
 
-    if races:
-        wcsadmin_github_menu[2].selectable = wcsadmin_github_menu[2].highlight = True
-
-    if items:
-        wcsadmin_github_menu[3].selectable = wcsadmin_github_menu[3].highlight = True
+    wcsadmin_github_menu[2].selectable = wcsadmin_github_menu[2].highlight = bool(races)
+    wcsadmin_github_menu[3].selectable = wcsadmin_github_menu[3].highlight = bool(items)
 
 
 @OnGithubInstalled
