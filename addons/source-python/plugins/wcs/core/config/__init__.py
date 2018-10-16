@@ -32,6 +32,20 @@ __all__ = (
     'cfg_top_stolen_notify',
     'cfg_welcome_gui_text',
     'cfg_welcome_text',
+    'cfg_assist_xp',
+    'cfg_round_survival_xp',
+    'cfg_round_win_xp',
+    'cfg_bomb_plant_xp',
+    'cfg_bomb_defuse_xp',
+    'cfg_bomb_explode_xp',
+    'cfg_hostage_rescue_xp',
+    'cfg_bot_assist_xp',
+    'cfg_bot_round_survival_xp',
+    'cfg_bot_round_win_xp',
+    'cfg_bot_bomb_plant_xp',
+    'cfg_bot_bomb_explode_xp',
+    'cfg_bot_bomb_defuse_xp',
+    'cfg_bot_hostage_rescue_xp'
 )
 
 
@@ -55,3 +69,17 @@ with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as co
     cfg_top_min_rank_announcement = config.cvar('top_min_rank_announcement', '10', config_strings['top_min_rank_announcement'])
     cfg_top_stolen_notify = config.cvar('top_stolen_notify', '1', config_strings['top_stolen_notify'])
     cfg_bot_random_race = config.cvar('bot_random_race', '1', config_strings['bot_random_race'])
+    cfg_assist_xp = config.cvar('assist_xp', '15', config_strings['assist_xp'])
+    cfg_round_survival_xp = config.cvar('round_survival_xp', '10', config_strings['round_survival_xp'])
+    cfg_round_win_xp = config.cvar('round_win_xp', '20', config_strings['round_win_xp'])
+    cfg_bomb_plant_xp = config.cvar('bomb_plant_xp', '10', config_strings['bomb_plant_xp'])
+    cfg_bomb_explode_xp = config.cvar('bomb_explode_xp', '10', config_strings['bomb_explode_xp'])
+    cfg_bomb_defuse_xp = config.cvar('bomb_defuse_xp', '20', config_strings['bomb_defuse_xp'])
+    cfg_hostage_rescue_xp = config.cvar('hostage_rescue_xp', '10', config_strings['hostage_rescue_xp'])
+    cfg_bot_assist_xp = config.cvar('bot_assist_exp', '-1', config_strings['bot_assist_xp'])
+    cfg_bot_round_survival_xp = config.cvar('bot_round_survival_xp', '-1', config_strings['bot_round_survival_xp'])
+    cfg_bot_round_win_xp = config.cvar('bot_round_win_xp', '-1', config_strings['bot_round_win_xp'])
+    cfg_bot_bomb_plant_xp = config.cvar('bot_bomb_plant_xp', '-1', config_strings['bot_bomb_plant_xp'])
+    cfg_bot_bomb_explode_xp = config.cvar('bot_bomb_explode_xp', '-1', config_strings['bot_bomb_explode_xp'])
+    cfg_bot_bomb_defuse_xp = config.cvar('bot_bomb_defuse_xp', '-1', config_strings['bot_bomb_defuse_xp'])
+    cfg_bot_hostage_rescue_xp = config.cvar('bot_hostage_rescue_xp', '-1', config_strings['bot_hostage_rescue_xp'])

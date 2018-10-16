@@ -55,6 +55,20 @@ from .core.config import cfg_top_public_announcement
 from .core.config import cfg_top_min_rank_announcement
 from .core.config import cfg_top_stolen_notify
 from .core.config import cfg_bot_random_race
+from .core.config import cfg_assist_xp
+from .core.config import cfg_round_survival_xp
+from .core.config import cfg_round_win_xp
+from .core.config import cfg_bomb_plant_xp
+from .core.config import cfg_bomb_defuse_xp
+from .core.config import cfg_bomb_explode_xp
+from .core.config import cfg_hostage_rescue_xp
+from .core.config import cfg_bot_assist_xp
+from .core.config import cfg_bot_round_survival_xp
+from .core.config import cfg_bot_round_win_xp
+from .core.config import cfg_bot_bomb_plant_xp
+from .core.config import cfg_bot_bomb_defuse_xp
+from .core.config import cfg_bot_bomb_explode_xp
+from .core.config import cfg_bot_hostage_rescue_xp
 #   Constants
 from .core.constants import IS_ESC_SUPPORT_ENABLED
 from .core.constants import IS_GITHUB_ENABLED
@@ -139,6 +153,13 @@ gain_xp_killed_message = SayText2(chat_strings['gain xp killed'])
 gain_xp_killed_higher_level_message = SayText2(chat_strings['gain xp killed higher level'])
 gain_xp_headshot_message = SayText2(chat_strings['gain xp headshot'])
 gain_xp_knife_message = SayText2(chat_strings['gain xp knife'])
+gain_xp_assist_message = SayText2(chat_strings['gain xp assist'])
+gain_xp_round_survival_message = SayText2(chat_strings['gain xp round survival'])
+gain_xp_round_win_message = SayText2(chat_strings['gain xp round win'])
+gain_xp_bomb_plant_message = SayText2(chat_strings['gain xp bomb plant'])
+gain_xp_bomb_defuse_message = SayText2(chat_strings['gain xp bomb defuse'])
+gain_xp_bomb_explode_message = SayText2(chat_strings['gain xp bomb explode'])
+gain_xp_hostage_rescue_message = SayText2(chat_strings['gain xp hostage rescue'])
 gain_level_message = SayText2(chat_strings['gain level'])
 maximum_level_message = SayText2(chat_strings['maximum level'])
 force_change_team_message = SayText2(chat_strings['force change team'])
@@ -259,6 +280,69 @@ def _query_refresh_ranks(result):
         rank_manager.append(uniqueid)
 
 
+def _give_xp_if_set(userid, config, bot_config, message):
+    wcsplayer = Player.from_userid(userid)
+
+    if not wcsplayer.ready:
+        return
+
+    if wcsplayer._is_bot:
+        value = bot_config.get_int()
+
+        if value == -1:
+            value = config.get_int()
+    else:
+        value = config.get_int()
+
+    if value:
+        if wcsplayer._is_bot:
+            wcsplayer.xp += value
+        else:
+            active_race = wcsplayer.active_race
+
+            old_level = active_race.level
+
+            active_race.xp += value
+
+            delay = Delay(1, _send_message_and_remove, (message, wcsplayer), {'value':value})
+            delay.args += (delay, )
+            _delays[wcsplayer].add(delay)
+
+            if active_race.level > old_level:
+                delay = Delay(1.01, _send_message_and_remove, (gain_level_message, wcsplayer), {'level':active_race.level, 'xp':active_race.xp, 'required':active_race.required_xp})
+                delay.args += (delay, )
+                _delays[wcsplayer].add(delay)
+
+
+def _give_players_xp_if_set(wcsplayers, config, bot_config, message):
+    value = config.get_int()
+    bot_value = bot_config.get_int()
+
+    if bot_value == -1:
+        bot_value = value
+
+    for _, wcsplayer in wcsplayers:
+        if wcsplayer._is_bot:
+            if bot_value:
+                wcsplayer.xp += bot_value
+        else:
+            if value:
+                active_race = wcsplayer.active_race
+
+                old_level = active_race.level
+
+                active_race.xp += value
+
+                delay = Delay(1, _send_message_and_remove, (message, wcsplayer), {'value':value})
+                delay.args += (delay, )
+                _delays[wcsplayer].add(delay)
+
+                if active_race.level > old_level:
+                    delay = Delay(1.01, _send_message_and_remove, (gain_level_message, wcsplayer), {'level':active_race.level, 'xp':active_race.xp, 'required':active_race.required_xp})
+                    delay.args += (delay, )
+                    _delays[wcsplayer].add(delay)
+
+
 # ============================================================================
 # >> EVENTS
 # ============================================================================
@@ -272,6 +356,12 @@ def round_start(event):
 def round_end(event):
     for _, wcsplayer in PlayerReadyIter(not_filters=['un', 'spec']):
         wcsplayer.execute('roundendcmd', event, define=True)
+
+    winner = event['winner']
+
+    if winner in (2, 3):
+        _give_players_xp_if_set(PlayerReadyIter(['alive', 't' if winner == 3 else 'ct']), cfg_round_survival_xp, cfg_bot_round_survival_xp, gain_xp_round_survival_message)
+        _give_players_xp_if_set(PlayerReadyIter('t' if winner == 2 else 'ct'), cfg_round_win_xp, cfg_bot_round_win_xp, gain_xp_round_win_message)
 
 
 @Event('player_team')
@@ -491,6 +581,9 @@ def player_death(event):
                 if usable_races:
                     wcsvictim.current_race = choice(usable_races)
 
+    if not event.is_empty('assister'):
+        _give_xp_if_set(event['assister'], cfg_assist_xp, cfg_bot_assist_xp, gain_xp_assist_message)
+
 
 @Event('player_say')
 def player_say(event):
@@ -499,6 +592,26 @@ def player_say(event):
 
     if wcsplayer.ready:
         wcsplayer.notify(event)
+
+
+@Event('bomb_planted')
+def bomb_planted(event):
+    _give_xp_if_set(event['userid'], cfg_bomb_plant_xp, cfg_bot_bomb_plant_xp, gain_xp_bomb_plant_message)
+
+
+@Event('bomb_defused')
+def bomb_defused(event):
+    _give_xp_if_set(event['userid'], cfg_bomb_defuse_xp, cfg_bot_bomb_defuse_xp, gain_xp_bomb_defuse_message)
+
+
+@Event('bomb_exploded')
+def bomb_exploded(event):
+    _give_xp_if_set(event['userid'], cfg_bomb_explode_xp, cfg_bot_bomb_explode_xp, gain_xp_bomb_explode_message)
+
+
+@Event('hostage_rescued')
+def hostage_rescued(event):
+    _give_xp_if_set(event['userid'], cfg_hostage_rescue_xp, cfg_bot_hostage_rescue_xp, gain_xp_hostage_rescue_message)
 
 
 # ============================================================================
