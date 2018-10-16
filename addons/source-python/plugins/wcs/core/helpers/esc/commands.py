@@ -260,7 +260,7 @@ def wcs_setfx_speed_command(command_info, player:convert_userid_to_player, opera
 
 
 @TypedServerCommand(['wcs_setfx', 'invis'])
-def wcs_setfx_invis_command(command_info, player:convert_userid_to_player, operator:valid_operators(), value:float, time:float=0):
+def wcs_setfx_invis_command(command_info, player:convert_userid_to_player, operator:valid_operators(), value:int, time:float=0):
     if player is None:
         return
 
