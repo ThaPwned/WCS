@@ -33,6 +33,8 @@ from listeners import OnServerOutput
 from listeners.tick import Delay
 from listeners.tick import Repeat
 from listeners.tick import RepeatStatus
+#   Mathlib
+from mathlib import Vector
 #   Menus
 from menus import Text
 #   Players
@@ -620,6 +622,25 @@ def bomb_exploded(event):
 @Event('hostage_rescued')
 def hostage_rescued(event):
     _give_xp_if_set(event['userid'], cfg_hostage_rescue_xp, cfg_bot_hostage_rescue_xp, gain_xp_hostage_rescue_message)
+
+
+@Event('player_jump')
+def player_jump(event):
+    userid = event['userid']
+    wcsplayer = Player.from_userid(userid)
+
+    if wcsplayer.ready:
+        value = wcsplayer.data.get('longjump')
+
+        if value is not None and value > 1:
+            player = wcsplayer.player
+
+            velocity = Vector(*player.get_property_vector('m_vecVelocity'))
+
+            velocity[0] *= value
+            velocity[1] *= value
+
+            player.set_property_vector('m_vecBaseVelocity', velocity)
 
 
 # ============================================================================
