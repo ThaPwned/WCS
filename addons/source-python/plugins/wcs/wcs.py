@@ -37,6 +37,7 @@ from listeners.tick import RepeatStatus
 from menus import Text
 #   Players
 from players.helpers import index_from_uniqueid
+from players.helpers import index_from_userid
 #   Weapons
 from weapons.entity import Weapon
 
@@ -582,7 +583,14 @@ def player_death(event):
                     wcsvictim.current_race = choice(usable_races)
 
     if not event.is_empty('assister'):
-        _give_xp_if_set(event['assister'], cfg_assist_xp, cfg_bot_assist_xp, gain_xp_assist_message)
+        assister = event['assister']
+
+        try:
+            index_from_userid(assister)
+        except ValueError:
+            pass
+        else:
+            _give_xp_if_set(assister, cfg_assist_xp, cfg_bot_assist_xp, gain_xp_assist_message)
 
 
 @Event('player_say')
