@@ -12,6 +12,7 @@ from json import load
 #   Menus
 from menus import PagedMenu
 from menus import PagedOption
+from menus import SimpleMenu
 from menus.radio import BUTTON_BACK
 from menus.radio import MAX_ITEM_COUNT
 #   Players
@@ -54,8 +55,11 @@ from . import wcsadmin_management_races_editor_menu
 from . import wcsadmin_management_items_editor_menu
 from . import wcsadmin_github_menu
 from . import wcsadmin_github_races_menu
+from . import wcsadmin_github_races_options_menu
+from . import wcsadmin_github_races_repository_menu
 from . import wcsadmin_github_items_menu
-from . import wcsadmin_github_options_menu
+from . import wcsadmin_github_items_options_menu
+from . import wcsadmin_github_items_repository_menu
 #   Modules
 from ..modules.items.manager import item_manager
 from ..modules.races.manager import race_manager
@@ -449,9 +453,50 @@ def wcsadmin_github_races_menu_select(menu, client, option):
     wcsplayer = Player.from_index(client)
 
     wcsplayer.data['_internal_wcsadmin_github_name'] = option.value
-    wcsplayer.data['_internal_wcsadmin_github_module'] = 1
 
-    return wcsadmin_github_options_menu
+    return wcsadmin_github_races_options_menu
+
+
+@wcsadmin_github_races_options_menu.register_select_callback
+def wcsadmin_github_races_options_menu_select(menu, client, option):
+    wcsplayer = Player.from_index(client)
+
+    if isinstance(option.value, GithubStatus):
+        wcsplayer.data['_internal_wcsadmin_github_cycle'] = 0
+
+        name = wcsplayer.data['_internal_wcsadmin_github_name']
+
+        if option.value is GithubStatus.INSTALLING:
+            if len(github_manager['races'][name]['repositories']) > 1:
+                return wcsadmin_github_races_repository_menu
+            else:
+                github_installing_message.send(client, name=name)
+
+                github_manager.install(list(github_manager['races'][name]['repositories'])[0], 'races', name, userid_from_index(client))
+        elif option.value is GithubStatus.UPDATING:
+            github_updating_message.send(client, name=name)
+
+            github_manager.update('races', name, userid_from_index(client))
+        else:
+            github_uninstalling_message.send(client, name=name)
+
+            github_manager.uninstall('races', name, userid_from_index(client))
+    elif isinstance(option.value, SimpleMenu):
+        return option.value
+
+    return menu
+
+
+@wcsadmin_github_races_repository_menu.register_select_callback
+def wcsadmin_github_races_repository_menu_select(menu, client, option):
+    wcsplayer = Player.from_index(client)
+    name = wcsplayer.data['_internal_wcsadmin_github_name']
+
+    github_installing_message.send(client, name=name)
+
+    github_manager.install(option.value, 'races', name, userid_from_index(client))
+
+    return wcsadmin_github_races_repository_menu.parent_menu
 
 
 @wcsadmin_github_items_menu.register_select_callback
@@ -459,37 +504,35 @@ def wcsadmin_github_items_menu_select(menu, client, option):
     wcsplayer = Player.from_index(client)
 
     wcsplayer.data['_internal_wcsadmin_github_name'] = option.value
-    wcsplayer.data['_internal_wcsadmin_github_module'] = 0
 
-    return wcsadmin_github_options_menu
+    return wcsadmin_github_items_options_menu
 
 
-@wcsadmin_github_options_menu.register_select_callback
-def wcsadmin_github_options_menu_select(menu, client, option):
+@wcsadmin_github_items_options_menu.register_select_callback
+def wcsadmin_github_items_options_menu_select(menu, client, option):
     wcsplayer = Player.from_index(client)
 
-    if option.choice_index == BUTTON_BACK:
-        if wcsplayer.data['_internal_wcsadmin_github_module']:
-            return wcsadmin_github_races_menu
-        else:
-            return wcsadmin_github_items_menu
-    elif isinstance(option.value, GithubStatus):
+    if isinstance(option.value, GithubStatus):
         wcsplayer.data['_internal_wcsadmin_github_cycle'] = 0
 
-        module = 'races' if wcsplayer.data['_internal_wcsadmin_github_module'] else 'items'
         name = wcsplayer.data['_internal_wcsadmin_github_name']
 
         if option.value is GithubStatus.INSTALLING:
-            github_installing_message.send(client, name=name)
+            if len(github_manager['items'][name]['repositories']) > 1:
+                return wcsadmin_github_items_repository_menu
+            else:
+                github_installing_message.send(client, name=name)
 
-            github_manager.install(module, name, userid_from_index(client))
+                github_manager.install(list(github_manager['items'][name]['repositories'])[0], 'items', name, userid_from_index(client))
         elif option.value is GithubStatus.UPDATING:
             github_updating_message.send(client, name=name)
 
-            github_manager.update(module, name, userid_from_index(client))
+            github_manager.update('items', name, userid_from_index(client))
         else:
             github_uninstalling_message.send(client, name=name)
 
-            github_manager.uninstall(module, name, userid_from_index(client))
+            github_manager.uninstall('items', name, userid_from_index(client))
+    elif isinstance(option.value, SimpleMenu):
+        return option.value
 
     return menu

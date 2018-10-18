@@ -57,8 +57,11 @@ from . import wcsadmin_management_races_editor_menu
 from . import wcsadmin_management_items_editor_menu
 from . import wcsadmin_github_menu
 from . import wcsadmin_github_races_menu
+from . import wcsadmin_github_races_options_menu
+from . import wcsadmin_github_races_repository_menu
 from . import wcsadmin_github_items_menu
-from . import wcsadmin_github_options_menu
+from . import wcsadmin_github_items_options_menu
+from . import wcsadmin_github_items_repository_menu
 #   Translations
 from ..translations import menu_strings
 
@@ -89,7 +92,9 @@ wcsadmin_management_items_menu.title = menu_strings['wcsadmin_management_items_m
 wcsadmin_management_races_add_menu.title = menu_strings['wcsadmin_management_races_add_menu title']
 wcsadmin_management_items_add_menu.title = menu_strings['wcsadmin_management_items_add_menu title']
 wcsadmin_github_races_menu.title = menu_strings['wcsadmin_github_races_menu title']
+wcsadmin_github_races_repository_menu.title = menu_strings['wcsadmin_github_races_repository_menu title']
 wcsadmin_github_items_menu.title = menu_strings['wcsadmin_github_items_menu title']
+wcsadmin_github_items_repository_menu.title = menu_strings['wcsadmin_github_items_repository_menu title']
 
 
 # ============================================================================
@@ -365,7 +370,7 @@ wcsadmin_github_menu.extend(
     ]
 )
 
-wcsadmin_github_options_menu.extend(
+wcsadmin_github_races_options_menu.extend(
     [
         Text(menu_strings['wcsadmin_github_options_menu title']),
         Text(' '),
@@ -375,7 +380,23 @@ wcsadmin_github_options_menu.extend(
         Text(menu_strings['wcsadmin_github_options_menu status 4']),
         Text(menu_strings['wcsadmin_github_options_menu last updated']),
         Text(menu_strings['wcsadmin_github_options_menu last modified']),
-        SimpleOption(BUTTON_BACK, menu_strings['back']),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_github_races_menu),
+        Text(' '),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
+    ]
+)
+
+wcsadmin_github_items_options_menu.extend(
+    [
+        Text(menu_strings['wcsadmin_github_options_menu title']),
+        Text(' '),
+        SimpleOption(1, menu_strings['wcsadmin_github_options_menu install'], GithubStatus.INSTALLING),
+        SimpleOption(2, menu_strings['wcsadmin_github_options_menu update'], GithubStatus.UPDATING),
+        SimpleOption(3, menu_strings['wcsadmin_github_options_menu uninstall'], GithubStatus.UNINSTALLING),
+        Text(menu_strings['wcsadmin_github_options_menu status 4']),
+        Text(menu_strings['wcsadmin_github_options_menu last updated']),
+        Text(menu_strings['wcsadmin_github_options_menu last modified']),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_github_items_menu),
         Text(' '),
         SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
@@ -400,22 +421,24 @@ def on_github_refresh():
 def on_github_refreshed(races, items):
     for name, data in races.items():
         option = PagedOption(name, name)
+        repository = data['repository']
 
-        if data['last_updated'] is None:
+        if repository is None or data['last_updated'] is None:
             option.text = f'+{option.text}'
         else:
-            if data['last_updated'] < data['last_modified']:
+            if data['last_updated'] < data['repositories'][repository]['last_modified']:
                 option.text = f'*{option.text}'
 
         wcsadmin_github_races_menu.append(option)
 
     for name, data in items.items():
         option = PagedOption(name, name)
+        repository = data['repository']
 
-        if data['last_updated'] is None:
+        if repository is None or data['last_updated'] is None:
             option.text = f'+{option.text}'
         else:
-            if data['last_updated'] < data['last_modified']:
+            if data['last_updated'] < data['repositories'][repository]['last_modified']:
                 option.text = f'*{option.text}'
 
         wcsadmin_github_items_menu.append(option)
@@ -425,17 +448,17 @@ def on_github_refreshed(races, items):
 
 
 @OnGithubInstalled
-def on_github_installed(module, name, userid):
+def on_github_installed(repository, module, name, userid):
     _update_menu(module, name, time())
 
 
 @OnGithubUpdated
-def on_github_updated(module, name, userid):
+def on_github_updated(repository, module, name, userid):
     _update_menu(module, name, time())
 
 
 @OnGithubUninstalled
-def on_github_uninstalled(module, name, userid):
+def on_github_uninstalled(repository, module, name, userid):
     _update_menu(module, name, None)
 
 

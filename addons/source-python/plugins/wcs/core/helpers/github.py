@@ -39,7 +39,8 @@ from ..listeners import OnGithubInstalled
 from ..listeners import OnGithubUpdated
 from ..listeners import OnGithubUninstalled
 #   Menus
-from ..menus import wcsadmin_github_options_menu
+from ..menus import wcsadmin_github_races_options_menu
+from ..menus import wcsadmin_github_items_options_menu
 #   Translations
 from ..translations import chat_strings
 
@@ -102,80 +103,88 @@ class _GithubManager(dict):
     def _refresh(self):
         try:
             _github = Github(GITHUB_ACCESS_TOKEN)
-            _repo = _github.get_repo(GITHUB_REPOSITORIES[0])
-            modules = _repo.get_contents('')
 
-            modules_left = {}
+            for repository in GITHUB_REPOSITORIES:
+                _repo = _github.get_repo(repository)
+                modules = _repo.get_contents('')
 
-            for module in [x.name for x in modules if x.name in self]:
-                contents = _repo.get_contents(module)
-                path = MODULE_PATH / module
-                modules_left[module] = []
+                modules_left = {}
 
-                for content in contents:
-                    modules_left[module].append(content.name)
+                for module in [x.name for x in modules if x.name in self]:
+                    contents = _repo.get_contents(module)
+                    path = MODULE_PATH / module
+                    modules_left[module] = []
 
-                    wcs_install_path = path / content.name / '.wcs_install'
+                    for content in contents:
+                        modules_left[module].append(content.name)
 
-                    if wcs_install_path.isfile():
-                        status = GithubStatus.INSTALLED
+                        if module not in self or content.name not in self[module]:
+                            wcs_install_path = path / content.name / '.wcs_install'
 
-                        last_updated = wcs_install_path.mtime
-                    else:
-                        status = GithubStatus.UNINSTALLED
+                            if wcs_install_path.isfile():
+                                status = GithubStatus.INSTALLED
 
-                        last_updated = None
+                                last_updated = wcs_install_path.mtime
 
-                    self[module][content.name] = {'status':status, 'last_updated':last_updated}
+                                with open(wcs_install_path) as inputfile:
+                                    repository_installed = inputfile.read()
+                            else:
+                                status = GithubStatus.UNINSTALLED
 
-            commits = _repo.get_commits()
+                                last_updated = None
+                                repository_installed = None
 
-            for commit in commits:
-                last_modified = commit.commit.committer.date.timestamp()
+                            self[module][content.name] = {'status':status, 'last_updated':last_updated, 'repository':repository_installed, 'repositories':{repository:{}}}
 
-                for file_ in commit.files:
-                    tmp = file_.filename.split('/')
-                    module = tmp[0]
+                commits = _repo.get_commits()
 
-                    if module in modules_left:
-                        name = tmp[1]
+                for commit in commits:
+                    last_modified = commit.commit.committer.date.timestamp()
 
-                        if name in modules_left[module]:
-                            self[module][name]['last_modified'] = last_modified
-                            modules_left[module].remove(name)
+                    for file_ in commit.files:
+                        tmp = file_.filename.split('/')
+                        module = tmp[0]
 
-                            if not modules_left[module]:
-                                del modules_left[module]
+                        if module in modules_left:
+                            name = tmp[1]
 
-                if not modules_left:
-                    break
+                            if name in modules_left[module]:
+                                self[module][name]['repositories'][repository]['last_modified'] = last_modified
+                                modules_left[module].remove(name)
+
+                                if not modules_left[module]:
+                                    del modules_left[module]
+
+                    if not modules_left:
+                        break
 
             _output.put((OnGithubRefreshed.manager.notify, self['races'], self['items']))
         except:
             _output.put(None)
             raise
 
-    def _install(self, module, name, userid):
+    def _install(self, repository, module, name, userid):
         try:
             _github = Github(GITHUB_ACCESS_TOKEN)
-            _repo = _github.get_repo(GITHUB_REPOSITORIES[0])
+            _repo = _github.get_repo(repository)
 
             self._download(_repo, f'{module}/{name}')
 
             with open(MODULE_PATH / module / name / '.wcs_install', 'w') as outputfile:
-                outputfile.write('')
+                outputfile.write(repository)
 
             self[module][name]['status'] = GithubStatus.INSTALLED
+            self[module][name]['repository'] = repository
 
-            _output.put((OnGithubInstalled.manager.notify, module, name, userid))
+            _output.put((OnGithubInstalled.manager.notify, repository, module, name, userid))
         except:
-            _output.put((OnGithubFailed.manager.notify, module, name, userid, GithubStatus.INSTALLING))
+            _output.put((OnGithubFailed.manager.notify, repository, module, name, userid, GithubStatus.INSTALLING))
             raise
 
-    def _update(self, module, name, userid):
+    def _update(self, repository, module, name, userid):
         try:
             _github = Github(GITHUB_ACCESS_TOKEN)
-            _repo = _github.get_repo(GITHUB_REPOSITORIES[0])
+            _repo = _github.get_repo(repository)
 
             path = MODULE_PATH / module / name
             config_path = path / 'config.json'
@@ -244,12 +253,12 @@ class _GithubManager(dict):
 
             self[module][name]['status'] = GithubStatus.INSTALLED
 
-            _output.put((OnGithubUpdated.manager.notify, module, name, userid))
+            _output.put((OnGithubUpdated.manager.notify, repository, module, name, userid))
         except:
-            _output.put((OnGithubFailed.manager.notify, module, name, userid, GithubStatus.UPDATING))
+            _output.put((OnGithubFailed.manager.notify, repository, module, name, userid, GithubStatus.UPDATING))
             raise
 
-    def _uninstall(self, module, name, userid):
+    def _uninstall(self, repository, module, name, userid):
         try:
             if (MODULE_PATH_ES / module / name).isdir():
                 (MODULE_PATH_ES / module / name).rmtree()
@@ -257,10 +266,11 @@ class _GithubManager(dict):
             (MODULE_PATH / module / name).rmtree()
 
             self[module][name]['status'] = GithubStatus.UNINSTALLED
+            self[module][name]['repository'] = None
 
-            _output.put((OnGithubUninstalled.manager.notify, module, name, userid))
+            _output.put((OnGithubUninstalled.manager.notify, repository, module, name, userid))
         except:
-            _output.put((OnGithubFailed.manager.notify, module, name, userid, GithubStatus.UNINSTALLING))
+            _output.put((OnGithubFailed.manager.notify, repository, module, name, userid, GithubStatus.UNINSTALLING))
             raise
 
     def _download(self, repository, from_path):
@@ -310,7 +320,7 @@ class _GithubManager(dict):
 
         self._repeat.stop()
 
-    def install(self, module, name, userid=None):
+    def install(self, repository, module, name, userid=None):
         assert self[module][name]['status'] is GithubStatus.UNINSTALLED
 
         if not self._counter:
@@ -320,7 +330,7 @@ class _GithubManager(dict):
 
         self[module][name]['status'] = GithubStatus.INSTALLING
 
-        thread = Thread(target=self._install, args=(module, name, userid))
+        thread = Thread(target=self._install, args=(repository, module, name, userid))
         thread.start()
 
         self._threads.append(thread)
@@ -335,7 +345,7 @@ class _GithubManager(dict):
 
         self[module][name]['status'] = GithubStatus.UPDATING
 
-        thread = Thread(target=self._update, args=(module, name, userid))
+        thread = Thread(target=self._update, args=(self[module][name]['repository'], module, name, userid))
         thread.start()
 
         self._threads.append(thread)
@@ -350,7 +360,7 @@ class _GithubManager(dict):
 
         self[module][name]['status'] = GithubStatus.UNINSTALLING
 
-        thread = Thread(target=self._uninstall, args=(module, name, userid))
+        thread = Thread(target=self._uninstall, args=(self[module][name]['repository'], module, name, userid))
         thread.start()
 
         self._threads.append(thread)
@@ -361,17 +371,17 @@ github_manager = _GithubManager()
 # >> LISTENERS
 # ============================================================================
 @OnGithubFailed
-def on_github_failed(module, name, userid, task):
+def on_github_failed(repository, module, name, userid, task):
     if task is GithubStatus.INSTALLING:
-        _send_message(github_installing_failed_message, userid, name=name)
+        _send_message(module, github_installing_failed_message, userid, name=name)
 
         github_manager[module][name]['status'] = GithubStatus.UNINSTALLED
     elif task is GithubStatus.UPDATING:
-        _send_message(github_updating_failed_message, userid, name=name)
+        _send_message(module, github_updating_failed_message, userid, name=name)
 
         github_manager[module][name]['status'] = GithubStatus.INSTALLED
     elif task is GithubStatus.UNINSTALLING:
-        _send_message(github_uninstalling_failed_message, userid, name=name)
+        _send_message(module, github_uninstalling_failed_message, userid, name=name)
 
         github_manager[module][name]['status'] = GithubStatus.INSTALLED
 
@@ -386,22 +396,22 @@ def on_github_refreshed(races, items):
 
 
 @OnGithubInstalled
-def on_github_installed(module, name, userid):
-    _send_message(github_installing_success_message, userid, name=name)
+def on_github_installed(repository, module, name, userid):
+    _send_message(module, github_installing_success_message, userid, name=name)
 
     _remove_dead_threads()
 
 
 @OnGithubUpdated
-def on_github_updated(module, name, userid):
-    _send_message(github_updating_success_message, userid, name=name)
+def on_github_updated(repository, module, name, userid):
+    _send_message(module, github_updating_success_message, userid, name=name)
 
     _remove_dead_threads()
 
 
 @OnGithubUninstalled
-def on_github_uninstalled(module, name, userid):
-    _send_message(github_uninstalling_success_message, userid, name=name)
+def on_github_uninstalled(repository, module, name, userid):
+    _send_message(module, github_uninstalling_success_message, userid, name=name)
 
     _remove_dead_threads()
 
@@ -409,7 +419,7 @@ def on_github_uninstalled(module, name, userid):
 # ============================================================================
 # >> HELPER FUNCTIONS
 # ============================================================================
-def _send_message(message, userid, **kwargs):
+def _send_message(module, message, userid, **kwargs):
     if userid is not None:
         try:
             index = index_from_userid(userid)
@@ -418,9 +428,14 @@ def _send_message(message, userid, **kwargs):
         else:
             message.send(index, **kwargs)
 
-    for index in wcsadmin_github_options_menu._player_pages:
-        if wcsadmin_github_options_menu.is_active_menu(index):
-            wcsadmin_github_options_menu._refresh(index)
+    if module == 'races':
+        for index in wcsadmin_github_races_options_menu._player_pages:
+            if wcsadmin_github_races_options_menu.is_active_menu(index):
+                wcsadmin_github_races_options_menu._refresh(index)
+    else:
+        for index in wcsadmin_github_items_options_menu._player_pages:
+            if wcsadmin_github_items_options_menu.is_active_menu(index):
+                wcsadmin_github_items_options_menu._refresh(index)
 
 
 def _remove_dead_threads():

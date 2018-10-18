@@ -67,7 +67,10 @@ from . import wcsadmin_management_races_add_menu
 from . import wcsadmin_management_items_add_menu
 from . import wcsadmin_management_races_editor_menu
 from . import wcsadmin_management_items_editor_menu
-from . import wcsadmin_github_options_menu
+from . import wcsadmin_github_races_options_menu
+from . import wcsadmin_github_races_repository_menu
+from . import wcsadmin_github_items_options_menu
+from . import wcsadmin_github_items_repository_menu
 #   Modules
 from ..modules.items.manager import item_manager
 from ..modules.races.manager import race_manager
@@ -624,15 +627,14 @@ def wcsadmin_management_items_editor_menu_build(menu, client):
     menu[2].text = menu_strings[f'wcsadmin_management_items_editor_menu toggle {int(name.startswith("_"))}']
 
 
-@wcsadmin_github_options_menu.register_build_callback
-def wcsadmin_github_options_menu_build(menu, client):
+@wcsadmin_github_races_options_menu.register_build_callback
+def wcsadmin_github_races_options_menu_build(menu, client):
     wcsplayer = Player.from_index(client)
 
     name = wcsplayer.data['_internal_wcsadmin_github_name']
-    module = 'races' if wcsplayer.data['_internal_wcsadmin_github_module'] else 'items'
 
-    option = github_manager[module][name]
-    status = option['status']
+    git_option = github_manager['races'][name]
+    status = git_option['status']
 
     menu[0].text.tokens['name'] = name
 
@@ -651,10 +653,101 @@ def wcsadmin_github_options_menu_build(menu, client):
 
         wcsplayer.data['_internal_wcsadmin_github_cycle'] = cycle
 
-    if option['last_updated'] is None:
+    if git_option['last_updated'] is None:
         menu[6].text = menu_strings['wcsadmin_github_options_menu last updated never']
+        menu[7].text.tokens['time'] = 0
     else:
         menu[6].text = menu_strings['wcsadmin_github_options_menu last updated']
-        menu[6].text.tokens['time'] = strftime(TIME_FORMAT, localtime(option['last_updated']))
+        menu[6].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['last_updated']))
 
-    menu[7].text.tokens['time'] = strftime(TIME_FORMAT, localtime(option['last_modified']))
+    if len(git_option['repositories']) == 1:
+        menu[7].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['repositories'][list(git_option['repositories'])[0]]['last_modified']))
+    else:
+        if git_option['repository'] is None:
+            menu[7].text.tokens['time'] = 0
+        else:
+            menu[7].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['repositories'][git_option['repository']]['last_modified']))
+
+
+@wcsadmin_github_races_repository_menu.register_build_callback
+def wcsadmin_github_races_repository_menu_build(menu, client):
+    menu.clear()
+
+    wcsplayer = Player.from_index(client)
+
+    name = wcsplayer.data['_internal_wcsadmin_github_name']
+
+    menu.title.tokens['name'] = name
+
+    git_option = github_manager['races'][name]
+
+    for repository in git_option['repositories']:
+        option = PagedOption(menu_strings['wcsadmin_github_races_repository_menu line'], repository)
+
+        option.text.tokens['name'] = repository
+        option.text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['repositories'][repository]['last_modified']))
+
+        menu.append(option)
+
+
+@wcsadmin_github_items_options_menu.register_build_callback
+def wcsadmin_github_items_options_menu_build(menu, client):
+    wcsplayer = Player.from_index(client)
+
+    name = wcsplayer.data['_internal_wcsadmin_github_name']
+
+    git_option = github_manager['items'][name]
+    status = git_option['status']
+
+    menu[0].text.tokens['name'] = name
+
+    menu[2].selectable = menu[2].highlight = status is GithubStatus.UNINSTALLED
+    menu[3].selectable = menu[3].highlight = status is GithubStatus.INSTALLED
+    menu[4].selectable = menu[4].highlight = status is GithubStatus.INSTALLED
+
+    menu[5].text = menu_strings[f'wcsadmin_github_options_menu status {status.value}']
+
+    if status is not GithubStatus.UNINSTALLED and not GithubStatus.INSTALLED:
+        cycle = wcsplayer.data.get('_internal_wcsadmin_github_cycle', 0)
+
+        menu[5].text.tokens['cycle'] = '.' * (cycle % 3 + 1)
+
+        cycle += 1
+
+        wcsplayer.data['_internal_wcsadmin_github_cycle'] = cycle
+
+    if git_option['last_updated'] is None:
+        menu[6].text = menu_strings['wcsadmin_github_options_menu last updated never']
+        menu[7].text.tokens['time'] = 0
+    else:
+        menu[6].text = menu_strings['wcsadmin_github_options_menu last updated']
+        menu[6].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['last_updated']))
+
+    if len(git_option['repositories']) == 1:
+        menu[7].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['repositories'][list(git_option['repositories'])[0]]['last_modified']))
+    else:
+        if git_option['repository'] is None:
+            menu[7].text.tokens['time'] = 0
+        else:
+            menu[7].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['repositories'][git_option['repository']]['last_modified']))
+
+
+@wcsadmin_github_items_repository_menu.register_build_callback
+def wcsadmin_github_items_repository_menu_build(menu, client):
+    menu.clear()
+
+    wcsplayer = Player.from_index(client)
+
+    name = wcsplayer.data['_internal_wcsadmin_github_name']
+
+    menu.title.tokens['name'] = name
+
+    git_option = github_manager['items'][name]
+
+    for repository in git_option['repositories']:
+        option = PagedOption(menu_strings['wcsadmin_github_items_repository_menu line'], repository)
+
+        option.text.tokens['name'] = repository
+        option.text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['repositories'][repository]['last_modified']))
+
+        menu.append(option)
