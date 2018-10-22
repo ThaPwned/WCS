@@ -109,7 +109,7 @@ def effect102(model, start_entity_index, start_point, end_entity_index, end_poin
 
 
 @register('BeamEnts')
-def effect103(model, start_entity_index, end_entity_index, frame_rate, start_width, end_with, fade_length, amplitude, red, green, blue, alpha, speed):
+def effect103(model, start_entity_index, end_entity_index, frame_rate, start_width, end_width, fade_length, amplitude, red, green, blue, alpha, speed):
     """
     est_effect_03 <player filter> <delay> <model> <start entity> <end entity> <framerate> <life> <start width> <end width> <fade distance> <amplitude> <red> <green> <blue> <alpha> <speed>
     """
@@ -123,7 +123,7 @@ def effect103(model, start_entity_index, end_entity_index, frame_rate, start_wid
     te.end_entity_index = end_entity_index
     te.frame_rate = frame_rate
     te.start_width = start_width
-    te.end_with = end_with
+    te.end_width = end_width
     te.fade_length = fade_length
     te.amplitude = amplitude
     te.red = red
