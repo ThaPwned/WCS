@@ -21,7 +21,7 @@ from engines.server import execute_server_command
 #   Entities
 from entities.constants import MoveType
 #   Filters
-from filters.players import PlayerIter
+from filters.weapons import WeaponClassIter
 #   Listeners
 from listeners.tick import Delay
 #   Mathlib
@@ -34,6 +34,8 @@ from players.entity import Player
 from players.helpers import index_from_userid
 #   Translations
 from translations.strings import LangStrings
+#   Weapons
+from weapons.restrictions import WeaponRestrictionHandler
 
 # WCS Imports
 #   Constants
@@ -70,6 +72,9 @@ if (TRANSLATION_PATH / 'strings.ini').isfile():
             _strings[key][language] = message.replace('#default', COLOR_DEFAULT).replace('#green', COLOR_GREEN).replace('#lightgreen', COLOR_LIGHTGREEN).replace('#darkgreen', COLOR_DARKGREEN)
 else:
     _strings = None
+
+_restrictions = WeaponRestrictionHandler()
+_all_weapons = set([x.basename for x in WeaponClassIter('all', ['melee', 'objective'])])
 
 
 # ============================================================================
@@ -546,3 +551,30 @@ def wcs_getinfo_command(command_info, wcsplayer:convert_userid_to_wcsplayer, var
             var.set_string(wcsplayer.active_race.name)
         elif attribute == 'currace':
             var.set_string(wcsplayer.active_race.settings.strings['name'])
+
+
+@TypedServerCommand('wcs_restrict')
+def wcs_restrict_command(command_info, player:convert_userid_to_player, weapons:split_str(), reverse:int=0):
+    if player is None:
+        return
+
+    if weapons == 'all':
+        _restrictions.add_player_restrictions(player, *_all_weapons)
+        return
+
+    if 'only' in weapons:
+        weapons.remove('only')
+
+        weapons = _all_weapons.difference(weapons)
+
+        _restrictions.player_restrictions[player.userid].clear()
+
+    _restrictions.add_player_restrictions(player, *weapons)
+
+
+@TypedServerCommand('wcs_unrestrict')
+def wcs_unrestrict_command(command_info, player:convert_userid_to_player, weapons:split_str()):
+    if player is None:
+        return
+
+    _restrictions.remove_player_restrictions(player, *weapons)
