@@ -42,6 +42,16 @@ from ...constants import COLOR_DEFAULT
 from ...constants import COLOR_GREEN
 from ...constants import COLOR_LIGHTGREEN
 from ...constants.paths import TRANSLATION_PATH
+#   Helpers
+from .converts import valid_userid
+from .converts import valid_userid_and_team
+from .converts import convert_userid_to_player
+from .converts import convert_userid_to_wcsplayer
+from .converts import convert_identifier_to_players
+from .converts import convert_userid_identifier_to_players
+from .converts import real_value
+from .converts import valid_operators
+from .converts import split_str
 #   Players
 from ...players import team_data
 from ...players.entity import Player as WCSPlayer
@@ -65,87 +75,6 @@ else:
 # ============================================================================
 # >> HELPER FUNCTIONS
 # ============================================================================
-def valid_userid(userid):
-    try:
-        userid = int(userid)
-        index_from_userid(userid)
-    except ValueError:
-        return None
-
-    return userid
-
-
-def valid_userid_and_team(userid):
-    new_userid = valid_userid(userid)
-
-    if new_userid is None:
-        if userid in ('T', 'CT'):
-            return userid
-
-        return None
-
-    return new_userid
-
-
-def convert_userid_to_player(userid):
-    userid = valid_userid(userid)
-
-    if userid is None:
-        return None
-
-    player = Player.from_userid(userid)
-
-    if player.dead:
-        return None
-
-    return player
-
-
-def convert_userid_to_wcsplayer(userid):
-    userid = valid_userid(userid)
-
-    if userid is None:
-        return None
-
-    return WCSPlayer.from_userid(userid)
-
-
-def convert_identifier_to_players(filter_):
-    filter_ = filter_.split(',')
-    is_filters = [x.replace('#', '') for x in filter_ if x.startswith('#')]
-    not_filters = [x.replace('!', '') for x in filter_ if x.startswith('!')]
-
-    for player in PlayerIter(is_filters=is_filters, not_filters=not_filters):
-        yield player
-
-
-def convert_userid_identifier_to_players(filter_):
-    if filter_.isdigit():
-        try:
-            yield Player.from_userid(int(filter_))
-        except ValueError:
-            yield StopIteration()
-    else:
-        return convert_identifier_to_players(filter_)
-
-
-def real_value(value):
-    try:
-        return int(value)
-    except ValueError:
-        try:
-            return float(value)
-        except ValueError:
-            return value
-
-
-def valid_operators(operators=('=', '+', '-')):
-    def validate_operator(value):
-        return value if value in operators else '='
-
-    return validate_operator
-
-
 def validate_userid_after_delay(callback, userid, *args, validator=convert_userid_to_player):
     callback(None, validator(userid), *args)
 
