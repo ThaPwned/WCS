@@ -12,8 +12,6 @@ from string import Template
 # Source.Python Imports
 #   Colors
 from colors import Color
-#   Commands
-from commands.typed import TypedServerCommand
 #   CVars
 from cvars import ConVar
 #   Engines
@@ -54,6 +52,7 @@ from .converts import convert_userid_identifier_to_players
 from .converts import real_value
 from .converts import valid_operators
 from .converts import split_str
+from .effects import TypedServerCommand
 #   Players
 from ...players import team_data
 from ...players.entity import Player as WCSPlayer
