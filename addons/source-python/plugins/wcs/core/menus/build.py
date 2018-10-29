@@ -61,6 +61,10 @@ from . import playerinfo_detail_stats_menu
 from . import wcstop_menu
 from . import wcstop_detail_menu
 from . import wcsadmin_menu
+from . import wcsadmin_players_menu
+from . import wcsadmin_players_sub_menu
+from . import wcsadmin_players_sub_xp_menu
+from . import wcsadmin_players_sub_levels_menu
 from . import wcsadmin_management_races_menu
 from . import wcsadmin_management_items_menu
 from . import wcsadmin_management_races_add_menu
@@ -537,8 +541,77 @@ def wcstop_detail_menu_build(menu, client):
 def wcsadmin_menu_build(menu, client):
     wcsplayer = Player.from_index(client)
 
-    menu[2].selectable = menu[2].highlight = wcsplayer.privileges.get('wcsadmin_managementaccess', False)
-    menu[3].selectable = menu[3].highlight = IS_GITHUB_ENABLED and wcsplayer.privileges.get('wcsadmin_githubaccess', False) and (github_manager['races'] or github_manager['items'])
+    menu[2].selectable = menu[2].highlight = wcsplayer.privileges.get('wcsadmin_playersmanagement', False)
+    menu[3].selectable = menu[3].highlight = wcsplayer.privileges.get('wcsadmin_managementaccess', False)
+    menu[4].selectable = menu[4].highlight = IS_GITHUB_ENABLED and wcsplayer.privileges.get('wcsadmin_githubaccess', False) and (github_manager['races'] or github_manager['items'])
+
+
+@wcsadmin_players_menu.register_build_callback
+def wcsadmin_players_menu_build(menu, client):
+    stop = False
+
+    for i, option in enumerate(menu):
+        if isinstance(option, Text):
+            if stop:
+                del menu[2:i]
+                break
+
+            stop = True
+
+    for i, (_, wcsplayer) in enumerate(PlayerReadyIter(), 2):
+        menu.insert(i, PagedOption(wcsplayer.name, wcsplayer.uniqueid))
+
+
+@wcsadmin_players_sub_menu.register_build_callback
+def wcsadmin_players_sub_menu_build(menu, client):
+    wcsplayer = Player.from_index(client)
+    uniqueid = wcsplayer.data['_internal_wcsadmin_player']
+
+    if uniqueid is None:
+        menu[0].text.tokens['name'] = menu_strings['wcsadmin_players_menu all']
+        menu[2].selectable = menu[2].highlight = True
+        menu[3].selectable = menu[3].highlight = True
+
+        menu[4] = Text(' ')
+    else:
+        wcstarget = Player(uniqueid)
+
+        if wcstarget.ready:
+            menu[0].text.tokens['name'] = wcstarget.name
+        else:
+            menu[0].text.tokens['name'] = wcsplayer.data['_internal_wcsadmin_player_name']
+
+        menu[2].selectable = menu[2].highlight = wcstarget.ready
+        menu[3].selectable = menu[3].highlight = wcstarget.ready
+        menu[4].selectable = menu[4].highlight = wcstarget.ready
+
+        menu[4] = SimpleOption(3, menu_strings['wcsadmin_players_sub_menu line 3'], selectable=False, highlight=False)
+
+
+@wcsadmin_players_sub_xp_menu.register_build_callback
+def wcsadmin_players_sub_xp_menu_build(menu, client):
+    wcsplayer = Player.from_index(client)
+    uniqueid = wcsplayer.data['_internal_wcsadmin_player']
+
+    if uniqueid is None:
+        menu[0].text.tokens['name'] = menu_strings['wcsadmin_players_menu all']
+    else:
+        wcstarget = Player(uniqueid)
+
+        menu[0].text.tokens['name'] = wcstarget.name
+
+
+@wcsadmin_players_sub_levels_menu.register_build_callback
+def wcsadmin_players_sub_levels_menu_build(menu, client):
+    wcsplayer = Player.from_index(client)
+    uniqueid = wcsplayer.data['_internal_wcsadmin_player']
+
+    if uniqueid is None:
+        menu[0].text.tokens['name'] = menu_strings['wcsadmin_players_menu all']
+    else:
+        wcstarget = Player(uniqueid)
+
+        menu[0].text.tokens['name'] = wcstarget.name
 
 
 @wcsadmin_management_races_menu.register_build_callback
@@ -655,7 +728,6 @@ def wcsadmin_github_races_options_menu_build(menu, client):
 
     if git_option['last_updated'] is None:
         menu[6].text = menu_strings['wcsadmin_github_options_menu last updated never']
-        menu[7].text.tokens['time'] = 0
     else:
         menu[6].text = menu_strings['wcsadmin_github_options_menu last updated']
         menu[6].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['last_updated']))

@@ -4,6 +4,8 @@
 # >> IMPORTS
 # ============================================================================
 # Python Imports
+#   Copy
+from copy import deepcopy
 
 # Source.Python Imports
 #   Menus
@@ -46,6 +48,10 @@ from . import wcstop_detail_menu
 from . import wcshelp_menu
 from . import welcome_menu
 from . import wcsadmin_menu
+from . import wcsadmin_players_menu
+from . import wcsadmin_players_sub_menu
+from . import wcsadmin_players_sub_xp_menu
+from . import wcsadmin_players_sub_levels_menu
 from . import wcsadmin_management_menu
 from . import wcsadmin_management_races_menu
 from . import wcsadmin_management_items_menu
@@ -85,6 +91,7 @@ raceinfo_skills_menu.title = menu_strings['raceinfo_skills_menu title']
 playerinfo_menu.title = menu_strings['playerinfo_menu title']
 playerinfo_detail_skills_menu.title = menu_strings['playerinfo_detail_skills_menu title']
 wcstop_menu.title = menu_strings['wcstop_menu title']
+wcsadmin_players_menu.title = menu_strings['wcsadmin_players_menu title']
 wcsadmin_management_races_menu.title = menu_strings['wcsadmin_management_races_menu title']
 wcsadmin_management_items_menu.title = menu_strings['wcsadmin_management_items_menu title']
 wcsadmin_management_races_add_menu.title = menu_strings['wcsadmin_management_races_add_menu title']
@@ -292,13 +299,69 @@ wcsadmin_menu.extend(
     [
         Text(menu_strings['wcsadmin_menu title']),
         Text(' '),
-        SimpleOption(1, menu_strings['wcsadmin_menu management'], wcsadmin_management_menu),
-        SimpleOption(2, menu_strings['wcsadmin_menu github'], wcsadmin_github_menu),
+        SimpleOption(1, menu_strings['wcsadmin_menu players'], wcsadmin_players_menu),
+        SimpleOption(2, menu_strings['wcsadmin_menu management'], wcsadmin_management_menu),
+        SimpleOption(3, menu_strings['wcsadmin_menu github'], wcsadmin_github_menu),
         Text(' '),
         Text(' '),
         Text(' '),
         Text(' '),
         Text(' '),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
+    ]
+)
+
+wcsadmin_players_menu.extend(
+    [
+        PagedOption(menu_strings['wcsadmin_players_menu all']),
+        Text(menu_strings['wcsadmin_players_menu online']),
+        Text(menu_strings['wcsadmin_players_menu offline']),
+    ]
+)
+
+wcsadmin_players_sub_menu.extend(
+    [
+        Text(menu_strings['wcsadmin_players_sub_menu title']),
+        Text(' '),
+        SimpleOption(1, menu_strings['wcsadmin_players_sub_menu line 1'], wcsadmin_players_sub_xp_menu),
+        SimpleOption(2, menu_strings['wcsadmin_players_sub_menu line 2'], wcsadmin_players_sub_levels_menu),
+        SimpleOption(3, menu_strings['wcsadmin_players_sub_menu line 3'], selectable=False, highlight=False),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_players_menu),
+        Text(' '),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
+    ]
+)
+
+wcsadmin_players_sub_xp_menu.extend(
+    [
+        Text(menu_strings['wcsadmin_players_sub_xp_menu title']),
+        Text(' '),
+        SimpleOption(1, deepcopy(menu_strings['wcsadmin_players_sub_xp_menu line']), 1),
+        SimpleOption(2, deepcopy(menu_strings['wcsadmin_players_sub_xp_menu line']), 10),
+        SimpleOption(3, deepcopy(menu_strings['wcsadmin_players_sub_xp_menu line']), 100),
+        SimpleOption(4, deepcopy(menu_strings['wcsadmin_players_sub_xp_menu line']), 1000),
+        SimpleOption(5, deepcopy(menu_strings['wcsadmin_players_sub_xp_menu line']), 10000),
+        SimpleOption(6, menu_strings['wcsadmin_players_sub_xp_menu custom'], selectable=False, highlight=False),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_players_sub_menu),
+        Text(' '),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
+    ]
+)
+
+wcsadmin_players_sub_levels_menu.extend(
+    [
+        Text(menu_strings['wcsadmin_players_sub_levels_menu title']),
+        Text(' '),
+        SimpleOption(1, deepcopy(menu_strings['wcsadmin_players_sub_levels_menu line']), 1),
+        SimpleOption(2, deepcopy(menu_strings['wcsadmin_players_sub_levels_menu line']), 10),
+        SimpleOption(3, deepcopy(menu_strings['wcsadmin_players_sub_levels_menu line']), 100),
+        SimpleOption(4, deepcopy(menu_strings['wcsadmin_players_sub_levels_menu line']), 1000),
+        SimpleOption(5, deepcopy(menu_strings['wcsadmin_players_sub_levels_menu line']), 10000),
+        SimpleOption(6, menu_strings['wcsadmin_players_sub_levels_menu custom'], selectable=False, highlight=False),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_players_sub_menu),
         Text(' '),
         SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
@@ -399,6 +462,27 @@ wcsadmin_github_items_options_menu.extend(
         SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
+
+
+# ============================================================================
+# >> MENU ENHANCEMENTS
+# ============================================================================
+if BUTTON_BACK == 8:
+    wcsadmin_menu.insert(-3, Text(' '))
+    wcsadmin_players_sub_menu.insert(-3, Text(' '))
+    wcsadmin_players_sub_xp_menu.insert(-3, Text(' '))
+    wcsadmin_players_sub_levels_menu.insert(-3, Text(' '))
+    wcsadmin_management_menu.insert(-3, Text(' '))
+    wcsadmin_management_races_editor_menu.insert(-3, Text(' '))
+    wcsadmin_management_items_editor_menu.insert(-3, Text(' '))
+    wcsadmin_github_menu.insert(-3, Text(' '))
+    wcsadmin_github_races_options_menu.insert(-3, Text(' '))
+    wcsadmin_github_items_options_menu.insert(-3, Text(' '))
+
+
+for i in range(2, 7):
+    wcsadmin_players_sub_xp_menu[i].text.tokens['value'] = wcsadmin_players_sub_xp_menu[i].value
+    wcsadmin_players_sub_levels_menu[i].text.tokens['value'] = wcsadmin_players_sub_levels_menu[i].value
 
 
 # ============================================================================

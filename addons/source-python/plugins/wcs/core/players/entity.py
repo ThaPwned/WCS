@@ -123,6 +123,7 @@ else:
                 'wcsadmin': 1,
                 'wcsadmin_githubaccess': 1,
                 'wcsadmin_managementaccess': 1,
+                'wcsadmin_playersmanagement': 1,
                 'wcsadmin_raceaccess': 1,
                 'vip_raceaccess': 1
             }

@@ -46,6 +46,10 @@ from . import playerinfo_detail_stats_menu
 from . import wcstop_menu
 from . import wcstop_detail_menu
 from . import wcsadmin_menu
+from . import wcsadmin_players_menu
+from . import wcsadmin_players_sub_menu
+from . import wcsadmin_players_sub_xp_menu
+from . import wcsadmin_players_sub_levels_menu
 from . import wcsadmin_management_menu
 from . import wcsadmin_management_races_menu
 from . import wcsadmin_management_items_menu
@@ -65,6 +69,7 @@ from ..modules.items.manager import item_manager
 from ..modules.races.manager import race_manager
 #   Players
 from ..players.entity import Player
+from ..players.filters import PlayerReadyIter
 #   Translations
 from ..translations import chat_strings
 
@@ -87,6 +92,11 @@ skills_reset_message = SayText2(chat_strings['skills reset'])
 changerace_message = SayText2(chat_strings['changerace'])
 skill_upgrade_message = SayText2(chat_strings['skill upgrade'])
 item_bought_message = SayText2(chat_strings['item bought'])
+admin_gain_xp_receiver_message = SayText2(chat_strings['admin gain xp receiver'])
+admin_gain_xp_sender_message = SayText2(chat_strings['admin gain xp sender'])
+admin_gain_levels_receiver_message = SayText2(chat_strings['admin gain levels receiver'])
+admin_gain_levels_sender_message = SayText2(chat_strings['admin gain levels sender'])
+github_installing_message = SayText2(chat_strings['github installing'])
 github_installing_message = SayText2(chat_strings['github installing'])
 github_updating_message = SayText2(chat_strings['github updating'])
 github_uninstalling_message = SayText2(chat_strings['github uninstalling'])
@@ -325,6 +335,85 @@ def wcstop_detail_menu_select(menu, client, option):
 # ============================================================================
 @wcsadmin_menu.register_select_callback
 def wcsadmin_menu_select(menu, client, option):
+    return option.value
+
+
+@wcsadmin_players_menu.register_select_callback
+def wcsadmin_players_menu_select(menu, client, option):
+    wcsplayer = Player.from_index(client)
+
+    wcsplayer.data['_internal_wcsadmin_player'] = option.value
+
+    if option.value is None:
+        return wcsadmin_players_sub_menu
+
+    wcsplayer.data['_internal_wcsadmin_player_name'] = option.text
+
+    return wcsadmin_players_sub_menu
+
+
+@wcsadmin_players_sub_menu.register_select_callback
+def wcsadmin_players_sub_menu_select(menu, client, option):
+    return option.value
+
+
+@wcsadmin_players_sub_xp_menu.register_select_callback
+def wcsadmin_players_sub_xp_menu_select(menu, client, option):
+    if isinstance(option.value, int):
+        wcsplayer = Player.from_index(client)
+        uniqueid = wcsplayer.data['_internal_wcsadmin_player']
+
+        if uniqueid is None:
+            for _, wcstarget in PlayerReadyIter():
+                wcstarget.xp += option.value
+
+                if wcstarget is not wcsplayer:
+                    admin_gain_xp_sender_message.send(wcsplayer.index, name=wcstarget.name, value=option.value)
+
+                admin_gain_xp_receiver_message.send(wcstarget.index, value=option.value, name=wcsplayer.name)
+        else:
+            wcstarget = Player(uniqueid)
+
+            wcstarget.xp += option.value
+
+            if wcstarget is not wcsplayer:
+                admin_gain_xp_sender_message.send(wcsplayer.index, name=wcstarget.name, value=option.value)
+
+            admin_gain_xp_receiver_message.send(wcstarget.index, value=option.value, name=wcsplayer.name)
+
+            return menu
+
+        return menu
+
+    return option.value
+
+
+@wcsadmin_players_sub_levels_menu.register_select_callback
+def wcsadmin_players_sub_levels_menu_select(menu, client, option):
+    if isinstance(option.value, int):
+        wcsplayer = Player.from_index(client)
+        uniqueid = wcsplayer.data['_internal_wcsadmin_player']
+
+        if uniqueid is None:
+            for _, wcstarget in PlayerReadyIter():
+                wcstarget.level += option.value
+
+                if wcstarget is not wcsplayer:
+                    admin_gain_levels_sender_message.send(wcsplayer.index, name=wcstarget.name, value=option.value)
+
+                admin_gain_levels_receiver_message.send(wcstarget.index, value=option.value, name=wcsplayer.name)
+        else:
+            wcstarget = Player(uniqueid)
+
+            wcstarget.level += option.value
+
+            if wcstarget is not wcsplayer:
+                admin_gain_levels_sender_message.send(wcsplayer.index, name=wcstarget.name, value=option.value)
+
+            admin_gain_levels_receiver_message.send(wcstarget.index, value=option.value, name=wcsplayer.name)
+
+        return menu
+
     return option.value
 
 

@@ -108,6 +108,7 @@ from .core.menus import wcstop_menu
 from .core.menus import wcshelp_menu
 from .core.menus import welcome_menu
 from .core.menus import wcsadmin_menu
+from .core.menus import wcsadmin_players_menu
 from .core.menus.base import PagedOption
 from .core.menus.build import _get_current_options  # Just to load it
 from .core.menus.close import raceinfo_menu_close  # Just to load it
@@ -208,7 +209,7 @@ def load():
     for settings in item_manager.values():
         settings.execute('preloadcmd')
 
-    database_manager.execute('player offline', callback=_query_refresh_playerinfo)
+    database_manager.execute('player offline', callback=_query_refresh_offline)
     database_manager.execute('rank update', callback=_query_refresh_ranks)
 
 
@@ -253,7 +254,7 @@ def _send_message_and_remove(message, wcsplayer, delay, **kwargs):
     _delays[wcsplayer].remove(delay)
 
 
-def _query_refresh_playerinfo(result):
+def _query_refresh_offline(result):
     stop = False
 
     for i, option in enumerate(playerinfo_menu, 1):
@@ -264,8 +265,19 @@ def _query_refresh_playerinfo(result):
 
             stop = True
 
+    stop = False
+
+    for i, option in enumerate(wcsadmin_players_menu, 2):
+        if isinstance(option, Text):
+            if stop:
+                del wcsadmin_players_menu[i:]
+                break
+
+            stop = True
+
     for uniqueid, name in result.fetchall():
         playerinfo_menu.append(PagedOption(name, uniqueid))
+        wcsadmin_players_menu.append(PagedOption(name, uniqueid))
 
 
 def _query_refresh_ranks(result):
@@ -1063,5 +1075,5 @@ def save_data_repeat():
     for _, wcsplayer in PlayerReadyIter():
         wcsplayer.save()
 
-    database_manager.execute('player offline', callback=_query_refresh_playerinfo)
+    database_manager.execute('player offline', callback=_query_refresh_offline)
 save_data_repeat.start(60 * 1)
