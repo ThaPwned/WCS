@@ -170,10 +170,13 @@ class _GithubManager(dict):
 
             self._download(_repo, f'{module}/{name}')
 
-            with open(MODULE_PATH / module / name / '.wcs_install', 'w') as outputfile:
+            _path = MODULE_PATH / module / name / '.wcs_install'
+
+            with open(_path, 'w') as outputfile:
                 outputfile.write(repository)
 
             self[module][name]['status'] = GithubStatus.INSTALLED
+            self[module][name]['last_updated'] = _path.mtime
             self[module][name]['repository'] = repository
 
             _output.put((OnGithubInstalled.manager.notify, repository, module, name, userid))
@@ -251,7 +254,13 @@ class _GithubManager(dict):
                         with open(config_path, 'w') as outputfile:
                             dump(new_data, outputfile, indent=4)
 
+            _path = MODULE_PATH / module / name / '.wcs_install'
+
+            # Update the installation file, so we know it's been updated
+            _path.utime(None)
+
             self[module][name]['status'] = GithubStatus.INSTALLED
+            self[module][name]['last_updated'] = _path.mtime
 
             _output.put((OnGithubUpdated.manager.notify, repository, module, name, userid))
         except:
@@ -266,6 +275,7 @@ class _GithubManager(dict):
             (MODULE_PATH / module / name).rmtree()
 
             self[module][name]['status'] = GithubStatus.UNINSTALLED
+            self[module][name]['last_updated'] = None
             self[module][name]['repository'] = None
 
             _output.put((OnGithubUninstalled.manager.notify, repository, module, name, userid))
@@ -428,14 +438,11 @@ def _send_message(module, message, userid, **kwargs):
         else:
             message.send(index, **kwargs)
 
-    if module == 'races':
-        for index in wcsadmin_github_races_options_menu._player_pages:
-            if wcsadmin_github_races_options_menu.is_active_menu(index):
-                wcsadmin_github_races_options_menu._refresh(index)
-    else:
-        for index in wcsadmin_github_items_options_menu._player_pages:
-            if wcsadmin_github_items_options_menu.is_active_menu(index):
-                wcsadmin_github_items_options_menu._refresh(index)
+    menu = wcsadmin_github_races_options_menu if module == 'races' else wcsadmin_github_items_options_menu
+
+    for index in menu._player_pages:
+        if menu.is_active_menu(index):
+            menu._refresh(index)
 
 
 def _remove_dead_threads():

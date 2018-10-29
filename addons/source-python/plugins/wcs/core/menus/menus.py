@@ -4,8 +4,6 @@
 # >> IMPORTS
 # ============================================================================
 # Python Imports
-#   Time
-from time import time
 
 # Source.Python Imports
 #   Menus
@@ -449,17 +447,17 @@ def on_github_refreshed(races, items):
 
 @OnGithubInstalled
 def on_github_installed(repository, module, name, userid):
-    _update_menu(module, name, time())
+    _update_menu(module, name, True)
 
 
 @OnGithubUpdated
 def on_github_updated(repository, module, name, userid):
-    _update_menu(module, name, time())
+    _update_menu(module, name, True)
 
 
 @OnGithubUninstalled
 def on_github_uninstalled(repository, module, name, userid):
-    _update_menu(module, name, None)
+    _update_menu(module, name, False)
 
 
 @OnPlayerQuery
@@ -472,16 +470,12 @@ def on_player_query(wcsplayer):
 # ============================================================================
 # >> FUNCTIONS
 # ============================================================================
-def _update_menu(module, name, now):
-    from ..helpers.github import github_manager
-
+def _update_menu(module, name, updated):
     menu = wcsadmin_github_races_menu if module == 'races' else wcsadmin_github_items_menu
 
     for option in menu:
         if option.value == name:
-            github_manager[module][name]['last_updated'] = now
-
-            option.text = ('+' if now is None else '') + name
+            option.text = ('' if updated else '+') + name
 
             break
 
