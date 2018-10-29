@@ -215,7 +215,7 @@ def load():
 def unload():
     database_manager._unloading = True
 
-    for wcsplayer in Player._players.values():
+    for _, wcsplayer in PlayerReadyIter():
         OnPlayerDelete.manager.notify(wcsplayer)
 
     for _, wcsplayer in PlayerReadyIter():
