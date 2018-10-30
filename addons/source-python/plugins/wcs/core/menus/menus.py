@@ -344,7 +344,7 @@ wcsadmin_players_sub_xp_menu.extend(
         SimpleOption(3, deepcopy(menu_strings['wcsadmin_players_sub_xp_menu line']), 100),
         SimpleOption(4, deepcopy(menu_strings['wcsadmin_players_sub_xp_menu line']), 1000),
         SimpleOption(5, deepcopy(menu_strings['wcsadmin_players_sub_xp_menu line']), 10000),
-        SimpleOption(6, menu_strings['wcsadmin_players_sub_xp_menu custom'], selectable=False, highlight=False),
+        SimpleOption(6, menu_strings['wcsadmin_players_sub_xp_menu custom']),
         SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_players_sub_menu),
         Text(' '),
         SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
@@ -360,7 +360,7 @@ wcsadmin_players_sub_levels_menu.extend(
         SimpleOption(3, deepcopy(menu_strings['wcsadmin_players_sub_levels_menu line']), 100),
         SimpleOption(4, deepcopy(menu_strings['wcsadmin_players_sub_levels_menu line']), 1000),
         SimpleOption(5, deepcopy(menu_strings['wcsadmin_players_sub_levels_menu line']), 10000),
-        SimpleOption(6, menu_strings['wcsadmin_players_sub_levels_menu custom'], selectable=False, highlight=False),
+        SimpleOption(6, menu_strings['wcsadmin_players_sub_levels_menu custom']),
         SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_players_sub_menu),
         Text(' '),
         SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)

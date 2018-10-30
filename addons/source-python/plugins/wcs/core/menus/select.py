@@ -15,6 +15,8 @@ from menus import PagedOption
 from menus import SimpleMenu
 from menus.radio import BUTTON_BACK
 from menus.radio import MAX_ITEM_COUNT
+#   Messages
+from messages.dialog import DialogEntry
 #   Players
 from players.helpers import userid_from_index
 
@@ -72,6 +74,7 @@ from ..players.entity import Player
 from ..players.filters import PlayerReadyIter
 #   Translations
 from ..translations import chat_strings
+from ..translations import menu_strings
 
 # Is Github available?
 if IS_GITHUB_ENABLED:
@@ -88,18 +91,26 @@ __all__ = ()
 # ============================================================================
 # >> GLOBAL VARIABLES
 # ============================================================================
+gain_level_message = SayText2(chat_strings['gain level'])
 skills_reset_message = SayText2(chat_strings['skills reset'])
 changerace_message = SayText2(chat_strings['changerace'])
 skill_upgrade_message = SayText2(chat_strings['skill upgrade'])
 item_bought_message = SayText2(chat_strings['item bought'])
+admin_gain_xp_all_message = SayText2(chat_strings['admin gain xp all'])
 admin_gain_xp_receiver_message = SayText2(chat_strings['admin gain xp receiver'])
 admin_gain_xp_sender_message = SayText2(chat_strings['admin gain xp sender'])
+admin_gain_xp_self_message = SayText2(chat_strings['admin gain xp self'])
+admin_gain_levels_all_message = SayText2(chat_strings['admin gain levels all'])
 admin_gain_levels_receiver_message = SayText2(chat_strings['admin gain levels receiver'])
 admin_gain_levels_sender_message = SayText2(chat_strings['admin gain levels sender'])
+admin_gain_levels_self_message = SayText2(chat_strings['admin gain levels self'])
 github_installing_message = SayText2(chat_strings['github installing'])
 github_installing_message = SayText2(chat_strings['github installing'])
 github_updating_message = SayText2(chat_strings['github updating'])
 github_uninstalling_message = SayText2(chat_strings['github uninstalling'])
+
+entry_xp_dialog = DialogEntry(menu_strings['wcsadmin_dialog_xp_title'], menu_strings['wcsadmin_dialog_xp_line'], '_wcsadmin_input_xp')
+entry_levels_dialog = DialogEntry(menu_strings['wcsadmin_dialog_levels_title'], menu_strings['wcsadmin_dialog_levels_line'], '_wcsadmin_input_level')
 
 
 # ============================================================================
@@ -365,23 +376,46 @@ def wcsadmin_players_sub_xp_menu_select(menu, client, option):
 
         if uniqueid is None:
             for _, wcstarget in PlayerReadyIter():
-                wcstarget.xp += option.value
+                active_race = wcstarget.active_race
+                old_level = active_race.level
 
-                if wcstarget is not wcsplayer:
-                    admin_gain_xp_sender_message.send(wcsplayer.index, name=wcstarget.name, value=option.value)
+                active_race.xp += option.value
 
-                admin_gain_xp_receiver_message.send(wcstarget.index, value=option.value, name=wcsplayer.name)
+                if wcstarget is wcsplayer:
+                    admin_gain_xp_self_message.send(wcsplayer.index, value=option.value)
+                else:
+                    admin_gain_xp_receiver_message.send(wcstarget.index, value=option.value, name=wcsplayer.name)
+
+                if active_race.level > old_level:
+                    gain_level_message.send(wcstarget.index, level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
+
+            admin_gain_xp_all_message.send(wcsplayer.index, value=option.value)
         else:
             wcstarget = Player(uniqueid)
+            active_race = wcstarget.active_race
+            old_level = active_race.level
 
-            wcstarget.xp += option.value
+            active_race.xp += option.value
 
-            if wcstarget is not wcsplayer:
+            if wcstarget is wcsplayer:
+                admin_gain_xp_self_message.send(wcsplayer.index, value=option.value)
+            else:
                 admin_gain_xp_sender_message.send(wcsplayer.index, name=wcstarget.name, value=option.value)
+                admin_gain_xp_receiver_message.send(wcstarget.index, value=option.value, name=wcsplayer.name)
 
-            admin_gain_xp_receiver_message.send(wcstarget.index, value=option.value, name=wcsplayer.name)
+            if active_race.level > old_level:
+                gain_level_message.send(wcstarget.index, level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
 
-            return menu
+        return menu
+    elif option.value is None:
+        wcsplayer = Player.from_index(client)
+
+        if wcsplayer.data['_internal_wcsadmin_player'] is None:
+            name = menu_strings['wcsadmin_players_menu all']
+        else:
+            name = wcsplayer.data['_internal_wcsadmin_player_name']
+
+        entry_xp_dialog.send(client, name=name)
 
         return menu
 
@@ -398,19 +432,33 @@ def wcsadmin_players_sub_levels_menu_select(menu, client, option):
             for _, wcstarget in PlayerReadyIter():
                 wcstarget.level += option.value
 
-                if wcstarget is not wcsplayer:
-                    admin_gain_levels_sender_message.send(wcsplayer.index, name=wcstarget.name, value=option.value)
+                if wcstarget is wcsplayer:
+                    admin_gain_levels_self_message.send(wcsplayer.index, value=option.value)
+                else:
+                    admin_gain_levels_receiver_message.send(wcstarget.index, value=option.value, name=wcsplayer.name)
 
-                admin_gain_levels_receiver_message.send(wcstarget.index, value=option.value, name=wcsplayer.name)
+            admin_gain_levels_all_message.send(wcsplayer.index, value=option.value)
         else:
             wcstarget = Player(uniqueid)
 
             wcstarget.level += option.value
 
-            if wcstarget is not wcsplayer:
+            if wcstarget is wcsplayer:
+                admin_gain_levels_self_message.send(wcsplayer.index, value=option.value)
+            else:
                 admin_gain_levels_sender_message.send(wcsplayer.index, name=wcstarget.name, value=option.value)
+                admin_gain_levels_receiver_message.send(wcstarget.index, value=option.value, name=wcsplayer.name)
 
-            admin_gain_levels_receiver_message.send(wcstarget.index, value=option.value, name=wcsplayer.name)
+        return menu
+    elif option.value is None:
+        wcsplayer = Player.from_index(client)
+
+        if wcsplayer.data['_internal_wcsadmin_player'] is None:
+            name = menu_strings['wcsadmin_players_menu all']
+        else:
+            name = wcsplayer.data['_internal_wcsadmin_player_name']
+
+        entry_levels_dialog.send(client, name=name)
 
         return menu
 
