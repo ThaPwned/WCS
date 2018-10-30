@@ -25,7 +25,9 @@ from players.helpers import index_from_userid
 # WCS Imports
 #   Constants
 from ..constants import GITHUB_ACCESS_TOKEN
+from ..constants import GITHUB_PASSWORD
 from ..constants import GITHUB_REPOSITORIES
+from ..constants import GITHUB_USERNAME
 from ..constants import GithubStatus
 from ..constants.paths import MODULE_PATH
 from ..constants.paths import MODULE_PATH_ES
@@ -102,7 +104,7 @@ class _GithubManager(dict):
 
     def _refresh(self):
         try:
-            _github = Github(GITHUB_ACCESS_TOKEN)
+            _github = Github(GITHUB_ACCESS_TOKEN or GITHUB_USERNAME, GITHUB_PASSWORD if GITHUB_ACCESS_TOKEN is None else None)
 
             for repository in GITHUB_REPOSITORIES:
                 _repo = _github.get_repo(repository)
@@ -165,7 +167,7 @@ class _GithubManager(dict):
 
     def _install(self, repository, module, name, userid):
         try:
-            _github = Github(GITHUB_ACCESS_TOKEN)
+            _github = Github(GITHUB_ACCESS_TOKEN or GITHUB_USERNAME, GITHUB_PASSWORD if GITHUB_ACCESS_TOKEN is None else None)
             _repo = _github.get_repo(repository)
 
             self._download(_repo, f'{module}/{name}')
@@ -186,7 +188,7 @@ class _GithubManager(dict):
 
     def _update(self, repository, module, name, userid):
         try:
-            _github = Github(GITHUB_ACCESS_TOKEN)
+            _github = Github(GITHUB_ACCESS_TOKEN or GITHUB_USERNAME, GITHUB_PASSWORD if GITHUB_ACCESS_TOKEN is None else None)
             _repo = _github.get_repo(repository)
 
             path = MODULE_PATH / module / name

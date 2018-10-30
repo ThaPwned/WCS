@@ -31,6 +31,8 @@ __all__ = (
     'COLOR_GREEN',
     'COLOR_LIGHTGREEN',
     'GITHUB_ACCESS_TOKEN',
+    'GITHUB_PASSWORD',
+    'GITHUB_USERNAME',
     'IS_ESC_SUPPORT_ENABLED',
     'IS_GITHUB_ENABLED',
     'TIME_FORMAT',
@@ -108,18 +110,22 @@ if (CFG_PATH / 'github.json').isfile():
     with open(CFG_PATH / 'github.json') as inputfile:
         data = load(inputfile)
 
-    GITHUB_ACCESS_TOKEN = data.get('access_token', None)
+    GITHUB_USERNAME = data.get('username')
+    GITHUB_PASSWORD = data.get('password')
+    GITHUB_ACCESS_TOKEN = data.get('access_token')
     GITHUB_REPOSITORIES = data.get('repositories', [])
 else:
     with open(CFG_PATH / 'github.json', 'w') as outputfile:
-        dump({'access_token':None, 'repositories':[]}, outputfile, indent=4)
+        dump({'username':None, 'password':None, 'access_token':None, 'repositories':[]}, outputfile, indent=4)
 
+    GITHUB_USERNAME = None
+    GITHUB_PASSWORD = None
     GITHUB_ACCESS_TOKEN = None
     GITHUB_REPOSITORIES = []
 
 GITHUB_REPOSITORIES.insert(0, f'{info.author.replace(" ", "")}/WCS-Contents')
 
-IS_GITHUB_ENABLED = GITHUB_ACCESS_TOKEN is not None
+IS_GITHUB_ENABLED = (GITHUB_USERNAME is not None and GITHUB_PASSWORD is not None) or GITHUB_ACCESS_TOKEN is not None
 
 TIME_FORMAT = '%H:%M:%S %d/%m/%Y'
 # TODO: Or should it be?
