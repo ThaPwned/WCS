@@ -72,6 +72,7 @@ from .core.config import cfg_bot_bomb_plant_xp
 from .core.config import cfg_bot_bomb_defuse_xp
 from .core.config import cfg_bot_bomb_explode_xp
 from .core.config import cfg_bot_hostage_rescue_xp
+from .core.config import cfg_github_refresh_rate
 #   Constants
 from .core.constants import IS_ESC_SUPPORT_ENABLED
 from .core.constants import ModuleType
@@ -1163,3 +1164,12 @@ def save_data_repeat():
 
     database_manager.execute('player offline', callback=_query_refresh_offline)
 save_data_repeat.start(60 * 1)
+
+
+@Repeat
+def github_refresh_repeat():
+    github_manager.refresh()
+
+
+if cfg_github_refresh_rate.get_int():
+    github_refresh_repeat.start(cfg_github_refresh_rate.get_int() * 60)
