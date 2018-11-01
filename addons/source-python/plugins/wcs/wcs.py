@@ -74,7 +74,6 @@ from .core.config import cfg_bot_bomb_explode_xp
 from .core.config import cfg_bot_hostage_rescue_xp
 #   Constants
 from .core.constants import IS_ESC_SUPPORT_ENABLED
-from .core.constants import IS_GITHUB_ENABLED
 from .core.constants import ModuleType
 from .core.constants import RaceReason
 from .core.constants import SkillReason
@@ -84,6 +83,7 @@ from .core.database.thread import _repeat
 from .core.database.thread import _thread
 #   Helpers
 from .core.helpers.events import FakeEvent
+from .core.helpers.github import github_manager
 from .core.helpers.overwrites import SayText2
 #   Listeners
 from .core.listeners import OnIsSkillExecutableText
@@ -133,11 +133,6 @@ if IS_ESC_SUPPORT_ENABLED:
     #   Modules
     from .core.modules.oldesc import parse_items
     from .core.modules.oldesc import parse_races
-
-# Is Github available?
-if IS_GITHUB_ENABLED:
-    #   Helpers
-    from .core.helpers.github import github_manager
 
 
 # ============================================================================
@@ -204,9 +199,7 @@ class QuietTypedClientCommand(TypedClientCommand):
 # >> FUNCTIONS
 # ============================================================================
 def load():
-    # Is Github available?
-    if IS_GITHUB_ENABLED:
-        github_manager.refresh()
+    github_manager.refresh()
 
     database_manager.connect()
 
@@ -241,9 +234,7 @@ def unload():
 
     OnPluginUnload.manager.notify()
 
-    # Is Github available?
-    if IS_GITHUB_ENABLED:
-        github_manager.stop()
+    github_manager.stop()
 
     race_manager.unload_all()
     item_manager.unload_all()
@@ -688,11 +679,9 @@ if IS_ESC_SUPPORT_ENABLED:
         return OutputReturn.CONTINUE
 
 
-# Is Github available?
-if IS_GITHUB_ENABLED:
-    @OnLevelInit
-    def on_level_init(map_name):
-        github_manager.refresh()
+@OnLevelInit
+def on_level_init(map_name):
+    github_manager.refresh()
 
 
 @OnPlayerDelete

@@ -22,12 +22,12 @@ from players.helpers import userid_from_index
 
 # WCS Imports
 #   Constants
-from ..constants import IS_GITHUB_ENABLED
 from ..constants import GithubStatus
 from ..constants import ItemReason
 from ..constants import RaceReason
 from ..constants.paths import CFG_PATH
 #   Helpers
+from ..helpers.github import github_manager
 from ..helpers.overwrites import SayText2
 #   Menus
 from . import main_menu
@@ -75,11 +75,6 @@ from ..players.filters import PlayerReadyIter
 #   Translations
 from ..translations import chat_strings
 from ..translations import menu_strings
-
-# Is Github available?
-if IS_GITHUB_ENABLED:
-    #   Helpers
-    from ..helpers.github import github_manager
 
 
 # ============================================================================

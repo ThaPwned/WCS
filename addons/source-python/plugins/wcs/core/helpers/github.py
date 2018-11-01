@@ -5,7 +5,10 @@
 # ============================================================================
 # Python Imports
 #   Github
-from github import Github
+try:
+    from github import Github
+except ImportError:
+    Github = None
 #   JSON
 from json import dump
 from json import load
@@ -102,9 +105,18 @@ class _GithubManager(dict):
                 else:
                     items()
 
+    def _connect(self):
+        if GITHUB_ACCESS_TOKEN is not None:
+            return Github(GITHUB_ACCESS_TOKEN)
+
+        if GITHUB_USERNAME is None or GITHUB_PASSWORD is None:
+            return Github()
+
+        return Github(GITHUB_USERNAME, GITHUB_PASSWORD)
+
     def _refresh(self):
         try:
-            _github = Github(GITHUB_ACCESS_TOKEN or GITHUB_USERNAME, GITHUB_PASSWORD if GITHUB_ACCESS_TOKEN is None else None)
+            _github = self._connect()
 
             for repository in GITHUB_REPOSITORIES:
                 _repo = _github.get_repo(repository)
@@ -167,7 +179,7 @@ class _GithubManager(dict):
 
     def _install(self, repository, module, name, userid):
         try:
-            _github = Github(GITHUB_ACCESS_TOKEN or GITHUB_USERNAME, GITHUB_PASSWORD if GITHUB_ACCESS_TOKEN is None else None)
+            _github = self._connect()
             _repo = _github.get_repo(repository)
 
             self._download(_repo, f'{module}/{name}')
@@ -188,7 +200,7 @@ class _GithubManager(dict):
 
     def _update(self, repository, module, name, userid):
         try:
-            _github = Github(GITHUB_ACCESS_TOKEN or GITHUB_USERNAME, GITHUB_PASSWORD if GITHUB_ACCESS_TOKEN is None else None)
+            _github = self._connect()
             _repo = _github.get_repo(repository)
 
             path = MODULE_PATH / module / name
@@ -307,75 +319,91 @@ class _GithubManager(dict):
                 with open(path, 'wb') as outputfile:
                     outputfile.write(repository.get_contents(content.path).decoded_content)
 
-    def refresh(self):
-        if self._refreshing:
-            return
+    if Github is None:
+        def refresh(self):
+            pass
 
-        self._refreshing = True
+        def stop(self):
+            pass
 
-        if not self._counter:
-            self._repeat.start(0.1)
+        def install(self, repository, module, name, userid=None):
+            pass
 
-        self._counter += 1
+        def update(self, repository, module, name, userid=None):
+            pass
 
-        OnGithubRefresh.manager.notify()
+        def uninstall(self, repository, module, name, userid=None):
+            pass
+    else:
+        def refresh(self):
+            if self._refreshing:
+                return
 
-        thread = Thread(target=self._refresh)
-        thread.start()
+            self._refreshing = True
 
-        self._threads.append(thread)
+            if not self._counter:
+                self._repeat.start(0.1)
 
-    def stop(self):
-        for thread in self._threads:
-            if thread.is_alive():
-                thread.join()
+            self._counter += 1
 
-        self._repeat.stop()
+            OnGithubRefresh.manager.notify()
 
-    def install(self, repository, module, name, userid=None):
-        assert self[module][name]['status'] is GithubStatus.UNINSTALLED
+            thread = Thread(target=self._refresh)
+            thread.start()
 
-        if not self._counter:
-            self._repeat.start(0.1)
+            self._threads.append(thread)
 
-        self._counter += 1
+        def stop(self):
+            for thread in self._threads:
+                if thread.is_alive():
+                    thread.join()
 
-        self[module][name]['status'] = GithubStatus.INSTALLING
+            self._repeat.stop()
 
-        thread = Thread(target=self._install, args=(repository, module, name, userid))
-        thread.start()
+        def install(self, repository, module, name, userid=None):
+            assert self[module][name]['status'] is GithubStatus.UNINSTALLED
 
-        self._threads.append(thread)
+            if not self._counter:
+                self._repeat.start(0.1)
 
-    def update(self, module, name, userid=None):
-        assert self[module][name]['status'] is GithubStatus.INSTALLED
+            self._counter += 1
 
-        if not self._counter:
-            self._repeat.start(0.1)
+            self[module][name]['status'] = GithubStatus.INSTALLING
 
-        self._counter += 1
+            thread = Thread(target=self._install, args=(repository, module, name, userid))
+            thread.start()
 
-        self[module][name]['status'] = GithubStatus.UPDATING
+            self._threads.append(thread)
 
-        thread = Thread(target=self._update, args=(self[module][name]['repository'], module, name, userid))
-        thread.start()
+        def update(self, module, name, userid=None):
+            assert self[module][name]['status'] is GithubStatus.INSTALLED
 
-        self._threads.append(thread)
+            if not self._counter:
+                self._repeat.start(0.1)
 
-    def uninstall(self, module, name, userid=None):
-        assert self[module][name]['status'] is GithubStatus.INSTALLED
+            self._counter += 1
 
-        if not self._counter:
-            self._repeat.start(0.1)
+            self[module][name]['status'] = GithubStatus.UPDATING
 
-        self._counter += 1
+            thread = Thread(target=self._update, args=(self[module][name]['repository'], module, name, userid))
+            thread.start()
 
-        self[module][name]['status'] = GithubStatus.UNINSTALLING
+            self._threads.append(thread)
 
-        thread = Thread(target=self._uninstall, args=(self[module][name]['repository'], module, name, userid))
-        thread.start()
+        def uninstall(self, module, name, userid=None):
+            assert self[module][name]['status'] is GithubStatus.INSTALLED
 
-        self._threads.append(thread)
+            if not self._counter:
+                self._repeat.start(0.1)
+
+            self._counter += 1
+
+            self[module][name]['status'] = GithubStatus.UNINSTALLING
+
+            thread = Thread(target=self._uninstall, args=(self[module][name]['repository'], module, name, userid))
+            thread.start()
+
+            self._threads.append(thread)
 github_manager = _GithubManager()
 
 

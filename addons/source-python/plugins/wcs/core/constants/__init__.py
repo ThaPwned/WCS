@@ -34,7 +34,6 @@ __all__ = (
     'GITHUB_PASSWORD',
     'GITHUB_USERNAME',
     'IS_ESC_SUPPORT_ENABLED',
-    'IS_GITHUB_ENABLED',
     'TIME_FORMAT',
     'GithubStatus',
     'ItemReason',
@@ -124,8 +123,6 @@ else:
     GITHUB_REPOSITORIES = []
 
 GITHUB_REPOSITORIES.insert(0, f'{info.author.replace(" ", "")}/WCS-Contents')
-
-IS_GITHUB_ENABLED = (GITHUB_USERNAME is not None and GITHUB_PASSWORD is not None) or GITHUB_ACCESS_TOKEN is not None
 
 TIME_FORMAT = '%H:%M:%S %d/%m/%Y'
 # TODO: Or should it be?

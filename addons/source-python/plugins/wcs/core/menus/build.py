@@ -31,7 +31,6 @@ from translations.strings import TranslationStrings
 
 # WCS Imports
 #   Constants
-from ..constants import IS_GITHUB_ENABLED
 from ..constants import TIME_FORMAT
 from ..constants import GithubStatus
 from ..constants import ItemReason
@@ -39,6 +38,8 @@ from ..constants import RaceReason
 from ..constants.paths import CFG_PATH
 from ..constants.paths import ITEM_PATH
 from ..constants.paths import RACE_PATH
+#   Helpers
+from ..helpers.github import github_manager
 #   Listeners
 from ..listeners import OnIsItemUsableText
 from ..listeners import OnIsRaceUsableText
@@ -86,11 +87,6 @@ from ..players.filters import PlayerReadyIter
 from ..ranks import rank_manager
 #   Translations
 from ..translations import menu_strings
-
-# Is Github available?
-if IS_GITHUB_ENABLED:
-    #   Helpers
-    from ..helpers.github import github_manager
 
 
 # ============================================================================
@@ -543,7 +539,7 @@ def wcsadmin_menu_build(menu, client):
 
     menu[2].selectable = menu[2].highlight = wcsplayer.privileges.get('wcsadmin_playersmanagement', False)
     menu[3].selectable = menu[3].highlight = wcsplayer.privileges.get('wcsadmin_managementaccess', False)
-    menu[4].selectable = menu[4].highlight = IS_GITHUB_ENABLED and wcsplayer.privileges.get('wcsadmin_githubaccess', False) and (github_manager['races'] or github_manager['items'])
+    menu[4].selectable = menu[4].highlight = wcsplayer.privileges.get('wcsadmin_githubaccess', False) and (github_manager['races'] or github_manager['items'])
 
 
 @wcsadmin_players_menu.register_build_callback
