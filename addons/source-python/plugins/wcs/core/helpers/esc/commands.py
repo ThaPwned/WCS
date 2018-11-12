@@ -587,3 +587,8 @@ def wcs_unrestrict_command(command_info, player:convert_userid_to_player, weapon
         return
 
     _restrictions.remove_player_restrictions(player, *weapons)
+
+
+@TypedServerCommand('wcs_getlanguage')
+def wcs_getlanguage_command(command_info, var:ConVar, id_:str, language:str='en'):
+    var.set_string(_languages.get(language, {}).get(id_, 'n/a'))
