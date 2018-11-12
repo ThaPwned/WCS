@@ -10,12 +10,16 @@ from collections import OrderedDict
 from configobj import ConfigObj
 #   Re
 from re import compile as re_compile
+#   Shlex
+from shlex import split
 #   Warnings
 from warnings import warn
 
 # Source.Python Imports
+#   Commands
+from commands.server import ServerCommand
 #   Engines
-from engines.server import queue_command_string
+from engines.server import execute_server_command
 #   Keyvalues
 from _keyvalues import KeyValues
 # NOTE: Have to prefix it with a _ otherwise it'd import KeyValues from ES Emulator if it's loaded
@@ -259,6 +263,8 @@ def parse_races_old():
                 if alias.startswith('racealias_'):
                     _aliases[alias] = value
 
+                    ServerCommand(alias)(_command)
+
             name = _get_string(data['name'])
 
             fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
@@ -364,6 +370,8 @@ def parse_items_old():
                 if alias.startswith('shopalias_'):
                     _aliases[alias] = value
 
+                    ServerCommand(alias)(_command)
+
             fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
             settings = items[fixed_name] = ImportedItem(fixed_name)
 
@@ -391,3 +399,11 @@ def parse_items_old():
                 settings.add_to_category(None)
 
     return items
+
+
+def _command(command):
+    alias = command.command_string.strip()
+
+    if alias in _aliases:
+        for cmd in _aliases[alias].split(';'):
+            execute_server_command(*split(cmd))
