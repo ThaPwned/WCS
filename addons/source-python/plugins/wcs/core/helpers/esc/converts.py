@@ -133,3 +133,7 @@ def split_str(separators=[',', ';']):
         return [value]
 
     return splitter
+
+
+def deprecated(value):
+    return None

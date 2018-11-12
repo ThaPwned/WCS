@@ -52,6 +52,7 @@ from .converts import convert_userid_identifier_to_players
 from .converts import real_value
 from .converts import valid_operators
 from .converts import split_str
+from .converts import deprecated
 from .effects import TypedServerCommand
 #   Players
 from ...players import team_data
@@ -441,7 +442,7 @@ def wcs_changerace_command(command_info, wcsplayer:convert_userid_to_wcsplayer, 
 
 
 @TypedServerCommand('wcs_givexp')
-def wcs_givexp_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:int):
+def wcs_givexp_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:int, reason:deprecated=None, forced:deprecated=None):
     if wcsplayer is None:
         return
 
@@ -449,7 +450,7 @@ def wcs_givexp_command(command_info, wcsplayer:convert_userid_to_wcsplayer, valu
 
 
 @TypedServerCommand('wcs_givelevel')
-def wcs_givelevel_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:int):
+def wcs_givelevel_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:int, reason:deprecated=None, forced:deprecated=None):
     if wcsplayer is None:
         return
 
