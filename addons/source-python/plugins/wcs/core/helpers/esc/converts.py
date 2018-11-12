@@ -130,6 +130,6 @@ def split_str(separators=[',', ';']):
             if separator in value:
                 return value.split(separator)
 
-        return value
+        return [value]
 
     return splitter
