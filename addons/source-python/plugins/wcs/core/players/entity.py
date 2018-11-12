@@ -29,7 +29,6 @@ from engines.server import execute_server_command
 #   Entities
 from entities import TakeDamageInfo
 from entities.constants import DamageTypes
-from entities.entity import Entity
 from entities.helpers import index_from_pointer
 from entities.hooks import EntityCondition
 from entities.hooks import EntityPreHook

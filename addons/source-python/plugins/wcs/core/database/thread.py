@@ -11,7 +11,6 @@ from sys import exc_info
 #   Threading
 from threading import Thread
 #   Time
-from time import sleep
 from warnings import warn
 
 # Source.Python Imports
