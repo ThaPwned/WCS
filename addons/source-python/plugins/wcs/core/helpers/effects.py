@@ -81,10 +81,10 @@ def register(name=None):
         effects_manager[function.__qualname__] = name
 
         @wraps(function)
-        def f(*args, **kwargs):
+        def wrapper(*args, **kwargs):
             return function(*args, **kwargs)
 
-        return f
+        return wrapper
 
     return decorator
 
