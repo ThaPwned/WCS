@@ -133,7 +133,9 @@ from .core.translations import menu_strings
 if IS_ESC_SUPPORT_ENABLED:
     #   Modules
     from .core.modules.oldesc import parse_items
+    from .core.modules.oldesc import parse_items_old
     from .core.modules.oldesc import parse_races
+    from .core.modules.oldesc import parse_races_old
 
 
 # ============================================================================
@@ -206,7 +208,9 @@ def load():
 
     if IS_ESC_SUPPORT_ENABLED:
         race_manager.update(parse_races())
+        race_manager.update(parse_races_old())
         item_manager.update(parse_items())
+        item_manager.update(parse_items_old())
 
     race_manager.load_all()
     item_manager.load_all()

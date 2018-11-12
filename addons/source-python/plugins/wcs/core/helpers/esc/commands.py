@@ -20,6 +20,9 @@ from engines.server import execute_server_command
 from entities.constants import MoveType
 #   Filters
 from filters.weapons import WeaponClassIter
+#   Keyvalues
+from _keyvalues import KeyValues
+# NOTE: Have to prefix it with a _ otherwise it'd import KeyValues from ES Emulator if it's loaded
 #   Listeners
 from listeners.tick import Delay
 #   Mathlib
@@ -41,6 +44,7 @@ from ...constants import COLOR_DARKGREEN
 from ...constants import COLOR_DEFAULT
 from ...constants import COLOR_GREEN
 from ...constants import COLOR_LIGHTGREEN
+from ...constants.paths import CFG_PATH
 from ...constants.paths import TRANSLATION_PATH
 #   Helpers
 from .converts import valid_userid
@@ -75,6 +79,11 @@ else:
 
 _restrictions = WeaponRestrictionHandler()
 _all_weapons = set([x.basename for x in WeaponClassIter('all', ['melee', 'objective'])])
+
+if (CFG_PATH / 'es_WCSlanguage_db.txt').isfile():
+    _languages = KeyValues.load_from_file(CFG_PATH / 'es_WCSlanguage_db.txt').as_dict()
+else:
+    _languages = {}
 
 
 # ============================================================================
