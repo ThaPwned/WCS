@@ -21,8 +21,13 @@ from time import time
 from commands import CommandReturn
 from commands.typed import TypedSayCommand
 from commands.typed import TypedClientCommand
+#   Colors
+from colors import Color
 #   Core
 from core import OutputReturn
+#   Entities
+from entities.constants import RenderMode
+from entities.entity import Entity
 #   Events
 from events import Event
 #   Filters
@@ -34,6 +39,7 @@ from listeners.tick import Delay
 from listeners.tick import Repeat
 from listeners.tick import RepeatStatus
 #   Mathlib
+from mathlib import QAngle
 from mathlib import Vector
 #   Menus
 from menus import Text
@@ -51,6 +57,7 @@ from .core.config import cfg_knife_xp
 from .core.config import cfg_headshot_xp
 from .core.config import cfg_welcome_text
 from .core.config import cfg_welcome_gui_text
+from .core.config import cfg_level_up_effect
 from .core.config import cfg_spawn_text
 from .core.config import cfg_disable_text_on_level
 from .core.config import cfg_top_announcement_enable
@@ -187,6 +194,9 @@ admin_gain_levels_self_message = SayText2(chat_strings['admin gain levels self']
 
 _delays = defaultdict(set)
 _melee_weapons = [weapon.basename for weapon in WeaponClassIter('melee')]
+
+_effect_angle = QAngle(0, 0, 0)
+_effect_color = Color(252, 232, 131)
 
 
 # ============================================================================
@@ -701,13 +711,47 @@ def on_player_delete(wcsplayer):
 
 @OnPlayerLevelUp
 def on_player_level_up(wcsplayer, race, old_level):
-    if not wcsplayer._is_bot:
-        for skill in wcsplayer.skills.values():
-            if skill.level < skill.config['maximum']:
-                delay = Delay(2, _send_message_and_remove, (spendskills_menu, wcsplayer))
-                delay.args += (delay, )
-                _delays[wcsplayer].add(delay)
-                break
+    if wcsplayer.current_race == race.name:
+        if not wcsplayer._is_bot:
+            for skill in wcsplayer.skills.values():
+                if skill.level < skill.config['maximum']:
+                    delay = Delay(2, _send_message_and_remove, (spendskills_menu, wcsplayer))
+                    delay.args += (delay, )
+                    _delays[wcsplayer].add(delay)
+                    break
+
+        if cfg_level_up_effect.get_int():
+            player = wcsplayer.player
+
+            origin = Vector(*player.origin)
+            origin.z += 10
+
+            entity = Entity.create('env_smokestack')
+            entity.origin = origin
+            entity.base_spread = 28
+            entity.spread_speed = 10
+            entity.initial_state = 0
+            entity.speed = 10
+            entity.start_size = 1
+            entity.end_size = 7
+            entity.rate = 173
+            entity.jet_length = 13
+            entity.render_color = _effect_color
+            entity.render_mode = RenderMode.NONE
+            entity.render_amt = 200
+            entity.smoke_material = 'effects/combinemuzzle2.vmt'
+            entity.angles = _effect_angle
+            entity.twist = 15
+
+            entity.spawn()
+
+            entity.set_parent(player)
+
+            entity.add_output('OnUser1 !self,TurnOff,,3.5,1')
+            entity.add_output('OnUser1 !self,Kill,,6,1')
+
+            entity.call_input('TurnOn')
+            entity.call_input('FireUser1', '1')
 
 
 @OnPlayerRankUpdate
