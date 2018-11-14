@@ -242,14 +242,14 @@ class _BaseSetting(object):
 
     # TODO: Could use a hand... don't hate me
     def _add_to_category(self, container, module, category, menu_choice, menu_info):
-        self.config['categories'].append(category)
-
-        container._category_to_values[category].append(self.name)
-
         if category is None:
             menu_choice.append(PagedOption(self.strings['name'], self.name))
             menu_info.append(PagedOption(self.strings['name'], self.name))
             return
+
+        self.config['categories'].append(category)
+
+        container._category_to_values[category].append(self.name)
 
         if module:
             from ..menus.build import changerace_menu_build as menu_choice_build
