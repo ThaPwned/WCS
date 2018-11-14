@@ -385,10 +385,10 @@ def parse_items_old():
             settings.config['count'] = int(data['maxamount'])
             settings.config['event'] = data['itemconfig']
 
-            settings.strings['name'] = _LanguageString(data['name'])
-            settings.strings['description'] = _LanguageString(data['description'].replace(r'\n', ''))
 
             category = data['category']
+            settings.strings['name'] = _LanguageString(_get_string(data['name']))
+            settings.strings['description'] = _LanguageString(_get_string(data['description']).replace(r'\n', ''))
 
             if isinstance(category, int):
                 try:
