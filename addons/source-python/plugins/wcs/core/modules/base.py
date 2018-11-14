@@ -242,14 +242,14 @@ class _BaseSetting(object):
 
     # TODO: Could use a hand... don't hate me
     def _add_to_category(self, container, module, category, menu_choice, menu_info):
+        container._category_to_values[category].append(self.name)
+
         if category is None:
             menu_choice.append(PagedOption(self.strings['name'], self.name))
             menu_info.append(PagedOption(self.strings['name'], self.name))
             return
 
         self.config['categories'].append(category)
-
-        container._category_to_values[category].append(self.name)
 
         if module:
             from ..menus.build import changerace_menu_build as menu_choice_build
@@ -260,8 +260,8 @@ class _BaseSetting(object):
             menu_choice_name = 'changerace_menu'
             menu_info_name = 'raceinfo_menu'
         else:
-            menu_info_close = None
             from ..menus.build import shopmenu_menu_build as menu_choice_build
+            from ..menus.close import shopinfo_menu_close as menu_info_close
             from ..menus.select import shopmenu_menu_select as menu_choice_select
             from ..menus.select import shopinfo_menu_select as menu_info_select
 

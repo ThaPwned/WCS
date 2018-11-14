@@ -143,7 +143,7 @@ def shopinfo_menu_select(menu, client, option):
     wcsplayer = Player.from_index(client)
 
     if isinstance(option.value, PagedMenu):
-        wcsplayer.data['_internal_shopinfo_category'] = option.value
+        wcsplayer.data['_internal_shopinfo_category'] = option.value.name
 
         return option.value
 
@@ -156,8 +156,18 @@ def shopinfo_menu_select(menu, client, option):
 def shopinfo_detail_menu_select(menu, client, option):
     if option.choice_index == BUTTON_BACK:
         wcsplayer = Player.from_index(client)
+        name = wcsplayer.data.get('_internal_shopinfo')
+        category = wcsplayer.data.get('_internal_shopinfo_category')
 
-        return wcsplayer.data['_internal_shopinfo_category']
+        all_items = item_manager._category_to_values[category]
+
+        if name not in all_items:
+            category = None
+
+        if category is None:
+            return shopinfo_menu
+
+        return item_manager._info_category_menus[category]
 
 
 @resetskills_menu.register_select_callback
