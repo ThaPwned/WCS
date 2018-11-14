@@ -101,6 +101,8 @@ def parse_races():
     if (CFG_PATH / 'races.ini').isfile():
         imported = ConfigObj(CFG_PATH / 'races.ini')
 
+        no_category = []
+
         for name, data in imported.items():
             for alias, value in data.items():
                 if alias.startswith('racealias_'):
@@ -185,7 +187,7 @@ def parse_races():
             if categories:
                 for category in categories:
                     if category == '0':
-                        settings.add_to_category(None)
+                        no_category.append(settings)
                         continue
 
                     fixed_category = FIX_NAME.sub('', category.lower().replace(' ', '_'))
@@ -195,7 +197,10 @@ def parse_races():
 
                     settings.add_to_category(fixed_category)
             else:
-                settings.add_to_category(None)
+                no_category.append(settings)
+
+        for settings in no_category:
+            settings.add_to_category(None)
 
     return races
 
@@ -351,12 +356,8 @@ def parse_items_old():
             warn(f'Unable to find the "es_WCSshop_cat_db" file.')
             categories = {}
 
-        _convert = {}
-
         for number, data in categories.items():
             fixed_category = FIX_NAME.sub('', data['name'].lower().replace(' ', '_'))
-
-            _convert[number] = fixed_category
 
             if fixed_category not in item_manager._category_max_items:
                 # TODO: Maybe it'd be set to 3 by default?
@@ -364,6 +365,11 @@ def parse_items_old():
 
             if fixed_category not in categories_strings:
                 categories_strings[fixed_category] = _LanguageString(_get_string(data['name']))
+
+            data['items'] = []
+            data['id'] = fixed_category
+
+        no_category = []
 
         for name, data in imported.items():
             for alias, value in data.items():
@@ -385,18 +391,20 @@ def parse_items_old():
             settings.config['count'] = int(data['maxamount'])
             settings.config['event'] = data['itemconfig']
 
-
-            category = data['category']
             settings.strings['name'] = _LanguageString(_get_string(data['name']))
             settings.strings['description'] = _LanguageString(_get_string(data['description']).replace(r'\n', ''))
 
-            if isinstance(category, int):
-                try:
-                    settings.add_to_category(_convert[str(category)])
-                except KeyError:
-                    settings.add_to_category(None)
+            if isinstance(data['category'], int):
+                categories[str(data['category'])]['items'].append(settings)
             else:
-                settings.add_to_category(None)
+                no_category.append(settings)
+
+        for number, data in categories.items():
+            for settings in data['items']:
+                settings.add_to_category(data['id'])
+
+        for settings in no_category:
+            settings.add_to_category(None)
 
     return items
 
