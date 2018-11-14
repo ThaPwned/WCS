@@ -265,8 +265,8 @@ class _BaseSetting(object):
             from ..menus.select import shopmenu_menu_select as menu_choice_select
             from ..menus.select import shopinfo_menu_select as menu_info_select
 
-            menu_choice_name = 'changerace_menu'
-            menu_info_name = 'raceinfo_menu'
+            menu_choice_name = 'shopmenu_menu'
+            menu_info_name = 'shopinfo_menu'
 
         if category not in container._category_menus:
             menu = container._category_menus[category] = PagedPageCountMenu()
