@@ -1136,8 +1136,8 @@ def client_ability_command(command):
                 if reason is SkillReason.ALLOWED:
                     # Only used for ESS_INI and ESS_KEY races - SP, ESP, and ESS races should set the cooldown directly
                     # TODO: Races should handle the cooldown directly
-                        skill.cooldown = time() + skill.cooldown_seconds
                     if skill._type is ModuleType.ESS_INI or skill._type is ModuleType.ESS_KEY:
+                        skill.reset_cooldown()
 
                     skill.execute('player_ability', define=True)
                 elif reason is SkillReason.TEAM:
@@ -1176,8 +1176,8 @@ def client_ultimate_command(command):
                 if reason is SkillReason.ALLOWED:
                     # Only used for ESS_INI and ESS_KEY races - SP, ESP, and ESS races should set the cooldown directly
                     # TODO: Races should handle the cooldown directly
-                        skill.cooldown = time() + skill.cooldown_seconds
                     if skill._type is ModuleType.ESS_INI or skill._type is ModuleType.ESS_KEY:
+                        skill.reset_cooldown()
 
                     skill.execute('player_ultimate', define=True)
                 elif reason is SkillReason.TEAM:
