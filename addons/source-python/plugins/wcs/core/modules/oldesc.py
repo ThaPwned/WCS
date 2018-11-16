@@ -43,10 +43,10 @@ from ..translations import categories_strings
 # >> ALL DECLARATION
 # ============================================================================
 __all__ = (
-    'parse_items',
-    'parse_items_old',
-    'parse_races',
-    'parse_races_old',
+    'parse_ini_items',
+    'parse_ini_races',
+    'parse_key_items',
+    'parse_key_races',
 )
 
 
@@ -60,9 +60,9 @@ FIX_NAME = re_compile(r'\W')
 # >> CLASSES
 # ============================================================================
 class ImportedRace(RaceSetting):
-    def __init__(self, name):
+    def __init__(self, name, type_):
         self.name = name
-        self.type = ModuleType.ESS_OLD
+        self.type = type_
         self.module = None
 
         self.config = {}
@@ -74,9 +74,9 @@ class ImportedRace(RaceSetting):
 
 
 class ImportedItem(ItemSetting):
-    def __init__(self, name):
+    def __init__(self, name, type_):
         self.name = name
-        self.type = ModuleType.ESS_OLD
+        self.type = type_
         self.module = None
 
         self.config = {}
@@ -95,7 +95,7 @@ class _LanguageString(str):
 # ============================================================================
 # >> FUNCTIONS
 # ============================================================================
-def parse_races():
+def parse_ini_races():
     races = OrderedDict()
 
     if (CFG_PATH / 'races.ini').isfile():
@@ -109,7 +109,7 @@ def parse_races():
                     _aliases[alias] = value
 
             fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
-            settings = races[fixed_name] = ImportedRace(fixed_name)
+            settings = races[fixed_name] = ImportedRace(fixed_name, ModuleType.ESS_INI)
 
             settings.cmds['preloadcmd'] = data['preloadcmd']
             settings.cmds['roundstartcmd'] = data['roundstartcmd']
@@ -205,7 +205,7 @@ def parse_races():
     return races
 
 
-def parse_items():
+def parse_ini_items():
     items = OrderedDict()
 
     if (CFG_PATH / 'items.ini').isfile():
@@ -227,7 +227,7 @@ def parse_items():
                             _aliases[alias] = value
 
                     fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
-                    settings = items[fixed_name] = ImportedItem(fixed_name)
+                    settings = items[fixed_name] = ImportedItem(fixed_name, ModuleType.ESS_INI)
 
                     settings.cmds['activatecmd'] = data['cmdactivate']
                     settings.cmds['buycmd'] = data['cmdbuy']
@@ -247,7 +247,7 @@ def parse_items():
     return items
 
 
-def parse_races_old():
+def parse_key_races():
     races = OrderedDict()
 
     if (CFG_PATH / 'es_WCSraces_db.txt').isfile():
@@ -273,7 +273,7 @@ def parse_races_old():
             name = _get_string(data['name'])
 
             fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
-            settings = races[fixed_name] = ImportedRace(fixed_name)
+            settings = races[fixed_name] = ImportedRace(fixed_name, ModuleType.ESS_KEY)
 
             settings.cmds['preloadcmd'] = data['preloadcmd'] if data['preloadcmd'] else None
             settings.cmds['roundstartcmd'] = data['round_start_cmd'] if data['round_start_cmd'] else None
@@ -334,7 +334,7 @@ def parse_races_old():
     return races
 
 
-def parse_items_old():
+def parse_key_items():
     items = OrderedDict()
 
     if (CFG_PATH / 'es_WCSshop_db.txt').isfile():
@@ -379,7 +379,7 @@ def parse_items_old():
                     ServerCommand(alias)(_command)
 
             fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
-            settings = items[fixed_name] = ImportedItem(fixed_name)
+            settings = items[fixed_name] = ImportedItem(fixed_name, ModuleType.ESS_KEY)
 
             settings.cmds['activatecmd'] = data['cmdactivate']
             settings.cmds['buycmd'] = data['cmdbuy']

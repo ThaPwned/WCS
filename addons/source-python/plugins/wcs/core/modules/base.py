@@ -309,7 +309,7 @@ class _BaseSetting(object):
 
                 if executor is not None:
                     executor.run()
-        elif self.type is ModuleType.ESS_OLD:
+        elif self.type is ModuleType.ESS_INI or self.type is ModuleType.ESS_KEY:
             commands = self.cmds.get(name)
 
             if commands is not None and commands:

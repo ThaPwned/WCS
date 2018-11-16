@@ -781,7 +781,7 @@ class _Race(object):
 
                 if executor is not None:
                     executor.run()
-        elif self.settings.type is ModuleType.ESS_OLD:
+        elif self.settings.type is ModuleType.ESS_INI or self.settings.type is ModuleType.ESS_KEY:
             commands = self.settings.cmds.get(name)
 
             if commands is not None and commands:
@@ -951,7 +951,7 @@ class _Skill(object):
                                     cvar.set_int(values)
 
                         executor.run()
-            elif self._type is ModuleType.ESS_OLD:
+            elif self._type is ModuleType.ESS_INI or self._type is ModuleType.ESS_KEY:
                 if define:
                     cvar_wcs_userid.set_int(self.wcsplayer.userid)
 
@@ -1053,7 +1053,7 @@ class _Item(object):
                     cvar.set_int(randint(0, 100))
 
                 esc.addons[f'wcs/modules/items/{self.name}'].blocks['activatecmd'].run()
-            elif self.settings.type is ModuleType.ESS_OLD:
+            elif self.settings.type is ModuleType.ESS_INI or self.settings.type is ModuleType.ESS_KEY:
                 for cvar in cvar_wcs_dices:
                     cvar.set_int(randint(0, 100))
 
@@ -1091,7 +1091,7 @@ class _Item(object):
                         cvar_wcs_userid.set_int(self.wcsplayer.userid)
 
                     executor.run()
-        elif self.settings.type is ModuleType.ESS_OLD:
+        elif self.settings.type is ModuleType.ESS_INI or self.settings.type is ModuleType.ESS_KEY:
             commands = self.settings.cmds.get(name)
 
             if commands is not None and commands:

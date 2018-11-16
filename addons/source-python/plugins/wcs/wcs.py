@@ -139,10 +139,10 @@ from .core.translations import menu_strings
 # Is ESC supported?
 if IS_ESC_SUPPORT_ENABLED:
     #   Modules
-    from .core.modules.oldesc import parse_items
-    from .core.modules.oldesc import parse_items_old
-    from .core.modules.oldesc import parse_races
-    from .core.modules.oldesc import parse_races_old
+    from .core.modules.oldesc import parse_ini_items
+    from .core.modules.oldesc import parse_ini_races
+    from .core.modules.oldesc import parse_key_items
+    from .core.modules.oldesc import parse_key_races
 
 
 # ============================================================================
@@ -217,10 +217,10 @@ def load():
     database_manager.connect()
 
     if IS_ESC_SUPPORT_ENABLED:
-        race_manager.update(parse_races())
-        race_manager.update(parse_races_old())
-        item_manager.update(parse_items())
-        item_manager.update(parse_items_old())
+        race_manager.update(parse_ini_races())
+        race_manager.update(parse_key_races())
+        item_manager.update(parse_ini_items())
+        item_manager.update(parse_key_items())
 
     race_manager.load_all()
     item_manager.load_all()
@@ -1134,10 +1134,10 @@ def client_ability_command(command):
                 reason = skill.is_executable()
 
                 if reason is SkillReason.ALLOWED:
-                    # Only used for ESS races - SP and ESP races should set the cooldown directly
+                    # Only used for ESS_INI and ESS_KEY races - SP, ESP, and ESS races should set the cooldown directly
                     # TODO: Races should handle the cooldown directly
-                    if skill._type is ModuleType.ESS or skill._type is ModuleType.ESS_OLD:
                         skill.cooldown = time() + skill.cooldown_seconds
+                    if skill._type is ModuleType.ESS_INI or skill._type is ModuleType.ESS_KEY:
 
                     skill.execute('player_ability', define=True)
                 elif reason is SkillReason.TEAM:
@@ -1174,10 +1174,10 @@ def client_ultimate_command(command):
                 reason = skill.is_executable()
 
                 if reason is SkillReason.ALLOWED:
-                    # Only used for ESS races - SP and ESP races should set the cooldown directly
+                    # Only used for ESS_INI and ESS_KEY races - SP, ESP, and ESS races should set the cooldown directly
                     # TODO: Races should handle the cooldown directly
-                    if skill._type is ModuleType.ESS or skill._type is ModuleType.ESS_OLD:
                         skill.cooldown = time() + skill.cooldown_seconds
+                    if skill._type is ModuleType.ESS_INI or skill._type is ModuleType.ESS_KEY:
 
                     skill.execute('player_ultimate', define=True)
                 elif reason is SkillReason.TEAM:
