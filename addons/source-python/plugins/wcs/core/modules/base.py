@@ -131,7 +131,7 @@ class _BaseManager(dict):
         else:
             config = {'categories':{}, module:[]}
 
-            for name in set(x.name for x in (path.listdir() + (path_es.listdir() if IS_ESC_SUPPORT_ENABLED else ()))):
+            for name in set(x.name for x in (path.listdir() + (path_es.listdir() if IS_ESC_SUPPORT_ENABLED else []))):
                 if self._is_valid_config_files(name, path):
                     config[module].append(name)
 
