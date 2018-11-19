@@ -195,6 +195,12 @@ class _RaceManager(_BaseManager):
     def unload(self, name):
         self._unload(name, 'races')
 
+    def unload_all(self):
+        if None in self:
+            del self[None]
+
+        super().unload_all()
+
     @property
     def default_race(self):
         return self._default_race
