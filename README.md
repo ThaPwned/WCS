@@ -40,9 +40,19 @@ Replace `dummy` with your steamid to gain full access.
 * `wcsadmin_raceaccess`: If this is set to `1`, it allows the player access to any race with the `ADMIN` tag in the race's `allowonly` key.
 * `vip_raceaccess`: If this is set to `1`, it does the same as with `wcsadmin_raceaccess` above except it uses the `VIP` tag instead.
 
+## Adding new style races and items
+Races and items are located in the folders `wcs/modules/races` and `wcs/modules/items` if they're written using Source.Python (the `config.json` and `strings.ini` files are _always_ located here). Races and items, which are written in either ESS or ESP, are located under `es_emulator/eventscripts/wcs/modules/races` and `es_emulator/eventscripts/wcs/modules/items`.
+If the race or item you want on your server is available on the [content repository](https://github.com/ThaPwned/WCS-Contents), you have the option to install it directly from your server. To set this up, just follow the [guide below](#github-management).
+
+## Adding old style races and items
+* WCS 0.78 (often referred to as `ini-style`): Are located in the files `cfg/source-python/wcs/races.ini` and `cfg/source-python/wcs/items.ini`.
+* WCS 0.77 and prior (often referred to as `keygroup-style`): Are located in the files `cfg/source-python/wcs/es_WCSraces_db.txt` and `cfg/source-python/wcs/es_WCSshop_db.txt`.
+
+Note: If you're using races or items from 0.78 or 0.77 and prior, it's a good idea to also get the `strings.ini` (from 0.78) or `es_WCSlanguage_db.txt` (from 0.77 and prior) as well (should be placed in the `cfg/source-python/wcs/` folder), as you can run into the possibility of the messages not being translated properly.
+Items from 0.77 and prior will also need the `es_WCSshop_cat_db.txt` file (should be placed in the `cfg/source-python/wcs/` folder), as you won't be able to use categories otherwise.
 
 ## Github Management
-Warcraft: Source allows you to install certain races and items (which can be found on the [content repository](https://github.com/ThaPwned/WCS-Contents)) directly on the server with a simple click. To enable this, you first have to install [PyGithub](https://github.com/PyGithub/PyGithub) and all of its dependencies. After that, you'll have to edit `cfg/source-python/wcs/github.json`. By default, it'll look like this:
+Warcraft: Source allows you to install certain races and items (which can be found on the [content repository](https://github.com/ThaPwned/WCS-Contents)) directly on the server with a simple click. To enable this, you have to install [PyGithub](https://github.com/PyGithub/PyGithub) and all of its dependencies. Once you've installed PyGithub properly, you can start using the functionality. However, as there's a limit ([60 for unauthenticated and 5000 for authenticated](https://developer.github.com/v3/#rate-limiting)) to the amount of requests, that gets reset once an hour, it is therefore recommended to use it while being authenticated. To do so, you'll have to edit `cfg/source-python/wcs/github.json`. By default, it'll look like this:
 ```json
 {
     "username": null,
