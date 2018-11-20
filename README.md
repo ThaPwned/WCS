@@ -43,6 +43,33 @@ Replace `dummy` with your steamid to gain full access.
 ## Adding new style races and items
 Races and items are located in the folders `wcs/modules/races` and `wcs/modules/items` if they're written using Source.Python (the `config.json` and `strings.ini` files are _always_ located here). Races and items, which are written in either ESS or ESP, are located under `es_emulator/eventscripts/wcs/modules/races` and `es_emulator/eventscripts/wcs/modules/items`.
 If the race or item you want on your server is available on the [content repository](https://github.com/ThaPwned/WCS-Contents), you have the option to install it directly from your server. To set this up, just follow the [guide below](#github-management).
+If you add the race or item directly (without using Github), you also have to add them to either `races.json` or `items.json` located in `cfg/source-python/wcs/`. By default, it'll look like this (this is the `races.json` file but it looks like the `items.json` file except it has `items` instead of `races`):
+```json
+{
+    "categories": {},
+    "races": []
+}
+```
+To add it directly to the menu, simply add it to the `races` (or `items` for items) key. If you want to add it to a category, add the category (if it's not already present) in the `categories` key with the race or item name as a sub-key. Below is an example for adding both Undead Scourge and Human Alliance:
+```json
+{
+    "categories": {
+        "standard": [
+            "undead_scourge",
+            "human_alliance"
+        ]
+    },
+    "races": [
+        "undead_scourge",
+        "human_alliance"
+    ]
+}
+```
+As they were added in a new category, you also have to edit `resource/source-python/translations/wcs/categories_strings_server.ini`, and add the translated category:
+```ini
+[standard]
+    en = "Standard"
+```
 
 ## Adding old style races and items
 * WCS 0.78 (often referred to as `ini-style`): Are located in the files `cfg/source-python/wcs/races.ini` and `cfg/source-python/wcs/items.ini`.
