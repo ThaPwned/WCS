@@ -789,11 +789,7 @@ def on_player_ready(wcsplayer):
 
             xp_required_message.send(wcsplayer.index, name=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
 
-        with FakeEvent('spawncmd', userid=wcsplayer.userid) as event:
-            wcsplayer.execute(event.name, event)
-
-        with FakeEvent('player_spawn', userid=wcsplayer.userid) as event:
-            wcsplayer.notify(event)
+        wcsplayer.execute('readycmd', define=True)
 
     if not wcsplayer._is_bot:
         if wcsplayer.total_level <= cfg_disable_text_on_level.get_int():
