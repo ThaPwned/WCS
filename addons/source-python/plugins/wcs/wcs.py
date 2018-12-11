@@ -381,6 +381,13 @@ def _give_players_xp_if_set(wcsplayers, config, bot_config, message):
                     _delays[wcsplayer].add(delay)
 
 
+def _fire_post_player_spawn(wcsplayer, delay):
+    with FakeEvent('post_player_spawn', userid=wcsplayer.userid) as event:
+        wcsplayer.notify(event)
+
+    _delays[wcsplayer].remove(delay)
+
+
 # ============================================================================
 # >> EVENTS
 # ============================================================================
@@ -499,6 +506,10 @@ def player_spawn(event):
 
             wcsplayer.execute('spawncmd', event)
             wcsplayer.notify(event)
+
+            delay = Delay(0, _fire_post_player_spawn, (wcsplayer, ))
+            delay.args += (delay, )
+            _delays[wcsplayer].add(delay)
 
 
 @Event('player_hurt')
