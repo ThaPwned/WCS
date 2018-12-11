@@ -3,6 +3,7 @@
 ## Introduction
 Warcraft: Source is a modification for Counter-Strike: Source and Counter-Strike: Global Offensive running on [Source.Python](https://github.com/Source-Python-Dev-Team/Source.Python). It changes the gameplay, where each player have a race with unique skills and abilities to that specific race, as well as having a shop to further change the playing field.
 
+* The official Source.Python forum thread can be found [here](https://forums.sourcepython.com/viewtopic.php?f=7&t=1925).
 * The official website can be found [here](http://warcraft-source.com/board/).
 * The content repository can be found [here](https://github.com/ThaPwned/WCS-Contents).
 
@@ -106,3 +107,163 @@ And that is it. If you were to add multiple repositories, remember to add a comm
 ```json
     "repositories": ["ThaPwned/WCS-Contents", "MyImaginary/Repository", "NotRealRepository/Hopefully"]
 ```
+
+## Understanding the races' config.json file
+`config.json` is the main configuration file for races, where you can make the race suit your server preferences. Below is the most basic `config.json` file with standard values:
+```json
+{
+    "required": 0,
+    "maximum": 0,
+    "restrictmap": [],
+    "restrictitem": [],
+    "restrictweapon": [],
+    "restrictteam": 0,
+    "teamlimit": 0,
+    "author": "",
+    "allowonly": [],
+    "skills": {}
+}
+```
+* `required` is the minimum global level required before you can use this race.
+* `maximum` is the maximum level you can get on this race (you can still play it, just not gain any more levels on it). If this value is set to `0`, there's no maximum level.
+* `restrictmap` contains a list of maps this race is unable to be used on. If the value is `[]`, it can be played on all maps.
+* `restrictitem` contains a list of items this race is unable to purchase and use. If the value is `[]`, all items are purchasable and usable.
+* `restrictweapon` contains a list of weapons this race is unable to use. If the value is `[]`, all weapons are usable.
+* `restrictteam` is the team this race can be used on. If the value is set to `0`, any team can use it.
+* `teamlimit` is the maximum total allowed players on each team that can use this race. If the value is `0`, there's no team limit.
+* `author` is the person who have made this race.
+* `allowonly` is a list containing steamids of players (or `ADMIN` for wcsadmins or `VIP` for VIP players) who's allowed to use this race. If the value is `[]`, all players can use it.
+* `skills` is a dict containing all the skills and skill configurations. If the value is `{}`, the race will have no skills.
+
+Skills can then be added under a `skills` key using the following format:
+```json
+        "skill name": {
+            "event": "",
+            "required": 0,
+            "cooldown": 0,
+            "variables": {
+                "variable name": [0]
+            }
+        }
+```
+
+* `skill name` have to be an all-lowercase value with spaces replaced with an underscore (`_`).
+* `event` is the event of which the skill is executed. It can be any of the available [events](#available-events). Races written in new style Python do not required this key, and can set the event directly in the skill.
+* `required` is the minimum race level required before the skill can be leveled.
+* `cooldown` is only available for skills with the event `player_ability` and `player_ultimate` (`player_ultimate` will be removed in a future release, so best to use `player_ability`). It can be a single value or a list. If it is a list, try to make sure it matches with the other lists for this skill.
+* `variables` is for unique variables the skill uses, so we'll have to take a look at its keys instead.
+* `variable name` is the name of the unique variable the skill uses, and that variable's values. It must be a list containing the values, and the length of the list is the skill's maximum level, so try to make all the lists for this skill the same.
+
+A race can also depend on certain things for different games, that may not be available in all games (eg. game models). This is primarily used for effect models, as they may not be available in the supported games. The format is as follows:
+```json
+    "games": {
+        "game name": {
+            "identifier": ""
+        }
+    }
+```
+* `games` is just to show this is for game specific elements.
+* `game name` is the game name (or `default` for the default behavior).
+* `identifier` is a unique name for this key, and are used by the race. The value of this key is just the prefered value used by this game.
+
+To further make a race unique, there can then be added effects under the `effects` key (these are to implemented by the race to function). The format looks like this (note: As there's many types of effects and different keys to set for each type of effect, this is only a rough example on how it can look):
+```json
+    "effects": {
+        "identifier": {
+            "type": "effect type",
+            "args": {
+                "key": 0,
+            }
+        }
+    }
+```
+* `effects` is just to show this is used for effects.
+* `identifier` is a unique name for this key, so the race can reference to it.
+* `type` is the effect type used and varies greatly in what they do.
+* `args` contains the key and values that the effect `type` requires.
+* `key` is the key that should be set on this specific effect `type`. The value of this key is the value that is set (note: Certain keys that requires a string value can reference back to game specific values using the following format: `$games.GAME_NAME.key`).
+
+To sum things up, using a simplified version of Human Alliance as an example, it'll look like this:
+```json
+{
+    "required": 0,
+    "maximum": 0,
+    "restrictmap": [],
+    "restrictitem": [],
+    "restrictweapon": [],
+    "restrictteam": 0,
+    "teamlimit": 0,
+    "author": "Tha Pwned (original: Kryptonite)",
+    "allowonly": [],
+    "skills": {
+        "teleport": {
+            "required": 8,
+            "cooldown": [10, 9, 8, 7, 6, 5, 4, 3],
+            "variables": {
+                "range": [600, 660, 720, 780, 840, 920, 1000, 1000]
+            }
+        }
+    },
+    "games": {
+        "default": {
+            "spawncmd_model": "sprites/cbbl_smoke.vmt"
+        }
+    },
+    "effects": {
+        "spawncmd": {
+            "type": "effect10",
+            "args": {
+                "halo": "$games.GAME_NAME.spawncmd_model",
+                "model": "$games.GAME_NAME.spawncmd_model",
+                "center": null,
+                "start_radius": null,
+                "end_radius": null,
+                "life_time": 1.5,
+                "start_width": 10,
+                "end_width": 10,
+                "fade_length": 10,
+                "amplitude": 0,
+                "red": 255,
+                "green": 255,
+                "blue": 255,
+                "alpha": 255,
+                "speed": null
+            }
+        }
+    }
+}
+```
+
+## Understanding the items' config.json file
+`config.json` is the main configuration file for items, where you can make the item suit your server preferences. Below is the most basic `config.json` file with standard values:
+```json
+{
+    "cost": 0,
+    "required": 0,
+    "dab": 0,
+    "duration": 0,
+    "count": 0,
+    "event": ""
+}
+
+```
+* `cost` is the price of the item.
+* `required` is the minimum total required level before you can purchase the item.
+* `dab` (or Dead Alive Both) is the player state that's required before they can purchase it. If the value is set to `0`, `1` or `2`, it defines the behavior as alive players, dead players or either, respectively.
+* `duration` is for how long the player should keep the item. If the value is set to `0` or `1`, it defines the behavior as a single round or until death, respectively.
+* `count` is the maximum amount purchasable of the item.
+* `event` is the event of which the item is executed. It can be any of the available [events](#available-events).
+
+### Available events
+Global events:
+* pre_player_attacker
+* player_attacker
+* player_death
+* pre_player_hurt
+* player_hurt
+* player_kill
+* player_say
+* player_spawn
+* post_player_spawn
+* pre_player_victim
+* player_victim
