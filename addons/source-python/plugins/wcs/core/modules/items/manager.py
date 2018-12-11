@@ -15,7 +15,7 @@ from ...listeners import OnPluginItemLoad
 from ...menus import shopmenu_menu
 from ...menus import shopinfo_menu
 #   Modules
-from .calls import _callbacks
+from . import _callbacks
 from ..base import _BaseManager
 from ..base import _BaseSetting
 
