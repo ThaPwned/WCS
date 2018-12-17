@@ -19,6 +19,8 @@ from random import uniform
 from shlex import split
 #   Time
 from time import time
+#   Warnings
+from warnings import warn
 
 # Source.Python Imports
 #   CVars
@@ -34,6 +36,8 @@ from entities.hooks import EntityCondition
 from entities.hooks import EntityPreHook
 #   Events
 from events import Event
+#   Hooks
+from hooks.exceptions import except_hooks
 #   Listeners
 from listeners import OnClientActive
 from listeners import OnClientDisconnect
@@ -110,7 +114,13 @@ __all__ = (
 # ============================================================================
 if (CFG_PATH / 'privileges.json').isfile():
     with open(CFG_PATH / 'privileges.json') as inputfile:
-        privileges = json_load(inputfile)
+        try:
+            privileges = json_load(inputfile)
+        except:
+            warn('Unable to load the privileges.json file.')
+            except_hooks.print_exception()
+
+            privileges = {}
 
     for x in ('players', ):
         if x not in privileges:
