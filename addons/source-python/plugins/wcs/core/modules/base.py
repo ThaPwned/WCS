@@ -93,7 +93,7 @@ class _BaseManager(dict):
 
         for category, data in config['categories'].items():
             if not category.startswith('_'):
-                for name in data[module]:
+                for name in data:
                     if not name.startswith('_'):
                         if self._is_valid_value_file(name, path, path_es):
                             if name not in value_categories:
