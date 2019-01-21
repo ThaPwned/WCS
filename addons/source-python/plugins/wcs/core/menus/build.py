@@ -426,32 +426,32 @@ def playerinfo_detail_menu_build(menu, client):
     wcsplayer = Player.from_index(client)
     wcstarget = Player(wcsplayer.data['_internal_playerinfo'])
 
-    menu[9].selectable = menu[9].highlight = wcstarget.ready
-    menu[10].selectable = menu[10].highlight = wcstarget.online
+    menu[7].selectable = menu[7].highlight = wcstarget.ready
+    menu[8].selectable = menu[8].highlight = wcstarget.online
 
     if wcstarget.ready:
         active_race = wcstarget.active_race
 
         menu[0].text.tokens['name'] = wcstarget.name
-        menu[2].text.tokens['race'] = active_race.settings.strings['name']
-        menu[3].text.tokens['xp'] = active_race.xp
-        menu[3].text.tokens['required'] = active_race.required_xp
-        menu[4].text.tokens['level'] = active_race.level
-        menu[4].text.tokens['total_level'] = wcstarget.total_level
-        menu[6].text.tokens['value'] = strftime(TIME_FORMAT, localtime(wcstarget._lastconnect))
-        menu[7].text.tokens['status'] = menu_strings['yes' if wcstarget.online else 'no']
+        menu[1].text.tokens['race'] = active_race.settings.strings['name']
+        menu[2].text.tokens['xp'] = active_race.xp
+        menu[2].text.tokens['required'] = active_race.required_xp
+        menu[3].text.tokens['level'] = active_race.level
+        menu[3].text.tokens['total_level'] = wcstarget.total_level
+        menu[5].text.tokens['value'] = strftime(TIME_FORMAT, localtime(wcstarget._lastconnect))
+        menu[6].text.tokens['status'] = menu_strings['yes' if wcstarget.online else 'no']
     else:
         menu[0].text.tokens['name'] = wcsplayer.data['_internal_playerinfo_name']
-        menu[2].text.tokens['race'] = -1
-        menu[3].text.tokens['xp'] = -1
-        menu[3].text.tokens['required'] = -1
-        menu[4].text.tokens['level'] = -1
-        menu[4].text.tokens['total_level'] = -1
-        menu[6].text.tokens['value'] = -1
-        menu[7].text.tokens['status'] = -1
+        menu[1].text.tokens['race'] = -1
+        menu[2].text.tokens['xp'] = -1
+        menu[2].text.tokens['required'] = -1
+        menu[3].text.tokens['level'] = -1
+        menu[3].text.tokens['total_level'] = -1
+        menu[5].text.tokens['value'] = -1
+        menu[6].text.tokens['status'] = -1
 
-    menu[5].text.tokens['rank'] = wcstarget.rank
-    menu[5].text.tokens['total_rank'] = len(rank_manager)
+    menu[4].text.tokens['rank'] = wcstarget.rank
+    menu[4].text.tokens['total_rank'] = len(rank_manager)
 
 
 @playerinfo_detail_skills_menu.register_build_callback

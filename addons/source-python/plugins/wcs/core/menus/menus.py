@@ -199,17 +199,14 @@ playerinfo_menu.extend(
 playerinfo_detail_menu.extend(
     [
         Text(menu_strings['playerinfo_detail_menu title']),
-        Text('-' * 25),
         Text(menu_strings['playerinfo_detail_menu line 1']),
         Text(menu_strings['playerinfo_detail_menu line 2']),
         Text(menu_strings['playerinfo_detail_menu line 3']),
         Text(menu_strings['playerinfo_detail_menu line 4']),
         Text(menu_strings['playerinfo_detail_menu line 5']),
         Text(menu_strings['playerinfo_detail_menu line 6']),
-        Text('-' * 25),
         SimpleOption(1, menu_strings['playerinfo_detail_menu line 7'], playerinfo_detail_skills_menu),
         SimpleOption(2, menu_strings['playerinfo_detail_menu line 8'], playerinfo_detail_stats_menu),
-        Text('-' * 25),
         SimpleOption(BUTTON_BACK, menu_strings['back'], playerinfo_menu),
         Text(' '),
         SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
@@ -219,13 +216,14 @@ playerinfo_detail_menu.extend(
 playerinfo_detail_stats_menu.extend(
     [
         Text(menu_strings['playerinfo_detail_stats_menu title']),
-        Text('-' * 25),
+        Text(' '),
         Text(menu_strings['playerinfo_detail_stats_menu line 1']),
         Text(menu_strings['playerinfo_detail_stats_menu line 2']),
         Text(menu_strings['playerinfo_detail_stats_menu line 3']),
         Text(menu_strings['playerinfo_detail_stats_menu line 4']),
         Text(menu_strings['playerinfo_detail_stats_menu line 5']),
-        Text('-' * 25),
+        Text(' '),
+        Text(' '),
         SimpleOption(BUTTON_BACK, menu_strings['back'], playerinfo_detail_menu),
         Text(' '),
         SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
