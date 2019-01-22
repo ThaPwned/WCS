@@ -1064,6 +1064,10 @@ def client_ability_plus_command(command, ability:int=1, *args:str):
     wcsplayer = Player.from_index(command.index)
 
     if wcsplayer.ready:
+        # TODO: Monkeypatch until it's been fixed in SP (don't create a race with 32 abilities, please)
+        if ability == 32:
+            ability = 1
+
         active_race = wcsplayer.active_race
 
         i = 1
@@ -1108,6 +1112,10 @@ def client_ability_plus_command(command, ability:int=1, *args:str):
 def client_ability_minus_command(command, ability:int=1, *args:str):
     wcsplayer = Player.from_index(command.index)
     if wcsplayer.ready:
+        # TODO: Monkeypatch until it's been fixed in SP (don't create a race with 32 abilities, please)
+        if ability == 32:
+            ability = 1
+
         active_race = wcsplayer.active_race
 
         i = 1
