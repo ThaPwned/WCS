@@ -351,8 +351,27 @@ def raceinfo_skills_menu_build(menu, client):
 
     menu.title.tokens['name'] = settings.strings['name']
 
+    i = 1
+
     for name in settings.config['skills']:
-        menu.append(PagedOption(settings.strings[name], name))
+        events = settings.config['skills'][name]['event']
+
+        if 'player_ultimate' in events:
+            option = PagedOption(menu_strings['raceinfo_skills_menu ultimate'], name)
+            option.text.tokens['name'] = settings.strings[name]
+        elif 'player_ability' in events:
+            option = PagedOption(menu_strings['raceinfo_skills_menu ability'], name)
+            option.text.tokens['name'] = settings.strings[name]
+        elif 'player_ability_on' in events or 'player_ability_off' in events:
+            option = PagedOption(menu_strings['raceinfo_skills_menu ability_on'], name)
+            option.text.tokens['name'] = settings.strings[name]
+            option.text.tokens['index'] = i
+
+            i += 1
+        else:
+            option = PagedOption(settings.strings[name], name)
+
+        menu.append(option)
 
 
 @raceinfo_skills_detail_menu.register_build_callback
