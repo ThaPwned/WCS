@@ -35,6 +35,9 @@ class ItemSetting(_BaseSetting):
     def __init__(self, name):
         super().__init__(name, ITEM_PATH)
 
+        if isinstance(self.config.get('event'), str):
+            self.config['event'] = [self.config['event']]
+
     def execute(self, name, *args):
         super().execute(name, 'items', _callbacks, args)
 

@@ -85,6 +85,9 @@ class RaceSetting(_BaseSetting):
                 if not isinstance(config['cooldown'], (list, tuple)):
                     config['cooldown'] = [config['cooldown']] * config['maximum']
 
+            if isinstance(config.get('event'), str):
+                config['event'] = [config['event']]
+
     def execute(self, name, *args):
         super().execute(name, 'races', _callbacks, args)
 

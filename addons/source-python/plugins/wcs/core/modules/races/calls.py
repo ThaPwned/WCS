@@ -3,10 +3,6 @@
 # ============================================================================
 # >> IMPORTS
 # ============================================================================
-# Python Imports
-#   Functools
-from functools import partial
-
 # Source.Python Imports
 #   Core
 from core import AutoUnload
@@ -21,37 +17,27 @@ from .manager import race_manager
 # >> ALL DECLARATION
 # ============================================================================
 __all__ = (
-    'command',
+    'RaceEvent',
+    'SkillEvent',
 )
-
-
-# ============================================================================
-# >> GLOBAL VARIABLES
-# ============================================================================
-_guard = object()
 
 
 # ============================================================================
 # >> CLASSES
 # ============================================================================
-class _Decorator(AutoUnload):
-    def __init__(self, callback, event=None):
-        self.callback = callback
-        self.event = callback.__name__
+class RaceEvent(AutoUnload):
+    def __init__(self, event=None):
+        self.event = event
+
+    def __call__(self, callback):
+        if self.event is None:
+            self.event = callback.__name__
+
         self.race = callback.__module__.rsplit('.', 1)[1]
 
         _callbacks[self.race][self.event] = callback
 
-        if event is not None:
-            config = race_manager[self.race].config['skills']
-
-            # TODO: Figure out a better way of doing this
-            if self.event in config:
-                config[self.event]['event'] = event
-            elif self.event.endswith(('_on', '_off')):
-                config[self.event.rsplit('_', 1)[0]]['event'] = event
-            else:
-                raise ValueError(f'Invalid function name: {self.event}')
+        return callback
 
     def _unload_instance(self):
         del _callbacks[self.race][self.event]
@@ -60,11 +46,37 @@ class _Decorator(AutoUnload):
             del _callbacks[self.race]
 
 
-# ============================================================================
-# >> FUNCTIONS
-# ============================================================================
-def command(function=_guard, *, event=None):
-    if function is _guard:
-        return partial(_Decorator, event=event)
+class SkillEvent(AutoUnload):
+    def __init__(self, event, skill=None):
+        self.event = event
+        self.skill = skill
 
-    return _Decorator(function, event=event)
+    def __call__(self, callback):
+        if self.skill is None:
+            self.skill = callback.__name__
+
+        self.callback = callback
+        self.race = callback.__module__.rsplit('.', 1)[1]
+
+        if self.skill not in _callbacks[self.race]:
+            _callbacks[self.race][self.skill] = {}
+
+        assert self.event not in _callbacks[self.race][self.skill]
+
+        _callbacks[self.race][self.skill][self.event] = callback
+
+        config = race_manager[self.race].config['skills']
+
+        if 'event' not in config[self.skill]:
+            config[self.skill]['event'] = []
+
+        config[self.skill]['event'].append(self.event)
+
+    def _unload_instance(self):
+        del _callbacks[self.race][self.skill][self.event]
+
+        if not _callbacks[self.race][self.skill]:
+            del _callbacks[self.race][self.skill]
+
+            if not _callbacks[self.race]:
+                del _callbacks[self.race]

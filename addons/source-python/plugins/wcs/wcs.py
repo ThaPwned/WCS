@@ -1075,14 +1075,14 @@ def client_ability_plus_command(command, ability:int=1, *args:str):
         for skill_name in active_race.settings.config['skills']:
             skill = active_race.skills[skill_name]
 
-            if skill.config['event'] == 'player_ability':
+            if 'player_ability_on' in skill.config['event']:
                 if ability == i:
                     reason = skill.is_executable()
 
                     if reason is SkillReason.ALLOWED:
                         OnPlayerAbilityOn.manager.notify(wcsplayer, skill, args)
 
-                        with FakeEvent(f'{skill_name}_on', userid=wcsplayer.userid, args=args) as event:
+                        with FakeEvent('player_ability_on' if skill._type is ModuleType.SP else f'{skill_name}_on', userid=wcsplayer.userid, args=args) as event:
                             skill.execute(event.name, event)
                     elif reason is SkillReason.TEAM:
                         ability_team_message.send(command.index)
@@ -1123,11 +1123,11 @@ def client_ability_minus_command(command, ability:int=1, *args:str):
         for skill_name in active_race.settings.config['skills']:
             skill = active_race.skills[skill_name]
 
-            if skill.config['event'] == 'player_ability':
+            if 'player_ability_off' in skill.config['event']:
                 if ability == i:
                     OnPlayerAbilityOff.manager.notify(wcsplayer, skill, args)
 
-                    with FakeEvent(f'{skill_name}_off', userid=wcsplayer.userid, args=args) as event:
+                    with FakeEvent('player_ability_off' if skill._type is ModuleType.SP else f'{skill_name}_off', userid=wcsplayer.userid, args=args) as event:
                         skill.execute(event.name, event)
 
                     break
@@ -1145,7 +1145,7 @@ def client_ability_command(command):
         active_race = wcsplayer.active_race
 
         for skill in active_race.skills.values():
-            if skill.config['event'] == 'player_ability':
+            if 'player_ability' in skill.config['event']:
                 reason = skill.is_executable()
 
                 if reason is SkillReason.ALLOWED:
@@ -1185,7 +1185,7 @@ def client_ultimate_command(command):
         active_race = wcsplayer.active_race
 
         for skill in active_race.skills.values():
-            if skill.config['event'] == 'player_ultimate':
+            if 'player_ultimate' in skill.config['event']:
                 reason = skill.is_executable()
 
                 if reason is SkillReason.ALLOWED:

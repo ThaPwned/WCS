@@ -146,7 +146,7 @@ def parse_ini_races():
 
                 skill = skills[fixed_skill_name] = {}
 
-                skill['event'] = skillcfg[i]
+                skill['event'] = [skillcfg[i]]
 
                 skill['required'] = [int(skillneeded[i])] * numberoflevels[i]
 
@@ -237,7 +237,7 @@ def parse_ini_items():
                     settings.config['dab'] = int(data['dab'])
                     settings.config['duration'] = int(data['duration'])
                     settings.config['count'] = int(data['max'])
-                    settings.config['event'] = data['cfg']
+                    settings.config['event'] = [data['cfg']]
 
                     settings.strings['name'] = _LanguageString(data['name'])
                     settings.strings['description'] = _LanguageString(data['desc'].replace(r'\n', ''))
@@ -310,7 +310,7 @@ def parse_key_races():
 
                 skill = skills[fixed_skill_name] = {}
 
-                skill['event'] = skillcfg[i]
+                skill['event'] = [skillcfg[i]]
 
                 if skillcfg[i] == 'player_ultimate':
                     skill['cooldown'] = [data['ultimate_cooldown']] * numberoflevels
@@ -389,7 +389,7 @@ def parse_key_items():
             settings.config['dab'] = int(data['dab'])
             settings.config['duration'] = int(data['duration'])
             settings.config['count'] = int(data['maxamount'])
-            settings.config['event'] = data['itemconfig']
+            settings.config['event'] = [data['itemconfig']]
 
             settings.strings['name'] = _LanguageString(_get_string(data['name']))
             settings.strings['description'] = _LanguageString(_get_string(data['description']).replace(r'\n', ''))

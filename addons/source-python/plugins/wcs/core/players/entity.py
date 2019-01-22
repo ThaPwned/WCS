@@ -757,11 +757,113 @@ class _Race(object):
             name = event.name
 
         for skill_name, data in self.settings.config['skills'].items():
-            if data['event'] == name:
-                self.skills[skill_name].execute(event=event)
+            if name in data['event']:
+                skill = self.skills[skill_name]
+                level = skill.level
+
+                if level:
+                    variables = {}
+
+                    for variable, values in skill.config['variables'].items():
+                        variables[variable] = values[level - 1] if level <= len(values) else values[-1]
+
+                    if skill._type is ModuleType.SP:
+                        callback = _race_callbacks.get(self.name, {}).get(skill_name, {}).get(name)
+
+                        if callback is not None:
+                            if event is None:
+                                callback(self.wcsplayer, variables)
+                            else:
+                                callback(event, self.wcsplayer, variables)
+                    elif skill._type is ModuleType.ESP:
+                        callback = es.addons.Blocks.get(f'wcs/modules/races/{self.name}/{skill_name}')
+
+                        if callback is not None:
+                            if event is None:
+                                callback(self.wcsplayer, variables)
+                            else:
+                                callback(es.event_var, self.wcsplayer, variables)
+                    elif skill._type is ModuleType.ESS:
+                        addon = esc.addons.get(f'wcs/modules/races/{self.name}')
+
+                        if addon is not None:
+                            executor = addon.blocks.get(skill_name)
+
+                            if executor is not None:
+                                for cvar in cvar_wcs_dices:
+                                    cvar.set_int(randint(0, 100))
+
+                                for variable, values in variables.items():
+                                    variable = f'wcs_{variable}'
+                                    cvar = cvars.get(variable)
+
+                                    if cvar is None:
+                                        cvar = cvars[variable] = ConVar(variable, '0')
+
+                                    if isinstance(values, list):
+                                        if isinstance(values[0], float) or isinstance(values[1], float):
+                                            cvar.set_float(uniform(*values))
+                                        else:
+                                            cvar.set_int(randint(*values))
+                                    else:
+                                        if isinstance(values, float):
+                                            cvar.set_float(values)
+                                        else:
+                                            cvar.set_int(values)
+
+                                executor.run()
+                    elif skill._type is ModuleType.ESS_INI or skill._type is ModuleType.ESS_KEY:
+                        for cvar in cvar_wcs_dices:
+                            cvar.set_int(randint(0, 100))
+
+                        try:
+                            commands = skill.config['cmds']['setting'][level - 1]
+                        except IndexError:
+                            commands = skill.config['cmds']['setting'][-1]
+
+                        if commands:
+                            for cmd in commands.split(';'):
+                                execute_server_command(*split(cmd))
+
+                        for key in ('cmd', 'sfx'):
+                            commands = skill.config['cmds'][key]
+
+                            if commands:
+                                for cmd in commands.split(';'):
+                                    execute_server_command(*split(cmd))
 
         for item in self.wcsplayer.items.values():
-            item.notify(event, name)
+            if name in self.settings.config['event']:
+                if self.settings.type is ModuleType.SP:
+                    callback = _item_callbacks.get(self.name, {}).get(name)
+
+                    if callback is not None:
+                        if event is None:
+                            callback(self.wcsplayer)
+                        else:
+                            callback(event, self.wcsplayer)
+                elif self.settings.type is ModuleType.ESP:
+                    callback = es.addons.Blocks.get(f'wcs/modules/items/{self.name}/{name}')
+
+                    if callback is not None:
+                        if event is None:
+                            callback(self.wcsplayer)
+                        else:
+                            callback(es.event_var, self.wcsplayer)
+                elif self.settings.type is ModuleType.ESS:
+                    addon = esc.addons.get(f'wcs/modules/items/{self.name}')
+
+                    if addon is not None:
+                        executor = addon.blocks.get(name)
+
+                        if executor is not None:
+                            executor.run()
+                elif self.settings.type is ModuleType.ESS_INI or self.settings.type is ModuleType.ESS_KEY:
+                    commands = self.settings.cmds.get(name)
+
+                    if commands is not None and commands:
+                        for cmd in commands.split(';'):
+                            execute_server_command(*split(cmd))
 
     def execute(self, name, event=None, define=False):
         if self.settings.type is ModuleType.SP:
@@ -905,16 +1007,13 @@ class _Skill(object):
 
     def execute(self, name=None, event=None, define=False):
         if self.level:
-            if name is None:
-                name = self.name
-
             variables = {}
 
             for variable, values in self.config['variables'].items():
                 variables[variable] = values[self.level - 1] if self.level <= len(values) else values[-1]
 
             if self._type is ModuleType.SP:
-                callback = _race_callbacks.get(self._race_name, {}).get(name)
+                callback = _race_callbacks.get(self._race_name, {}).get(self.name, {}).get(name or event.name)
 
                 if callback is not None:
                     if event is None:
@@ -922,7 +1021,7 @@ class _Skill(object):
                     else:
                         callback(event, self.wcsplayer, variables)
             elif self._type is ModuleType.ESP:
-                callback = es.addons.Blocks.get(f'wcs/modules/races/{self._race_name}/{name}')
+                callback = es.addons.Blocks.get(f'wcs/modules/races/{self._race_name}/{self.name}')
 
                 if callback is not None:
                     if event is None:
@@ -933,7 +1032,7 @@ class _Skill(object):
                 addon = esc.addons.get(f'wcs/modules/races/{self._race_name}')
 
                 if addon is not None:
-                    executor = addon.blocks.get(name)
+                    executor = addon.blocks.get(self.name)
 
                     if executor is not None:
                         if define:
@@ -1048,30 +1147,6 @@ class _Item(object):
         self._stats = _Stats()
 
         self.settings = item_manager[name]
-
-    def notify(self, event, name=None):
-        if name is None:
-            name = event.name
-
-        if self.settings.config['event'] == name:
-            if self.settings.type is ModuleType.SP:
-                _item_callbacks[self.name]['activatecmd'](event, self.wcsplayer)
-            elif self.settings.type is ModuleType.ESP:
-                es.addons.Blocks[f'wcs/modules/items/{self.name}/activatecmd'](es.event_var, self.wcsplayer)
-            elif self.settings.type is ModuleType.ESS:
-                for cvar in cvar_wcs_dices:
-                    cvar.set_int(randint(0, 100))
-
-                esc.addons[f'wcs/modules/items/{self.name}'].blocks['activatecmd'].run()
-            elif self.settings.type is ModuleType.ESS_INI or self.settings.type is ModuleType.ESS_KEY:
-                for cvar in cvar_wcs_dices:
-                    cvar.set_int(randint(0, 100))
-
-                commands = self.settings.cmds.get('activatecmd')
-
-                if commands is not None and commands:
-                    for cmd in commands.split(';'):
-                        execute_server_command(*split(cmd))
 
     def execute(self, name, event=None, define=False):
         if self.settings.type is ModuleType.SP:
