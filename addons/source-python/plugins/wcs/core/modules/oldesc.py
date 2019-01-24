@@ -116,7 +116,8 @@ def parse_ini_races():
             settings.cmds['roundendcmd'] = data['roundendcmd']
             settings.cmds['spawncmd'] = data['spawncmd']
             settings.cmds['deathcmd'] = data['deathcmd']
-            settings.cmds['changecmd'] = data['onchange']
+            settings.cmds['changeintocmd'] = None
+            settings.cmds['changefromcmd'] = data['onchange']
 
             settings.config['required'] = int(data['required'])
             settings.config['maximum'] = int(data['maximum'])
@@ -280,7 +281,8 @@ def parse_key_races():
             settings.cmds['roundendcmd'] = data['round_end_cmd'] if data['round_end_cmd'] else None
             settings.cmds['spawncmd'] = data['player_spawn_cmd'] if data['player_spawn_cmd'] else None
             settings.cmds['deathcmd'] = None
-            settings.cmds['changecmd'] = None
+            settings.cmds['changeintocmd'] = None
+            settings.cmds['changefromcmd'] = None
 
             settings.config['required'] = data['required_level']
             settings.config['maximum'] = data['maximum_level']

@@ -596,7 +596,7 @@ class Player(object, metaclass=_PlayerMeta):
         assert old != value
         assert value in race_manager
 
-        self.execute('changecmd', define=True)
+        self.execute('changefromcmd', define=True)
 
         team = self.player.team
 
@@ -612,6 +612,8 @@ class Player(object, metaclass=_PlayerMeta):
             team_data[team][f'_internal_{value}_limit_allowed'].append(self.userid)
 
         self._current_race = value
+
+        self.execute('changeintocmd', define=True)
 
         OnPlayerChangeRace.manager.notify(self, old, value)
 
