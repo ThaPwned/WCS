@@ -712,8 +712,9 @@ def on_level_init(map_name):
 
 @OnPlayerDelete
 def on_player_delete(wcsplayer):
-    with FakeEvent('disconnectcmd', userid=wcsplayer.userid) as event:
-        wcsplayer.execute(event.name, event)
+    if wcsplayer.ready:
+        with FakeEvent('disconnectcmd', userid=wcsplayer.userid) as event:
+            wcsplayer.execute(event.name, event)
 
     for delay in _delays.pop(wcsplayer, []):
         if delay.running:
