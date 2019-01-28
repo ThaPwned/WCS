@@ -330,14 +330,18 @@ class _BaseSetting(object):
             if isinstance(value, str):
                 if value.startswith('$'):
                     current = None
+                    values = value[1:].split('.')
 
-                    for next_key in value[1:].split('.'):
+                    for i, next_key in enumerate(values):
                         if current is None:
                             current = self.config[next_key]
                         else:
                             if next_key == 'GAME_NAME':
                                 if GAME_NAME in current:
-                                    next_key = GAME_NAME
+                                    if values[i + 1] in current[GAME_NAME]:
+                                        next_key = GAME_NAME
+                                    else:
+                                        next_key = 'default'
                                 else:
                                     next_key = 'default'
 
