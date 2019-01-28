@@ -79,12 +79,14 @@ from .core.config import cfg_bot_bomb_plant_xp
 from .core.config import cfg_bot_bomb_defuse_xp
 from .core.config import cfg_bot_bomb_explode_xp
 from .core.config import cfg_bot_hostage_rescue_xp
+from .core.config import cfg_github_mod_update
 from .core.config import cfg_github_refresh_rate
 #   Constants
 from .core.constants import IS_ESC_SUPPORT_ENABLED
 from .core.constants import ModuleType
 from .core.constants import RaceReason
 from .core.constants import SkillReason
+from .core.constants.info import info
 #   Database
 from .core.database.manager import database_manager
 from .core.database.thread import _repeat
@@ -94,6 +96,7 @@ from .core.helpers.events import FakeEvent
 from .core.helpers.github import github_manager
 from .core.helpers.overwrites import SayText2
 #   Listeners
+from .core.listeners import OnDownloadComplete
 from .core.listeners import OnIsSkillExecutableText
 from .core.listeners import OnPlayerAbilityOff
 from .core.listeners import OnPlayerAbilityOn
@@ -191,9 +194,11 @@ admin_gain_levels_all_message = SayText2(chat_strings['admin gain levels all'])
 admin_gain_levels_receiver_message = SayText2(chat_strings['admin gain levels receiver'])
 admin_gain_levels_sender_message = SayText2(chat_strings['admin gain levels sender'])
 admin_gain_levels_self_message = SayText2(chat_strings['admin gain levels self'])
+github_mod_update_message = SayText2(chat_strings['github mod update'])
 
 _delays = defaultdict(set)
 _melee_weapons = [weapon.basename for weapon in WeaponClassIter('melee')]
+_new_version = None
 
 _effect_angle = QAngle(0, 0, 0)
 _effect_color = Color(252, 232, 131)
@@ -213,6 +218,9 @@ class QuietTypedClientCommand(TypedClientCommand):
 # ============================================================================
 def load():
     github_manager.refresh()
+
+    if cfg_github_mod_update.get_int():
+        github_manager.download_update()
 
     database_manager.connect()
 
@@ -395,6 +403,11 @@ def _fire_post_player_spawn(wcsplayer, delay):
 def round_start(event):
     for _, wcsplayer in PlayerReadyIter(not_filters=['un', 'spec']):
         wcsplayer.execute('roundstartcmd', event, define=True)
+
+    if _new_version is not None:
+        for _, wcsplayer in PlayerReadyIter():
+            if wcsplayer.privileges.get('wcsadmin'):
+                github_mod_update_message.send(wcsplayer.index, old=info.version, new=_new_version)
 
 
 @Event('round_end')
@@ -705,9 +718,24 @@ if IS_ESC_SUPPORT_ENABLED:
         return OutputReturn.CONTINUE
 
 
+@OnDownloadComplete
+def on_download_complete(version):
+    if version is not None:
+        global _new_version
+
+        _new_version = version
+
+        for _, wcsplayer in PlayerReadyIter():
+            if wcsplayer.privileges.get('wcsadmin'):
+                github_mod_update_message.send(wcsplayer.index, old=info.version, new=version)
+
+
 @OnLevelInit
 def on_level_init(map_name):
     github_manager.refresh()
+
+    if cfg_github_mod_update.get_int():
+        github_manager.download_update()
 
 
 @OnPlayerDelete

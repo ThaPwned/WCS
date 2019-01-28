@@ -13,6 +13,8 @@ from listeners import ListenerManagerDecorator
 # >> ALL DECLARATION
 # ============================================================================
 __all__ = (
+    'OnDownloadBegin',
+    'OnDownloadComplete',
     'OnGithubFailed',
     'OnGithubRefresh',
     'OnGithubRefreshed',
@@ -44,6 +46,14 @@ __all__ = (
 # ============================================================================
 # >> CLASSES
 # ============================================================================
+class OnDownloadBegin(ListenerManagerDecorator):
+    manager = ListenerManager()
+
+
+class OnDownloadComplete(ListenerManagerDecorator):
+    manager = ListenerManager()
+
+
 class OnGithubFailed(ListenerManagerDecorator):
     manager = ListenerManager()
 

@@ -1,0 +1,4 @@
+.gitattributes
+.gitignore
+README.md
+addons/source-python/data/plugins/wcs/update_blacklist.txt

@@ -4,22 +4,39 @@
 # >> IMPORTS
 # ============================================================================
 # Python Imports
+#   Disutils
+from distutils.dir_util import copy_tree
 #   Github
 try:
     from github import Github
 except ImportError:
     Github = None
+#   IO
+from io import BytesIO
 #   JSON
 from json import dump
 from json import load
+#   Path
+from path import Path
 #   Queue
 from queue import Queue
+#   Tempfile
+from tempfile import TemporaryDirectory
 #   Threading
 from threading import Thread
+#   Time
+from time import mktime
+from time import strptime
+#   Urllib
+from urllib.request import urlopen
 #   Warnings
 from warnings import filterwarnings
+#   Zipfile
+from zipfile import ZipFile
 
 # Source.Python Imports
+#   Constants
+from paths import GAME_PATH
 #   Listeners
 from listeners.tick import Repeat
 #   Players
@@ -32,11 +49,15 @@ from ..constants import GITHUB_PASSWORD
 from ..constants import GITHUB_REPOSITORIES
 from ..constants import GITHUB_USERNAME
 from ..constants import GithubStatus
+from ..constants.info import info
+from ..constants.paths import DATA_PATH
 from ..constants.paths import MODULE_PATH
 from ..constants.paths import MODULE_PATH_ES
 #   Helpers
 from ..helpers.overwrites import SayText2
 #   Listeners
+from ..listeners import OnDownloadBegin
+from ..listeners import OnDownloadComplete
 from ..listeners import OnGithubFailed
 from ..listeners import OnGithubRefresh
 from ..listeners import OnGithubRefreshed
@@ -83,6 +104,7 @@ class _GithubManager(dict):
 
         self._counter = 0
         self._repeat = Repeat(self._tick)
+        self._downloading = False
         self._refreshing = False
 
         self._threads = []
@@ -113,6 +135,58 @@ class _GithubManager(dict):
             return Github()
 
         return Github(GITHUB_USERNAME, GITHUB_PASSWORD)
+
+    def _download_update(self):
+        try:
+            _github = self._connect()
+
+            _repo = _github.get_repo(f'{info.author.replace(" ", "")}/WCS')
+            info_file = _repo.get_contents('addons/source-python/plugins/wcs/info.ini')
+
+            for line in info_file.decoded_content.decode('utf8').split('\n'):
+                if line.startswith('version'):
+                    new_version = line.split()[2].strip()[1:-1]
+                    break
+            else:
+                raise ValueError("Unable to locate 'version'.")
+
+            new_version_epoch = new_version.split('-')
+            new_version_epoch = mktime(strptime(new_version_epoch[0], r'%Y.%m.%d')) + int(new_version_epoch[1])
+
+            local_version_epoch = info.version.split('-')
+            local_version_epoch = mktime(strptime(local_version_epoch[0], r'%Y.%m.%d')) + int(local_version_epoch[1])
+
+            if new_version_epoch > local_version_epoch:
+                if (DATA_PATH / 'update_blacklist.txt').isfile():
+                    with open(DATA_PATH / 'update_blacklist.txt') as f:
+                        blacklist = f.read().splitlines()
+                else:
+                    blacklist = []
+
+                with urlopen(_repo.get_archive_link('zipball', 'master')) as response:
+                    with ZipFile(BytesIO(response.read()), 'r') as ref:
+                        files = ref.namelist()
+                        unique_name = files[0]
+
+                        files.remove(unique_name)
+
+                        with TemporaryDirectory() as tmpdir:
+                            for member in files:
+                                name = member.replace(unique_name, '')
+
+                                if name in blacklist:
+                                    continue
+
+                                ref.extract(member, path=tmpdir)
+
+                            copy_tree(Path(tmpdir) / unique_name, GAME_PATH)
+
+                _output.put((OnDownloadComplete.manager.notify, new_version))
+            else:
+                _output.put((OnDownloadComplete.manager.notify, None))
+        except:
+            _output.put(None)
+            raise
 
     def _refresh(self):
         try:
@@ -320,6 +394,9 @@ class _GithubManager(dict):
                     outputfile.write(repository.get_contents(content.path).decoded_content)
 
     if Github is None:
+        def download_update(self):
+            pass
+
         def refresh(self):
             pass
 
@@ -335,6 +412,24 @@ class _GithubManager(dict):
         def uninstall(self, repository, module, name, userid=None):
             pass
     else:
+        def download_update(self):
+            if self._downloading:
+                return
+
+            self._downloading = True
+
+            if not self._counter:
+                self._repeat.start(0.1)
+
+            self._counter += 1
+
+            OnDownloadBegin.manager.notify()
+
+            thread = Thread(target=self._download_update)
+            thread.start()
+
+            self._threads.append(thread)
+
         def refresh(self):
             if self._refreshing:
                 return
@@ -424,6 +519,13 @@ def on_github_failed(repository, module, name, userid, task):
         _send_message(module, github_uninstalling_failed_message, userid, name=name)
 
         github_manager[module][name]['status'] = GithubStatus.INSTALLED
+
+    _remove_dead_threads()
+
+
+@OnDownloadComplete
+def on_download_complete(version):
+    github_manager._downloading = False
 
     _remove_dead_threads()
 
