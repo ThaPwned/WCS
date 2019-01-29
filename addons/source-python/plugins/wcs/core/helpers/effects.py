@@ -492,9 +492,9 @@ def effect117(*args):
 
 
 @register('Dynamic Light')
-def effect118(origin, red, green, blue, alpha, exponent, radius, life_time, decay):
+def effect118(origin, red, green, blue, exponent, radius, life_time, decay):
     """
-    est_effect_18 <player filter> <delay> <position x y z> <red> <green> <blue> <alpha> <exponent> <radius> <time> <decay>
+    est_effect_18 <player filter> <delay> <position x y z> <red> <green> <blue> <exponent> <radius> <time> <decay>
     """
     if not isinstance(origin, Vector):
         origin = Vector(*origin)

@@ -158,8 +158,8 @@ def effect117_command(command_info, filter_:convert_userid_identifier_to_players
 
 
 @TypedServerCommand('est_effect_18')
-def effect118_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, origin:convert_to_vector, red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), exponent:int, radius:float, life_time:float, decay:int):
-    effect118(origin, red, green, blue, alpha, exponent, radius, life_time, decay).create(filter_, delay=delay)
+def effect118_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, origin:convert_to_vector, red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), exponent:int, radius:float, life_time:float, decay:int):
+    effect118(origin, red, green, blue, exponent, radius, life_time, decay).create(filter_, delay=delay)
 
 
 @TypedServerCommand('est_effect_19')
