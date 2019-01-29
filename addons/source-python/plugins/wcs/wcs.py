@@ -391,6 +391,7 @@ def _give_players_xp_if_set(wcsplayers, config, bot_config, message):
 
 def _fire_post_player_spawn(wcsplayer, delay):
     with FakeEvent('post_player_spawn', userid=wcsplayer.userid) as event:
+        wcsplayer.execute('postspawncmd', event)
         wcsplayer.notify(event)
 
     _delays[wcsplayer].remove(delay)
