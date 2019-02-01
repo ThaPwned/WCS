@@ -1,8 +1,13 @@
-# ../wcs/core/helpers/events.py
+# ../wcs/core/events.py
 
 # ============================================================================
 # >> IMPORTS
 # ============================================================================
+# Source.Python Imports
+#   Events
+from events import Event as _Event
+from events.manager import event_manager
+
 # WCS Imports
 #   Constants
 from ..constants import IS_ESC_SUPPORT_ENABLED
@@ -17,13 +22,52 @@ if IS_ESC_SUPPORT_ENABLED:
 # >> ALL DECLARATION
 # ============================================================================
 __all__ = (
+    'Event',
     'FakeEvent',
 )
 
 
 # ============================================================================
+# >> GLOBAL VARIABLES
+# ============================================================================
+_events = {}
+
+
+# ============================================================================
 # >> CLASSES
 # ============================================================================
+class Event(_Event):
+    def __call__(self, callback):
+        self.callback = callback
+
+        return self.callback
+
+    def _add_instance(self, caller):
+        self._caller = caller.split('.')[-1]
+
+        if self._caller not in _events:
+            _events[self._caller] = {'events':[], 'counter':0}
+
+        _events[self._caller]['events'].append(self)
+
+        super()._add_instance(caller)
+
+    def _unload_instance(self):
+        if _events.pop(self._caller)['counter']:
+            if self.callback is None:
+                return
+
+            self.unregister()
+
+    def register(self):
+        for event_name in self._event_names:
+            event_manager.register_for_event(event_name, self.callback)
+
+    def unregister(self):
+        for event_name in self._event_names:
+            event_manager.unregister_for_event(event_name, self.callback)
+
+
 # Emulates a real GameEvent object (with ESC support)
 class FakeEvent(object):
     class _Container(dict):

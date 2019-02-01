@@ -91,8 +91,10 @@ from .core.constants.info import info
 from .core.database.manager import database_manager
 from .core.database.thread import _repeat
 from .core.database.thread import _thread
+#   Events
+from .core.events import FakeEvent
+from .core.events import _events
 #   Helpers
-from .core.helpers.events import FakeEvent
 from .core.helpers.github import github_manager
 from .core.helpers.overwrites import SayText2
 #   Listeners
@@ -100,8 +102,11 @@ from .core.listeners import OnDownloadComplete
 from .core.listeners import OnIsSkillExecutableText
 from .core.listeners import OnPlayerAbilityOff
 from .core.listeners import OnPlayerAbilityOn
+from .core.listeners import OnPlayerChangeRace
 from .core.listeners import OnPlayerDelete
+from .core.listeners import OnPlayerDestroy
 from .core.listeners import OnPlayerLevelUp
+from .core.listeners import OnPlayerQuery
 from .core.listeners import OnPlayerRankUpdate
 from .core.listeners import OnPlayerReady
 from .core.listeners import OnPluginUnload
@@ -739,6 +744,23 @@ def on_level_init(map_name):
         github_manager.download_update()
 
 
+@OnPlayerChangeRace
+def on_player_change_race(wcsplayer, old, new):
+    if old in _events:
+        _events[old]['counter'] -= 1
+
+        if not _events[old]['counter']:
+            for event in _events[old]['events']:
+                event.unregister()
+
+    if new in _events:
+        _events[new]['counter'] += 1
+
+        if _events[new]['counter'] == 1:
+            for event in _events[new]['events']:
+                event.register()
+
+
 @OnPlayerDelete
 def on_player_delete(wcsplayer):
     if wcsplayer.ready:
@@ -748,6 +770,16 @@ def on_player_delete(wcsplayer):
     for delay in _delays.pop(wcsplayer, []):
         if delay.running:
             delay.cancel()
+
+
+@OnPlayerDestroy
+def on_player_destroy(wcsplayer):
+    if wcsplayer.current_race in _events:
+        _events[wcsplayer.current_race]['counter'] -= 1
+
+        if not _events[wcsplayer.current_race]['counter']:
+            for event in _events[wcsplayer.current_race]['events']:
+                event.unregister()
 
 
 @OnPlayerLevelUp
@@ -793,6 +825,16 @@ def on_player_level_up(wcsplayer, race, old_level):
 
             entity.call_input('TurnOn')
             entity.call_input('FireUser1', '1')
+
+
+@OnPlayerQuery
+def on_player_query(wcsplayer):
+    if wcsplayer.current_race in _events:
+        _events[wcsplayer.current_race]['counter'] += 1
+
+        if _events[wcsplayer.current_race]['counter'] == 1:
+            for event in _events[wcsplayer.current_race]['events']:
+                event.register()
 
 
 @OnPlayerRankUpdate
