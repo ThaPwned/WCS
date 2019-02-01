@@ -6,8 +6,15 @@
 # Python Imports
 #   Functools
 from functools import wraps
+#   Re
+from re import sub
+#   Shlex
+from shlex import split
 
 # Source.Python Imports
+#   Commands
+from _commands import Command
+from commands.typed import TypedServerCommand
 #   Effects
 from effects.base import TempEntity
 #   Engines
@@ -76,6 +83,57 @@ __all__ = (
 # ============================================================================
 # >> CLASSES
 # ============================================================================
+# Emulates a real Command object (poorly)
+class _Command(object):
+    def __init__(self, command):
+        self._command = command
+        self._command_split = split(command)
+
+    def __len__(self):
+        return len(self._command_split)
+
+    def __getitem__(self, index):
+        return self._command_split[index]
+
+    def _obj(self):
+        raise NotImplementedError()
+
+    def _ptr(self):
+        raise NotImplementedError()
+
+    def tokenize(self):
+        raise NotImplementedError()
+
+    @property
+    def arg_string(self):
+        return ' '.join(split(self._command)[1:])
+
+    @property
+    def command_string(self):
+        return self._command
+
+    @property
+    def max_command_length(self):
+        return Command.max_command_length
+
+
+class _EffectsManager(dict):
+    def __getitem__(self, name):
+        return TempEntity(super().__getitem__(name))
+
+    def execute(self, string, **kwargs):
+        if kwargs:
+            string = sub(r'server_var\(([a-zA-Z0-9_]+)\)', r'{\1}', string).format(**kwargs)
+
+        command = _Command(string)
+
+        TypedServerCommand.on_command(command)
+effects_manager = _EffectsManager()
+
+
+# ============================================================================
+# >> FUNCTIONS
+# ============================================================================
 def register(name=None):
     def decorator(function):
         effects_manager[function.__qualname__] = name
@@ -87,12 +145,6 @@ def register(name=None):
         return wrapper
 
     return decorator
-
-
-class _EffectsManager(dict):
-    def __getitem__(self, name):
-        return TempEntity(super().__getitem__(name))
-effects_manager = _EffectsManager()
 
 
 # ============================================================================
