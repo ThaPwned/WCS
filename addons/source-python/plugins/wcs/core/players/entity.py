@@ -36,6 +36,8 @@ from entities.hooks import EntityCondition
 from entities.hooks import EntityPreHook
 #   Events
 from events import Event
+#   Filters
+from filters.weapons import WeaponClassIter
 #   Hooks
 from hooks.exceptions import except_hooks
 #   Listeners
@@ -51,6 +53,9 @@ from players.helpers import index_from_userid
 from players.helpers import uniqueid_from_playerinfo
 from players.helpers import userid_from_index
 from players.helpers import playerinfo_from_index
+#   Weapons
+from weapons.manager import weapon_manager
+from weapons.restrictions import WeaponRestrictionHandler
 
 # WCS Imports
 #   Config
@@ -142,6 +147,8 @@ else:
     with open(CFG_PATH / 'privileges.json', 'w') as outputfile:
         json_dump(privileges, outputfile, indent=4)
 
+
+_restrictions = WeaponRestrictionHandler()
 
 # TODO: Should I even be using this?
 _players = PlayerDictionary()
@@ -610,6 +617,24 @@ class Player(object, metaclass=_PlayerMeta):
                 team_data[team][f'_internal_{value}_limit_allowed'] = []
 
             team_data[team][f'_internal_{value}_limit_allowed'].append(self.userid)
+
+        _restrictions.player_restrictions[self.userid].clear()
+
+        restricted_weapons = race_manager[value].config.get('restrictweapon', [])
+
+        if restricted_weapons:
+            weapons = set()
+
+            for weapon in restricted_weapons:
+                if weapon.startswith('#'):
+                    weapons.update(WeaponClassIter(weapon[1:]))
+                elif weapon.startswith('!'):
+                    # Objective items will never be restricted unless explicitly told
+                    weapons.update(WeaponClassIter(not_filters=['objective', weapon[1:]]))
+                else:
+                    weapons.add(weapon)
+
+            _restrictions.add_player_restrictions(self.player, *[weapon for weapon in weapons if weapon in weapon_manager])
 
         self._current_race = value
 
