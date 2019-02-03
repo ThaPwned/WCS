@@ -25,6 +25,8 @@ from commands.typed import TypedClientCommand
 from colors import Color
 #   Core
 from core import OutputReturn
+#   CVars
+from cvars import cvar
 #   Entities
 from entities.constants import RenderMode
 from entities.entity import Entity
@@ -79,6 +81,7 @@ from .core.config import cfg_bot_bomb_plant_xp
 from .core.config import cfg_bot_bomb_defuse_xp
 from .core.config import cfg_bot_bomb_explode_xp
 from .core.config import cfg_bot_hostage_rescue_xp
+from .core.config import cfg_bot_ability_chance
 from .core.config import cfg_github_mod_update
 from .core.config import cfg_github_refresh_rate
 #   Constants
@@ -91,6 +94,8 @@ from .core.constants.info import info
 from .core.database.manager import database_manager
 from .core.database.thread import _repeat
 from .core.database.thread import _thread
+#   Emulate
+from .core.emulate import emulate_manager
 #   Events
 from .core.events import FakeEvent
 from .core.events import _events
@@ -245,12 +250,17 @@ def load():
     for settings in item_manager.values():
         settings.execute('preloadcmd')
 
+    if cfg_bot_ability_chance.get_float():
+        emulate_manager.start()
+
     database_manager.execute('player offline', callback=_query_refresh_offline)
     database_manager.execute('rank update', callback=_query_refresh_ranks)
 
 
 def unload():
     database_manager._unloading = True
+
+    emulate_manager.stop()
 
     for _, wcsplayer in PlayerReadyIter():
         OnPlayerDelete.manager.notify(wcsplayer)

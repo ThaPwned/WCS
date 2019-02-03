@@ -47,6 +47,7 @@ __all__ = (
     'cfg_bot_bomb_explode_xp',
     'cfg_bot_bomb_defuse_xp',
     'cfg_bot_hostage_rescue_xp',
+    'cfg_bot_ability_chance',
     'cfg_github_mod_update',
     'cfg_github_refresh_rate'
 )
@@ -87,5 +88,6 @@ with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as co
     cfg_bot_bomb_explode_xp = config.cvar('bot_bomb_explode_xp', '-1', config_strings['bot_bomb_explode_xp'])
     cfg_bot_bomb_defuse_xp = config.cvar('bot_bomb_defuse_xp', '-1', config_strings['bot_bomb_defuse_xp'])
     cfg_bot_hostage_rescue_xp = config.cvar('bot_hostage_rescue_xp', '-1', config_strings['bot_hostage_rescue_xp'])
+    cfg_bot_ability_chance = config.cvar('bot_ability_chance', '0.15', config_strings['bot_ability_chance'])
     cfg_github_mod_update = config.cvar('github_mod_update', '0', config_strings['github_mod_update'])
     cfg_github_refresh_rate = config.cvar('github_refresh_rate', '60', config_strings['github_refresh_rate'])
