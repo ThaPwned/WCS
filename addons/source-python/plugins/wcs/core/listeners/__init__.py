@@ -27,8 +27,6 @@ __all__ = (
     'OnIsRaceUsableText',
     'OnIsSkillExecutable',
     'OnIsSkillExecutableText',
-    'OnPlayerAbilityOff',
-    'OnPlayerAbilityOn',
     'OnPlayerChangeRace',
     'OnPlayerDelete',
     'OnPlayerDestroy',
@@ -99,14 +97,6 @@ class OnIsSkillExecutable(ListenerManagerDecorator):
 
 
 class OnIsSkillExecutableText(ListenerManagerDecorator):
-    manager = ListenerManager()
-
-
-class OnPlayerAbilityOff(ListenerManagerDecorator):
-    manager = ListenerManager()
-
-
-class OnPlayerAbilityOn(ListenerManagerDecorator):
     manager = ListenerManager()
 
 

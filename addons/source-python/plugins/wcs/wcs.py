@@ -100,8 +100,6 @@ from .core.helpers.overwrites import SayText2
 #   Listeners
 from .core.listeners import OnDownloadComplete
 from .core.listeners import OnIsSkillExecutableText
-from .core.listeners import OnPlayerAbilityOff
-from .core.listeners import OnPlayerAbilityOn
 from .core.listeners import OnPlayerChangeRace
 from .core.listeners import OnPlayerDelete
 from .core.listeners import OnPlayerDestroy
@@ -1152,9 +1150,7 @@ def client_ability_plus_command(command, ability:int=1, *args:str):
                     reason = skill.is_executable()
 
                     if reason is SkillReason.ALLOWED:
-                        OnPlayerAbilityOn.manager.notify(wcsplayer, skill, args)
-
-                        with FakeEvent('player_ability_on' if skill._type is ModuleType.SP else f'{skill_name}_on', userid=wcsplayer.userid, args=args) as event:
+                        with FakeEvent('player_ability_on' if skill._type is ModuleType.SP else f'{skill_name}_on', userid=wcsplayer.userid) as event:
                             skill.execute(event.name, event)
                     elif reason is SkillReason.TEAM:
                         ability_team_message.send(command.index)
@@ -1197,9 +1193,7 @@ def client_ability_minus_command(command, ability:int=1, *args:str):
 
             if 'player_ability_off' in skill.config['event']:
                 if ability == i:
-                    OnPlayerAbilityOff.manager.notify(wcsplayer, skill, args)
-
-                    with FakeEvent('player_ability_off' if skill._type is ModuleType.SP else f'{skill_name}_off', userid=wcsplayer.userid, args=args) as event:
+                    with FakeEvent('player_ability_off' if skill._type is ModuleType.SP else f'{skill_name}_off', userid=wcsplayer.userid) as event:
                         skill.execute(event.name, event)
 
                     break
