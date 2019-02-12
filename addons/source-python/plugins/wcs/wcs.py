@@ -25,8 +25,6 @@ from commands.typed import TypedClientCommand
 from colors import Color
 #   Core
 from core import OutputReturn
-#   CVars
-from cvars import cvar
 #   Entities
 from entities.constants import RenderMode
 from entities.entity import Entity
