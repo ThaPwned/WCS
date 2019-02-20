@@ -425,7 +425,7 @@ class _GithubManager(dict):
 
             OnDownloadBegin.manager.notify()
 
-            thread = Thread(target=self._download_update)
+            thread = Thread(target=self._download_update, name='wcs.download')
             thread.start()
 
             self._threads.append(thread)
@@ -443,7 +443,7 @@ class _GithubManager(dict):
 
             OnGithubRefresh.manager.notify()
 
-            thread = Thread(target=self._refresh)
+            thread = Thread(target=self._refresh, name='wcs.refresh')
             thread.start()
 
             self._threads.append(thread)
@@ -465,7 +465,7 @@ class _GithubManager(dict):
 
             self[module][name]['status'] = GithubStatus.INSTALLING
 
-            thread = Thread(target=self._install, args=(repository, module, name, userid))
+            thread = Thread(target=self._install, name=f'wcs.install.{module}.{name}', args=(repository, module, name, userid))
             thread.start()
 
             self._threads.append(thread)
@@ -480,7 +480,7 @@ class _GithubManager(dict):
 
             self[module][name]['status'] = GithubStatus.UPDATING
 
-            thread = Thread(target=self._update, args=(self[module][name]['repository'], module, name, userid))
+            thread = Thread(target=self._update, name=f'wcs.update.{module}.{name}', args=(self[module][name]['repository'], module, name, userid))
             thread.start()
 
             self._threads.append(thread)
@@ -495,7 +495,7 @@ class _GithubManager(dict):
 
             self[module][name]['status'] = GithubStatus.UNINSTALLING
 
-            thread = Thread(target=self._uninstall, args=(self[module][name]['repository'], module, name, userid))
+            thread = Thread(target=self._uninstall, name=f'wcs.uninstall.{module}.{name}', args=(self[module][name]['repository'], module, name, userid))
             thread.start()
 
             self._threads.append(thread)

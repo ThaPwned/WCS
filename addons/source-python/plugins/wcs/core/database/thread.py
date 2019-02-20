@@ -163,7 +163,7 @@ class _Thread(Thread):
 
         self.cur = None
         self.con = None
-_thread = _Thread()
+_thread = _Thread(name='wcs.database')
 
 
 class Repeat2(Repeat):
