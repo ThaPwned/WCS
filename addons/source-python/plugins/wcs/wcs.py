@@ -857,7 +857,7 @@ def on_player_rank_update(wcsplayer, old, new):
 
         if new < old:
             if cfg_top_stolen_notify.get_int():
-                for i, uniqueid in enumerate(rank_manager[new + 1:old + 1]):
+                for i, uniqueid in enumerate(rank_manager[new + 1:old + 1], 1):
                     try:
                         index = index_from_uniqueid(uniqueid)
                     except ValueError:
