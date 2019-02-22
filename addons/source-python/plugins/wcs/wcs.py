@@ -256,7 +256,7 @@ def load():
 
 
 def unload():
-    database_manager._unloading = True
+    _thread.unloading = True
 
     emulate_manager.stop()
 

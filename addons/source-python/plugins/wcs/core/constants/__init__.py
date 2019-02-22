@@ -37,6 +37,7 @@ __all__ = (
     'TIME_FORMAT',
     'GithubStatus',
     'ItemReason',
+    'NodeType',
     'SkillReason',
     'ModuleType',
     'RaceReason',
@@ -90,6 +91,15 @@ class GithubStatus(IntEnum):
     UPDATING = 2
     UNINSTALLING = 3
     UNINSTALLED = 4
+
+
+class NodeType(IntEnum):
+    QUERY = 0
+    QUERY_MANY = 1
+    CALLBACK = 2
+    CONNECT = 3
+    USE = 4
+    CLOSE = 5
 
 
 # ============================================================================

@@ -70,6 +70,7 @@ from ..constants.paths import CFG_PATH
 #   Database
 from ..database.manager import database_manager
 from ..database.manager import statements
+from ..database.thread import _thread
 #   Listeners
 from ..listeners import OnIsSkillExecutable
 from ..listeners import OnPlayerChangeRace
@@ -264,11 +265,11 @@ class Player(object, metaclass=_PlayerMeta):
 
             name = playerinfo_from_index(self.index).name
 
-        if not database_manager._unloading:
+        if not _thread.unloading:
             database_manager.execute('player get', (uniqueid, ), callback=self._query_get_player, name=name)
 
     def _query_get_player(self, result):
-        if database_manager._unloading:
+        if _thread.unloading:
             return
 
         data = result.fetchone()
@@ -296,7 +297,7 @@ class Player(object, metaclass=_PlayerMeta):
         database_manager.callback(self._query_final)
 
     def _query_get_races(self, result):
-        if database_manager._unloading:
+        if _thread.unloading:
             return
 
         data = result.fetchall()
@@ -307,7 +308,7 @@ class Player(object, metaclass=_PlayerMeta):
                     self._races[name] = _Race(self, name, xp, level, unused, _added=True)
 
     def _query_get_skills(self, result):
-        if database_manager._unloading:
+        if _thread.unloading:
             return
 
         data = result.fetchall()
@@ -331,7 +332,7 @@ class Player(object, metaclass=_PlayerMeta):
                         race.skills[skill_name]._type = settings.type
 
     def _query_get_stats(self, result):
-        if database_manager._unloading:
+        if _thread.unloading:
             return
 
         data = result.fetchall()
@@ -347,7 +348,7 @@ class Player(object, metaclass=_PlayerMeta):
                         self.items[owner].stats._data[key] = value
 
     def _query_final(self, result):
-        if database_manager._unloading:
+        if _thread.unloading:
             return
 
         online = self.online

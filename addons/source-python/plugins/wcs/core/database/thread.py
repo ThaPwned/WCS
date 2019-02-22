@@ -4,14 +4,19 @@
 # >> IMPORTS
 # ============================================================================
 # Python Imports
+#   PyMySQL
+from pymysql.err import InterfaceError
+from pymysql.err import OperationalError
 #   Queue
+from queue import PriorityQueue
 from queue import Queue
 #   Sys
 from sys import exc_info
 #   Threading
+from threading import Event
 from threading import Thread
 #   Time
-from warnings import warn
+from time import sleep
 
 # Source.Python Imports
 #   Hooks
@@ -19,17 +24,25 @@ from hooks.exceptions import except_hooks
 #   Listeners
 from listeners.tick import Repeat
 
-
-# ============================================================================
-# >> GLOBAL VARIABLES
-# ============================================================================
-_queue = Queue()
-_output = Queue()
+# WCS Imports
+#   Constants
+from ..constants import NodeType
 
 
 # ============================================================================
 # >> CLASSES
 # ============================================================================
+class _PriorityQueue(PriorityQueue):
+    _entry = 0
+
+    def put(self, node):
+        node._entry = self._entry
+
+        self._entry += 1
+
+        super().put(node)
+
+
 class _Result(object):
     def __init__(self, query=None, data=None, args=None, exception=None):
         self._query = query
@@ -66,55 +79,96 @@ class _Result(object):
         return self._exception
 
 
+class _Node(object):
+    def __init__(self, type_, query=None, arguments=None, callback=None, keywords=None, priority=0):
+        self.type = type_
+        self.query = query
+        self.arguments = arguments
+        self.callback = callback
+        self.keywords = keywords
+        self.priority = priority
+        self._entry = None
+
+    def __lt__(self, other):
+        return other.priority < self.priority or other._entry > self._entry
+
+
 class _Thread(Thread):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self._use_database = None
+        self._unloading = Event()
+        self._counter = 0
+        self._reconnect_delay = 10
+
     def run(self):
         self.con = None
         self.cur = None
 
-        self.connect()
+        self.connector = _queue.get().query
 
         while True:
-            query, arguments, callback, many, keywords = _queue.get()
+            node = _queue.get()
 
-            if query is None:
-                if callback is None:
-                    break
+            if node.type in (NodeType.QUERY, NodeType.QUERY_MANY):
+                if self.con is None or self.cur is None:
+                    if not self.connect():
+                        node.priority = 1
 
-                result = _Result(args=keywords)
+                        _queue.put(node)
 
-                _output.put((callback, result))
+                        sleep(self._reconnect_delay)
 
-                if _queue.empty():
-                    if self.con is not None and self.cur is not None:
+                        continue
+
+                result = _Result(args=node.keywords, query=node.query)
+
+                try:
+                    if node.type is NodeType.QUERY:
+                        self.cur.execute(node.query, node.arguments)
+                    else:
+                        self.cur.executemany(node.query, node.arguments)
+                except (InterfaceError, OperationalError) as e:
+                    node.priority = 1
+
+                    _queue.put(node)
+
+                    if isinstance(e, InterfaceError):
                         self.close()
 
-                continue
+                        if not self.connect():
+                            sleep(self._reconnect_delay)
+                except:
+                    node.priority = 1
 
-            if self.con is None or self.cur is None:
-                self.connect()
+                    _queue.put(node)
 
-            result = _Result(args=keywords, query=query)
+                    result._exception = exc_info()
 
-            try:
-                if many:
-                    self.cur.executemany(query, arguments)
+                    _output.put((None, result))
                 else:
-                    self.cur.execute(query, arguments)
-            except:
-                except_hooks.print_exception()
-                result._exception = exc_info()
+                    if node.callback is not None:
+                        result._data = self.cur.fetchall()
 
-            if callback is not None:
-                result._data = self.cur.fetchall()
+                        _output.put((node.callback, result))
+            elif node.type is NodeType.CALLBACK:
+                _output.put((node.callback, _Result(args=node.keywords)))
+            elif node.type is NodeType.CONNECT:
+                if not self.connect():
+                    sleep(self._reconnect_delay)
+            elif node.type is NodeType.USE:
+                self._use_database = node.query
 
-            if not (result.exception is None and callback is None):
-                _output.put((callback, result))
+                if self.cur is not None:
+                    self.cur.execute(self._use_database)
+            elif node.type is NodeType.CLOSE:
+                break
 
             if _queue.empty():
                 self.close()
 
-        if self.con is not None and self.cur is not None:
-            self.close()
+        self.close()
 
         _output.put((True, True))
 
@@ -137,37 +191,70 @@ class _Thread(Thread):
                 if result.exception:
                     except_hooks.print_exception(*result.exception)
 
-                    if result.query is not None:
-                        warn(result.query)
-
     def connect(self):
-        if not hasattr(self, 'connector'):
-            self.connector = _queue.get()
-
         try:
             self.con = self.connector()
             self.cur = self.con.cursor()
-        except:
-            result = _Result(exception=exc_info())
 
-            _output.put((None, result))
+            if self._use_database is not None:
+                self.cur.execute(self._use_database)
+        except OperationalError:
+            if self.unloading:
+                if self._counter >= 4:
+                    _queue.put(_Node(NodeType.CLOSE, priority=3))
+
+                    return False
+
+                self._counter += 1
+
+            _queue.put(_Node(NodeType.CONNECT, priority=2))
+
+            return False
+        except:
+            _output.put((None, _Result(exception=exc_info())))
             _output.put((True, True))
 
-            raise RuntimeError('Failed to connect to database. Terminating thread.')
+            raise
+        else:
+            self._counter = 0
+
+        return True
 
     def close(self):
-        self.con.commit()
+        if self.cur is not None:
+            self.cur.close()
 
-        self.cur.close()
-        self.con.close()
+            self.cur = None
 
-        self.cur = None
-        self.con = None
-_thread = _Thread(name='wcs.database')
+        if self.con is not None:
+            try:
+                self.con.commit()
+            except InterfaceError:
+                pass
+
+            self.con.close()
+
+            self.con = None
+
+    @property
+    def unloading(self):
+        return self._unloading.is_set()
+
+    @unloading.setter
+    def unloading(self, value):
+        getattr(self._unloading, 'set' if value else 'clear')()
 
 
 class Repeat2(Repeat):
     def _unload_instance(self):
         # I need to be sure the repeat does NOT stop at unload
         pass
+
+
+# ============================================================================
+# >> GLOBAL VARIABLES
+# ============================================================================
+_queue = _PriorityQueue()
+_output = Queue()
+_thread = _Thread(name='wcs.database')
 _repeat = Repeat2(_thread._tick)
