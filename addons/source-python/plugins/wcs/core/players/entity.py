@@ -1304,16 +1304,30 @@ def round_prestart(event):
     _delays.clear()
 
 
+@Event('round_start')
+def round_start(event):
+    if IS_ESC_SUPPORT_ENABLED:
+        cvars['wcs_wardencounter'].set_int(cvars['wcs_wardencounter'].get_int() + 1)
+
+
 @Event('round_freeze_end')
 def round_freeze_end(event):
     global _round_started
     _round_started = True
+
+    if IS_ESC_SUPPORT_ENABLED:
+        cvars['wcs_gamestarted'].set_int(1)
 
 
 @Event('round_end')
 def round_end(event):
     global _round_started
     _round_started = False
+
+    if IS_ESC_SUPPORT_ENABLED:
+        cvars['wcs_wardencounter'].set_int(cvars['wcs_wardencounter'].get_int() - 1)
+        cvars['wcs_roundcounter'].set_int(cvars['wcs_roundcounter'].get_int() + 1)
+        cvars['wcs_gamestarted'].set_int(1)
 
 
 @Event('player_death')

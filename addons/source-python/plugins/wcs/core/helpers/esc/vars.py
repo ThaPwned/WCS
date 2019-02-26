@@ -4,6 +4,8 @@
 # >> IMPORTS
 # ============================================================================
 # Source.Python Imports
+#   Core
+from core import GAME_NAME
 #   CVars
 from cvars import ConVar
 
@@ -38,7 +40,7 @@ for variable in ('ex', 'vector1', 'vector2', 'wcs_x', 'wcs_y', 'wcs_z', 'wcs_x1'
                  'wcs_uid', 'wcs_lng', 'wcs_rand', 'wcs_wardencounter', 'wcs_trapcounter', 'wcs_healcounter', 'wcs_target', 'wcs_targetid', 'wcs_amount', 'wcs_maxhp', 'wcs_round',
                  'wcs_maxheal', 'wcs_roundcounter', 'wcs_type', 'wcs_removeid', 'wcs_fxtype', 'wcs_op', 'wcs_params', 'wcs_sucxp', 'wcs_skulls', 'wcs_skulls_amount', 'wcs_res_ui',
                  'wcs_res_type', 'wcs_res_wep', 'wcs_res_give', 'wcs_res_knife', 'wcs_res_wep_wep', 'wcs_choice', 'wcs_todo', 'wcs_name', 'wcs_mole', 'wcs_exists', 'wcs_smokestack_counter',
-                 'wcs_duration', 'wcs_speed_var', 'wcs_magnitude', 'wcs_healthadd', 'wcs_ammo'):
+                 'wcs_duration', 'wcs_speed_var', 'wcs_magnitude', 'wcs_healthadd', 'wcs_ammo', 'wcs_game', 'wcs_game_css', 'wcs_game_csgo', 'wcs_game_dods'):
     cvars[variable] = ConVar(variable, '0')
 
 if (CFG_PATH / 'var.txt').isfile():
@@ -49,6 +51,12 @@ if (CFG_PATH / 'var.txt').isfile():
 else:
     with open(CFG_PATH / 'var.txt', 'w') as outputfile:
         outputfile.write('// Place all the server variables you want to set under here.\n')
-        outputfile.write('// This is only necessary for ESS races.\n')
+        outputfile.write('// This is only necessary for ESS races and items.\n')
         outputfile.write('//\n')
         outputfile.write('// Lines with // in front of it will not be read.\n')
+
+cvars['wcs_game'].set_string(GAME_NAME)
+
+cvars['wcs_game_css'].set_string('cstrike')
+cvars['wcs_game_csgo'].set_string('csgo')
+cvars['wcs_game_dods'].set_string('dod')
