@@ -628,10 +628,10 @@ class Player(object, metaclass=_PlayerMeta):
 
             for weapon in restricted_weapons:
                 if weapon.startswith('#'):
-                    weapons.update(WeaponClassIter(weapon[1:]))
+                    weapons.update(map(lambda weapon_inst: weapon_inst.name, WeaponClassIter(weapon[1:])))
                 elif weapon.startswith('!'):
                     # Objective items will never be restricted unless explicitly told
-                    weapons.update(WeaponClassIter(not_filters=['objective', weapon[1:]]))
+                    weapons.update(map(lambda weapon_inst: weapon_inst.name, WeaponClassIter(not_filters=['objective', weapon[1:]])))
                 else:
                     weapons.add(weapon)
 
