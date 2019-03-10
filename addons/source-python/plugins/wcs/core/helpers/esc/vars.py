@@ -40,7 +40,7 @@ for variable in ('ex', 'vector1', 'vector2', 'wcs_x', 'wcs_y', 'wcs_z', 'wcs_x1'
                  'wcs_uid', 'wcs_lng', 'wcs_rand', 'wcs_wardencounter', 'wcs_trapcounter', 'wcs_healcounter', 'wcs_target', 'wcs_targetid', 'wcs_amount', 'wcs_maxhp', 'wcs_round',
                  'wcs_maxheal', 'wcs_roundcounter', 'wcs_type', 'wcs_removeid', 'wcs_fxtype', 'wcs_op', 'wcs_params', 'wcs_sucxp', 'wcs_skulls', 'wcs_skulls_amount', 'wcs_res_ui',
                  'wcs_res_type', 'wcs_res_wep', 'wcs_res_give', 'wcs_res_knife', 'wcs_res_wep_wep', 'wcs_choice', 'wcs_todo', 'wcs_name', 'wcs_mole', 'wcs_exists', 'wcs_smokestack_counter',
-                 'wcs_duration', 'wcs_speed_var', 'wcs_magnitude', 'wcs_healthadd', 'wcs_ammo', 'wcs_game', 'wcs_game_css', 'wcs_game_csgo', 'wcs_game_dods'):
+                 'wcs_duration', 'wcs_speed_var', 'wcs_magnitude', 'wcs_healthadd', 'wcs_ammo', 'wcs_game', 'wcs_gamestarted', 'wcs_game_css', 'wcs_game_csgo', 'wcs_game_dods'):
     cvars[variable] = ConVar(variable, '0')
 
 if (CFG_PATH / 'var.txt').isfile():
