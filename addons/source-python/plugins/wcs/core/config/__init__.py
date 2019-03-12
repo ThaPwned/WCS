@@ -33,6 +33,7 @@ __all__ = (
     'cfg_welcome_gui_text',
     'cfg_welcome_text',
     'cfg_level_up_effect',
+    'cfg_rank_gain_effect',
     'cfg_assist_xp',
     'cfg_round_survival_xp',
     'cfg_round_win_xp',
@@ -66,6 +67,7 @@ with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as co
     cfg_welcome_text = config.cvar('welcome_text', '0', config_strings['welcome_text'])
     cfg_welcome_gui_text = config.cvar('welcome_gui_text', '0', config_strings['welcome_gui_text'])
     cfg_level_up_effect = config.cvar('level_up_effect', '1', config_strings['level_up_effect'])
+    cfg_rank_gain_effect = config.cvar('rank_gain_effect', '1', config_strings['rank_gain_effect'])
     cfg_spawn_text = config.cvar('spawn_text', '1', config_strings['spawn_text'])
     cfg_disable_text_on_level = config.cvar('disable_text_on_level', '20', config_strings['disable_text_on_level'])
     cfg_default_race = config.cvar('default_race', '', config_strings['default_race'])

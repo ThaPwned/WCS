@@ -58,6 +58,7 @@ from .core.config import cfg_headshot_xp
 from .core.config import cfg_welcome_text
 from .core.config import cfg_welcome_gui_text
 from .core.config import cfg_level_up_effect
+from .core.config import cfg_rank_gain_effect
 from .core.config import cfg_spawn_text
 from .core.config import cfg_disable_text_on_level
 from .core.config import cfg_top_announcement_enable
@@ -207,7 +208,8 @@ _melee_weapons = [weapon.basename for weapon in WeaponClassIter('melee')]
 _new_version = None
 
 _effect_angle = QAngle(0, 0, 0)
-_effect_color = Color(252, 232, 131)
+_level_effect_color = Color(252, 232, 131)
+_rank_effect_color = Color(43, 145, 255)
 
 
 # ============================================================================
@@ -815,7 +817,7 @@ def on_player_level_up(wcsplayer, race, old_level):
             entity.end_size = 7
             entity.rate = 173
             entity.jet_length = 13
-            entity.render_color = _effect_color
+            entity.render_color = _level_effect_color
             entity.render_mode = RenderMode.NONE
             entity.render_amt = 200
             entity.smoke_material = 'effects/combinemuzzle2.vmt'
@@ -865,6 +867,39 @@ def on_player_rank_update(wcsplayer, old, new):
                     else:
                         top_stolen_notify_message.send(index, name=wcsplayer.name, old=new + i, new=new + i + 1)
 
+            if cfg_rank_gain_effect.get_int():
+                player = wcsplayer.player
+
+                if not player.dead:
+                    origin = Vector(*player.origin)
+                    origin.z -= 9
+
+                    entity = Entity.create('env_smokestack')
+                    entity.origin = origin
+                    entity.base_spread = 24
+                    entity.spread_speed = 6
+                    entity.initial_state = 0
+                    entity.speed = 68
+                    entity.start_size = 2
+                    entity.end_size = 4
+                    entity.rate = 212
+                    entity.jet_length = 82
+                    entity.render_color = _rank_effect_color
+                    entity.render_mode = RenderMode.NONE
+                    entity.render_amt = 200
+                    entity.smoke_material = 'effects/yellowflare.vmt'
+                    entity.angles = _effect_angle
+                    entity.twist = 0
+
+                    entity.spawn()
+
+                    entity.set_parent(player)
+
+                    entity.add_output('OnUser1 !self,TurnOff,,3.5,1')
+                    entity.add_output('OnUser1 !self,Kill,,6,1')
+
+                    entity.call_input('TurnOn')
+                    entity.call_input('FireUser1', '1')
 
 @OnPlayerReady
 def on_player_ready(wcsplayer):

@@ -280,7 +280,7 @@ def changerace_menu_build(menu, client):
                 option.text = deepcopy(menu_strings['changerace_menu team'])
                 option.text.tokens['team'] = ['T', 'CT'][wcsplayer.player.team - 2]
                 option.selectable = option.highlight = False
-            elif reason is RaceReason.PRIVATE or reason is RaceReason.VIP:
+            elif reason is RaceReason.PRIVATE or reason is RaceReason.VIP or reason is RaceReason.ADMIN:
                 option.text = deepcopy(menu_strings['changerace_menu private'])
                 option.selectable = option.highlight = False
             elif reason is RaceReason.MAP:

@@ -83,6 +83,7 @@ class RaceReason(IntEnum):
     PRIVATE = 5
     MAP = 6
     VIP = 7
+    ADMIN = 8
 
 
 class GithubStatus(IntEnum):
