@@ -50,7 +50,7 @@ class _FakeRace(_BaseSetting):
         self.type = None
         self.module = None
 
-        self.config = {'required': 0, 'maximum': 0, 'restrictmap': [], 'restrictitem': [], 'restrictweapon': [], 'restrictteam': 0, 'teamlimit': 0, 'author': 'Tha Pwned', 'allowonly': [], 'skills': {}}
+        self.config = {'required': 0, 'maximum': 0, 'restrictbot': 0, 'restrictmap': [], 'restrictitem': [], 'restrictweapon': [], 'restrictteam': 0, 'teamlimit': 0, 'author': 'Tha Pwned', 'allowonly': [], 'skills': {}}
 
         self.strings = {'name':'None', 'description':'Add some races'}
 
@@ -137,6 +137,12 @@ class RaceSetting(_BaseSetting):
 
             if team >= 2 and not restrictteam == team:
                 return RaceReason.TEAM
+
+        restrictbot = self.config.get('restrictbot')
+
+        if restrictbot:
+            if wcsplayer._is_bot and restrictbot == 1:
+                return RaceReason.BOT
 
         teamlimit = self.config.get('teamlimit')
 
