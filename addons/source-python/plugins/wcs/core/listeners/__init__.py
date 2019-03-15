@@ -146,3 +146,7 @@ class OnPluginUnload(ListenerManagerDecorator):
 
 class OnTakeDamage(ListenerManagerDecorator):
     manager = ListenerManager()
+
+
+class OnTakeDamageAlive(ListenerManagerDecorator):
+    manager = ListenerManager()

@@ -48,6 +48,7 @@ from players.helpers import index_from_uniqueid
 from players.helpers import index_from_userid
 #   Weapons
 from weapons.entity import Weapon
+from weapons.manager import weapon_manager
 
 # WCS Imports
 #   Config
@@ -113,6 +114,7 @@ from .core.listeners import OnPlayerRankUpdate
 from .core.listeners import OnPlayerReady
 from .core.listeners import OnPluginUnload
 from .core.listeners import OnTakeDamage
+from .core.listeners import OnTakeDamageAlive
 #   Menus
 from .core.menus import shopmenu_menu
 from .core.menus import shopinfo_menu
@@ -901,6 +903,7 @@ def on_player_rank_update(wcsplayer, old, new):
                     entity.call_input('TurnOn')
                     entity.call_input('FireUser1', '1')
 
+
 @OnPlayerReady
 def on_player_ready(wcsplayer):
     if wcsplayer.player.team_index >= 2:
@@ -928,8 +931,8 @@ def on_player_ready(wcsplayer):
                 _delays[wcsplayer].add(delay)
 
 
-@OnTakeDamage
-def on_take_damage(wcsvictim, wcsattacker, info):
+@OnTakeDamageAlive
+def on_take_damage_alive(wcsvictim, wcsattacker, info):
     if wcsattacker is not None:
         if wcsvictim is not wcsattacker:
             if wcsvictim.ready:
@@ -938,23 +941,31 @@ def on_take_damage(wcsvictim, wcsattacker, info):
                 else:
                     weapon = Weapon(info.inflictor)
 
-                if weapon.class_name not in ('point_hurt', 'worldspawn') and not weapon.class_name.startswith('wcs_'):
-                    # TODO: Make this the same as player_hurt (info.damage is not the real, calculated damage that is dealt, so don't know when a player is getting killed)
-                    # TODO: Keep using weapon.class_name (weapon_<name>) or use weapon_manager[weapon.class_name].basename (<name>)?
+                if weapon is None:
+                    return
+
+                class_name = weapon.class_name
+
+                if class_name not in ('point_hurt', 'worldspawn') and not class_name.startswith('wcs_'):
+                    weapon_name = weapon_manager[class_name].basename
+                    health = wcsvictim.player.health - info.damage
+
                     if not wcsvictim.player.team_index == wcsattacker.player.team_index:
-                        with FakeEvent('pre_player_victim', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon.class_name, info=info) as event:
+                        with FakeEvent('pre_player_victim', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon_name, info=info) as event:
                             wcsvictim.notify(event)
 
-                        if wcsattacker.ready:
-                            with FakeEvent('pre_player_attacker', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon.class_name, info=info) as event:
-                                wcsattacker.notify(event)
+                        if health > 0:
+                            if wcsattacker.ready:
+                                with FakeEvent('pre_player_attacker', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon_name, info=info) as event:
+                                    wcsattacker.notify(event)
 
-                    with FakeEvent('pre_player_hurt', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon.class_name, info=info) as event:
+                    with FakeEvent('pre_player_hurt', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon_name, info=info) as event:
                         wcsvictim.notify(event)
 
-                    if wcsattacker.ready:
-                        with FakeEvent('pre_player_hurt', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon.class_name, info=info) as event:
-                            wcsattacker.notify(event)
+                    if health > 0:
+                        if wcsattacker.ready:
+                            with FakeEvent('pre_player_hurt', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon_name, info=info) as event:
+                                wcsattacker.notify(event)
 
 
 # ============================================================================
