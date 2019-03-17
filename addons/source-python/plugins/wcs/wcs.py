@@ -150,6 +150,8 @@ from .core.translations import menu_strings
 
 # Is ESC supported?
 if IS_ESC_SUPPORT_ENABLED:
+    #   Helpers
+    from .core.helpers.esc.events import _execute_ability
     #   Modules
     from .core.modules.oldesc import parse_ini_items
     from .core.modules.oldesc import parse_ini_races
@@ -1293,6 +1295,9 @@ def client_ability_command(command):
                     raise ValueError(f'Invalid reason: {reason}')
 
                 break
+        else:
+            if IS_ESC_SUPPORT_ENABLED:
+                _execute_ability(wcsplayer)
 
     return CommandReturn.BLOCK
 
