@@ -15,7 +15,12 @@ import esc
 #   Constants
 from ...constants import ModuleType
 #   Helpers
+from . import wcstmp
+from . import wcsuserdata
 from .vars import cvar_wcs_userid
+#   Listeners
+from ...listeners import OnPlayerDelete
+from ...listeners import OnPlayerReady
 #   Players
 from ...players.entity import Player
 
@@ -24,6 +29,21 @@ from ...players.entity import Player
 # >> ALL DECLARATION
 # ============================================================================
 __all__ = ()
+
+
+# ============================================================================
+# >> LISTENERS
+# ============================================================================
+@OnPlayerReady
+def on_player_ready(wcsplayer):
+    wcstmp.find_key(str(wcsplayer.userid), True)
+    wcsuserdata.find_key(str(wcsplayer.userid), True)
+
+
+@OnPlayerDelete
+def on_player_delete(wcsplayer):
+    wcstmp.remove_sub_key(wcstmp.find_key(str(wcsplayer.userid)))
+    wcsuserdata.remove_sub_key(wcsuserdata.find_key(str(wcsplayer.userid)))
 
 
 # ============================================================================
