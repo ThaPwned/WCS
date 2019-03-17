@@ -567,7 +567,7 @@ def wcs_restrict_command(command_info, player:convert_userid_to_player, weapons:
     if player is None:
         return
 
-    if weapons == 'all':
+    if weapons[0] == 'all':
         _restrictions.add_player_restrictions(player, *_all_weapons)
         return
 
