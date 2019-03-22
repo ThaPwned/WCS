@@ -114,6 +114,7 @@ And that is it. If you were to add multiple repositories, remember to add a comm
 {
     "required": 0,
     "maximum": 0,
+    "restrictbot": 0,
     "restrictmap": [],
     "restrictitem": [],
     "restrictweapon": [],
@@ -126,6 +127,7 @@ And that is it. If you were to add multiple repositories, remember to add a comm
 ```
 * `required` is the minimum global level required before you can use this race.
 * `maximum` is the maximum level you can get on this race (you can still play it, just not gain any more levels on it). If this value is set to `0`, there's no maximum level.
+* `restrictbot` prevents bots from using this race if it is set to `1`.
 * `restrictmap` contains a list of maps this race is unable to be used on. If the value is `[]`, it can be played on all maps.
 * `restrictitem` contains a list of items this race is unable to purchase and use. If the value is `[]`, all items are purchasable and usable.
 * `restrictweapon` contains a list of weapons this race is unable to use. If the value is `[]`, all weapons are usable.

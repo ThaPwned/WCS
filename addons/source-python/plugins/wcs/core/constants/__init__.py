@@ -84,6 +84,7 @@ class RaceReason(IntEnum):
     MAP = 6
     VIP = 7
     ADMIN = 8
+    BOT = 9
 
 
 class GithubStatus(IntEnum):
