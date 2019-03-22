@@ -140,9 +140,8 @@ class RaceSetting(_BaseSetting):
 
         restrictbot = self.config.get('restrictbot')
 
-        if restrictbot:
-            if wcsplayer._is_bot and restrictbot == 1:
-                return RaceReason.BOT
+        if restrictbot and wcsplayer._is_bot:
+            return RaceReason.BOT
 
         teamlimit = self.config.get('teamlimit')
 
