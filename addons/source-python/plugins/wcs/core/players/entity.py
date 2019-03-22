@@ -81,6 +81,7 @@ from ..listeners import OnPlayerLevelUp
 from ..listeners import OnPlayerQuery
 from ..listeners import OnPlayerReady
 from ..listeners import OnTakeDamage
+from ..listeners import OnTakeDamageAlive
 #   Modules
 from ..modules.items.calls import _callbacks as _item_callbacks
 from ..modules.items.manager import item_manager
@@ -1291,6 +1292,25 @@ def pre_on_take_damage(stack):
     wcsvictim = Player.from_index(index)
 
     OnTakeDamage.manager.notify(wcsvictim, wcsattacker, info)
+
+
+@EntityPreHook(EntityCondition.is_player, 'on_take_damage_alive')
+def pre_on_take_damage_alive(stack):
+    if _global_bypass:
+        return
+
+    info = make_object(TakeDamageInfo, stack[1])
+    attacker = info.attacker
+
+    if 0 < attacker <= global_vars.max_clients:
+        wcsattacker = Player.from_index(attacker)
+    else:
+        wcsattacker = None
+
+    index = index_from_pointer(stack[0])
+    wcsvictim = Player.from_index(index)
+
+    OnTakeDamageAlive.manager.notify(wcsvictim, wcsattacker, info)
 
 
 # ============================================================================
