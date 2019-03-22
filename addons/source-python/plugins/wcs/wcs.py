@@ -61,6 +61,8 @@ from .core.config import cfg_welcome_gui_text
 from .core.config import cfg_level_up_effect
 from .core.config import cfg_rank_gain_effect
 from .core.config import cfg_spawn_text
+from .core.config import cfg_changerace_next_round
+from .core.config import cfg_resetskills_next_round
 from .core.config import cfg_disable_text_on_level
 from .core.config import cfg_top_announcement_enable
 from .core.config import cfg_top_public_announcement
@@ -172,6 +174,8 @@ not_ready_message = SayText2(chat_strings['not ready'])
 xp_required_message = SayText2(chat_strings['xp required'])
 help_text_message = SayText2(chat_strings['help text'])
 welcome_text_message = SayText2(chat_strings['welcome text'])
+changerace_message = SayText2(chat_strings['changerace'])
+changerace_warning_message = SayText2(chat_strings['changerace warning'])
 gain_xp_killed_message = SayText2(chat_strings['gain xp killed'])
 gain_xp_killed_higher_level_message = SayText2(chat_strings['gain xp killed higher level'])
 gain_xp_headshot_message = SayText2(chat_strings['gain xp headshot'])
@@ -189,6 +193,7 @@ force_change_team_message = SayText2(chat_strings['force change team'])
 force_change_team_limit_message = SayText2(chat_strings['force change team limit'])
 no_unused_message = SayText2(chat_strings['no unused'])
 no_access_message = SayText2(chat_strings['no access'])
+skills_reset_message = SayText2(chat_strings['skills reset'])
 ability_team_message = SayText2(chat_strings['ability team'])
 ability_dead_message = SayText2(chat_strings['ability dead'])
 ability_deactivated_message = SayText2(chat_strings['ability deactivated'])
@@ -527,6 +532,30 @@ def player_spawn(event):
     if wcsplayer.ready:
         if wcsplayer.player.team_index >= 2:
             if not wcsplayer._is_bot:
+                if cfg_resetskills_next_round.get_int():
+                    if wcsplayer.data.pop('_internal_reset_skills', False):
+                        unused = 0
+                        maximum = 0
+
+                        for skill in wcsplayer.skills.values():
+                            unused += skill.level
+                            skill.level = 0
+
+                            maximum += skill.config['maximum']
+
+                        unused = wcsplayer.unused = min(wcsplayer.unused + unused, maximum)
+
+                        skills_reset_message.send(wcsplayer.index, unused=unused)
+
+                if cfg_changerace_next_round.get_int():
+                    new_race = wcsplayer.data.pop('_internal_race_change', None)
+
+                    if new_race is not None:
+                        if race_manager[new_race].usable_by(wcsplayer) is RaceReason.ALLOWED:
+                            wcsplayer.current_race = new_race
+
+                            changerace_message.send(wcsplayer.index, name=wcsplayer.active_race.settings.strings['name'])
+
                 if cfg_spawn_text.get_int():
                     if wcsplayer.total_level <= cfg_disable_text_on_level.get_int():
                         help_text_message.send(wcsplayer.index)
@@ -1128,6 +1157,9 @@ def say_command_changerace(command):
     wcsplayer = Player.from_index(command.index)
 
     if wcsplayer.ready:
+        if not cfg_changerace_next_round.get_int():
+            changerace_warning_message.send(command.index)
+
         changerace_menu.send(command.index)
     else:
         not_ready_message.send(command.index)

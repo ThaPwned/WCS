@@ -21,6 +21,9 @@ from messages.dialog import DialogEntry
 from players.helpers import userid_from_index
 
 # WCS Imports
+#   Config
+from ..config import cfg_changerace_next_round
+from ..config import cfg_resetskills_next_round
 #   Constants
 from ..constants import GithubStatus
 from ..constants import ItemReason
@@ -89,6 +92,9 @@ __all__ = ()
 gain_level_message = SayText2(chat_strings['gain level'])
 skills_reset_message = SayText2(chat_strings['skills reset'])
 changerace_message = SayText2(chat_strings['changerace'])
+changerace_warning_message = SayText2(chat_strings['changerace warning'])
+changerace_changed_message = SayText2(chat_strings['changerace updated'])
+skills_reset_updated_message = SayText2(chat_strings['skills reset updated'])
 skill_upgrade_message = SayText2(chat_strings['skill upgrade'])
 item_bought_message = SayText2(chat_strings['item bought'])
 admin_gain_xp_all_message = SayText2(chat_strings['admin gain xp all'])
@@ -113,6 +119,10 @@ entry_levels_dialog = DialogEntry(menu_strings['wcsadmin_dialog_levels_title'], 
 # ============================================================================
 @main_menu.register_select_callback
 def main_menu_select(menu, client, option):
+    if option.value is changerace_menu:
+        if not cfg_changerace_next_round.get_int():
+            changerace_warning_message.send(client)
+
     return option.value
 
 
@@ -175,23 +185,28 @@ def resetskills_menu_select(menu, client, option):
     wcsplayer = Player.from_index(client)
 
     if option.choice_index == 1:
-        unused = 0
-        maximum = 0
+        if cfg_resetskills_next_round.get_int():
+            wcsplayer.data['_internal_reset_skills'] = True
 
-        for skill in wcsplayer.skills.values():
-            unused += skill.level
-            skill.level = 0
+            skills_reset_updated_message.send(client)
+        else:
+            unused = 0
+            maximum = 0
 
-            maximum += skill.config['maximum']
+            for skill in wcsplayer.skills.values():
+                unused += skill.level
+                skill.level = 0
 
-        unused = wcsplayer.unused = min(wcsplayer.unused + unused, maximum)
+                maximum += skill.config['maximum']
 
-        player = wcsplayer.player
+            wcsplayer.unused = min(wcsplayer.unused + unused, maximum)
 
-        if not player.dead:
-            player.client_command('kill', True)
+            player = wcsplayer.player
 
-        skills_reset_message.send(client, unused=unused)
+            if not player.dead:
+                player.client_command('kill', True)
+
+            skills_reset_message.send(client, unused=wcsplayer.unused)
 
         return
 
@@ -232,16 +247,21 @@ def changerace_menu_select(menu, client, option):
     settings = race_manager[option.value]
 
     if settings.usable_by(wcsplayer) is RaceReason.ALLOWED:
-        changerace_message.send(client, name=settings.strings['name'])
+        if cfg_changerace_next_round.get_int():
+            wcsplayer.data['_internal_race_change'] = option.value
 
-        wcsplayer.current_race = option.value
+            changerace_changed_message.send(client, name=settings.strings['name'])
+        else:
+            changerace_message.send(client, name=settings.strings['name'])
 
-        player = wcsplayer.player
+            wcsplayer.current_race = option.value
 
-        if not player.dead:
-            player.godmode = False
+            player = wcsplayer.player
 
-            player.client_command('kill', True)
+            if not player.dead:
+                player.godmode = False
+
+                player.client_command('kill', True)
     else:
         return menu
 
