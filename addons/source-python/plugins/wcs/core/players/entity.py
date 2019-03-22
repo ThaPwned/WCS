@@ -862,33 +862,33 @@ class _Race(object):
                                     execute_server_command(*split(cmd))
 
         for item in self.wcsplayer.items.values():
-            if name in self.settings.config['event']:
-                if self.settings.type is ModuleType.SP:
-                    callback = _item_callbacks.get(self.name, {}).get(name)
+            if name in item.settings.config['event']:
+                if item.settings.type is ModuleType.SP:
+                    callback = _item_callbacks.get(item.name, {}).get(name)
 
                     if callback is not None:
                         if event is None:
                             callback(self.wcsplayer)
                         else:
                             callback(event, self.wcsplayer)
-                elif self.settings.type is ModuleType.ESP:
-                    callback = es.addons.Blocks.get(f'wcs/modules/items/{self.name}/{name}')
+                elif item.settings.type is ModuleType.ESP:
+                    callback = es.addons.Blocks.get(f'wcs/modules/items/{item.name}/{name}')
 
                     if callback is not None:
                         if event is None:
                             callback(self.wcsplayer)
                         else:
                             callback(es.event_var, self.wcsplayer)
-                elif self.settings.type is ModuleType.ESS:
-                    addon = esc.addons.get(f'wcs/modules/items/{self.name}')
+                elif item.settings.type is ModuleType.ESS:
+                    addon = esc.addons.get(f'wcs/modules/items/{item.name}')
 
                     if addon is not None:
                         executor = addon.blocks.get(name)
 
                         if executor is not None:
                             executor.run()
-                elif self.settings.type is ModuleType.ESS_INI or self.settings.type is ModuleType.ESS_KEY:
-                    commands = self.settings.cmds.get(name)
+                elif item.settings.type is ModuleType.ESS_INI or item.settings.type is ModuleType.ESS_KEY:
+                    commands = item.settings.cmds.get(name)
 
                     if commands is not None and commands:
                         for cmd in commands.split(';'):
