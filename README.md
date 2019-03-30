@@ -14,6 +14,8 @@ Warcraft: Source is a modification for Counter-Strike: Source and Counter-Strike
 3. Write `sp plugin load wcs` in the `cfg/autoexec.cfg` file (create it if it doesn't exist).
 4. The necessary files will be created on the first load under `cfg/source-python/wcs/`.
 
+If you're going to use races or items from 0.77 (and prior) or 0.78, you also have to install [EventScripts Emulator](https://github.com/Ayuto/EventScripts-Emulator). This have to be loaded before WCS, otherwise your races and items will not be loaded.
+
 
 ## Administrator
 You can make yourself an administrator by editing `cfg/source-python/wcs/privileges.json` and adding your steamid there. By default, it'll look like this:
