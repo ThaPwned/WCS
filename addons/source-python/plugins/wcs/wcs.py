@@ -1238,6 +1238,8 @@ def client_ability_plus_command(command, ability:int=1, *args:str):
                     reason = skill.is_executable()
 
                     if reason is SkillReason.ALLOWED:
+                        wcsplayer.data[f'_internal_ability_{i}'] = True
+
                         with FakeEvent('player_ability_on' if skill._type is ModuleType.SP else f'{skill_name}_on', userid=wcsplayer.userid) as event:
                             skill.execute(event.name, event)
                     elif reason is SkillReason.TEAM:
@@ -1267,26 +1269,28 @@ def client_ability_plus_command(command, ability:int=1, *args:str):
 @TypedClientCommand('-ability')
 def client_ability_minus_command(command, ability:int=1, *args:str):
     wcsplayer = Player.from_index(command.index)
+
     if wcsplayer.ready:
         # TODO: Monkeypatch until it's been fixed in SP (don't create a race with 32 abilities, please)
         if ability == 32:
             ability = 1
 
-        active_race = wcsplayer.active_race
+        if wcsplayer.data.pop(f'_internal_ability_{i}', False):
+            active_race = wcsplayer.active_race
 
-        i = 1
+            i = 1
 
-        for skill_name in active_race.settings.config['skills']:
-            skill = active_race.skills[skill_name]
+            for skill_name in active_race.settings.config['skills']:
+                skill = active_race.skills[skill_name]
 
-            if 'player_ability_off' in skill.config['event']:
-                if ability == i:
-                    with FakeEvent('player_ability_off' if skill._type is ModuleType.SP else f'{skill_name}_off', userid=wcsplayer.userid) as event:
-                        skill.execute(event.name, event)
+                if 'player_ability_off' in skill.config['event']:
+                    if ability == i:
+                        with FakeEvent('player_ability_off' if skill._type is ModuleType.SP else f'{skill_name}_off', userid=wcsplayer.userid) as event:
+                            skill.execute(event.name, event)
 
-                    break
+                        break
 
-                i += 1
+                    i += 1
 
     return CommandReturn.BLOCK
 
