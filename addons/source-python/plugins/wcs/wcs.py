@@ -1275,22 +1275,23 @@ def client_ability_minus_command(command, ability:int=1, *args:str):
         if ability == 32:
             ability = 1
 
-        if wcsplayer.data.pop(f'_internal_ability_{i}', False):
-            active_race = wcsplayer.active_race
+        active_race = wcsplayer.active_race
 
-            i = 1
+        i = 1
 
-            for skill_name in active_race.settings.config['skills']:
-                skill = active_race.skills[skill_name]
+        for skill_name in active_race.settings.config['skills']:
+            skill = active_race.skills[skill_name]
 
-                if 'player_ability_off' in skill.config['event']:
-                    if ability == i:
-                        with FakeEvent('player_ability_off' if skill._type is ModuleType.SP else f'{skill_name}_off', userid=wcsplayer.userid) as event:
-                            skill.execute(event.name, event)
+            if 'player_ability_off' in skill.config['event'] or 'player_ability_on' in skill.config['event']:
+                if ability == i:
+                    if wcsplayer.data.pop(f'_internal_ability_{i}', False):
+                        if 'player_ability_off' in skill.config['event']:
+                            with FakeEvent('player_ability_off' if skill._type is ModuleType.SP else f'{skill_name}_off', userid=wcsplayer.userid) as event:
+                                skill.execute(event.name, event)
 
-                        break
+                    break
 
-                    i += 1
+                i += 1
 
     return CommandReturn.BLOCK
 
