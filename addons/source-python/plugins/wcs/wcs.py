@@ -115,7 +115,6 @@ from .core.listeners import OnPlayerQuery
 from .core.listeners import OnPlayerRankUpdate
 from .core.listeners import OnPlayerReady
 from .core.listeners import OnPluginUnload
-from .core.listeners import OnTakeDamage
 from .core.listeners import OnTakeDamageAlive
 #   Menus
 from .core.menus import shopmenu_menu
