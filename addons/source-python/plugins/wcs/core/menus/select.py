@@ -13,6 +13,7 @@ from json import load
 from menus import PagedMenu
 from menus import PagedOption
 from menus import SimpleMenu
+from menus import Text
 from menus.radio import BUTTON_BACK
 from menus.radio import MAX_ITEM_COUNT
 #   Messages
@@ -69,6 +70,9 @@ from . import wcsadmin_github_races_repository_menu
 from . import wcsadmin_github_items_menu
 from . import wcsadmin_github_items_options_menu
 from . import wcsadmin_github_items_repository_menu
+from . import wcsadmin_github_info_menu
+from . import wcsadmin_github_info_confirm_menu
+from . import wcsadmin_github_info_commits_menu
 #   Modules
 from ..modules.items.manager import item_manager
 from ..modules.races.manager import race_manager
@@ -698,3 +702,46 @@ def wcsadmin_github_items_options_menu_select(menu, client, option):
         return option.value
 
     return menu
+
+
+@wcsadmin_github_info_menu.register_select_callback
+def wcsadmin_github_info_menu_select(menu, client, option):
+    if option.choice_index == 1:
+        menu._checking_cycle = 0
+
+        menu[3] = Text(menu_strings['wcsadmin_github_info_menu checking'])
+        github_manager.check_new_version()
+
+        menu[4] = Text(' ')
+
+        for index in menu._player_pages:
+            if menu.is_active_menu(index):
+                menu._refresh(index)
+    elif option.choice_index == 2:
+        return wcsadmin_github_info_confirm_menu
+
+    return option.value or menu
+
+
+@wcsadmin_github_info_confirm_menu.register_select_callback
+def wcsadmin_github_info_confirm_menu_select(menu, client, option):
+    if option.choice_index == 1:
+        wcsadmin_github_info_menu.send([*menu._player_pages])
+        menu.close([*menu._player_pages])
+
+        wcsadmin_github_info_menu[3].selectable = wcsadmin_github_info_menu[3].highlight = False
+
+        wcsadmin_github_info_menu[4] = Text(menu_strings['wcsadmin_github_info_menu updating'])
+        wcsadmin_github_info_menu._installing_cycle = 0
+
+        github_manager.refresh_commits()
+        github_manager.install_new_version()
+
+        return
+
+    return option.value
+
+
+@wcsadmin_github_info_commits_menu.register_select_callback
+def wcsadmin_github_info_commits_menu_select(menu, client, option):
+    return option.value

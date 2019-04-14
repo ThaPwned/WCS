@@ -65,6 +65,9 @@ wcsadmin_github_races_repository_menu = PagedMenu()
 wcsadmin_github_items_menu = PagedMenu()
 wcsadmin_github_items_options_menu = SimpleMenu()
 wcsadmin_github_items_repository_menu = PagedMenu()
+wcsadmin_github_info_menu = SimpleMenu()
+wcsadmin_github_info_confirm_menu = SimpleMenu()
+wcsadmin_github_info_commits_menu = PagedPageCountMenu()
 
 shopmenu_menu.parent_menu = main_menu
 shopinfo_menu.parent_menu = main_menu
@@ -87,6 +90,7 @@ wcsadmin_github_races_menu.parent_menu = wcsadmin_github_menu
 wcsadmin_github_races_repository_menu.parent_menu = wcsadmin_github_races_options_menu
 wcsadmin_github_items_menu.parent_menu = wcsadmin_github_menu
 wcsadmin_github_items_repository_menu.parent_menu = wcsadmin_github_items_options_menu
+wcsadmin_github_info_commits_menu.parent_menu = wcsadmin_github_info_menu
 
 
 # ============================================================================

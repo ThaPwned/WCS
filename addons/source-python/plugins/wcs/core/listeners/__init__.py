@@ -13,14 +13,16 @@ from listeners import ListenerManagerDecorator
 # >> ALL DECLARATION
 # ============================================================================
 __all__ = (
-    'OnDownloadBegin',
-    'OnDownloadComplete',
-    'OnGithubFailed',
-    'OnGithubRefresh',
-    'OnGithubRefreshed',
-    'OnGithubInstalled',
-    'OnGithubUpdated',
-    'OnGithubUninstalled',
+    'OnGithubCommitsRefresh',
+    'OnGithubCommitsRefreshed',
+    'OnGithubModuleFailed',
+    'OnGithubModuleInstalled',
+    'OnGithubModuleUpdated',
+    'OnGithubModuleUninstalled',
+    'OnGithubModulesRefresh',
+    'OnGithubModulesRefreshed',
+    'OnGithubNewVersionChecked',
+    'OnGithubNewVersionInstalled',
     'OnIsItemUsable',
     'OnIsItemUsableText',
     'OnIsRaceUsable',
@@ -44,35 +46,43 @@ __all__ = (
 # ============================================================================
 # >> CLASSES
 # ============================================================================
-class OnDownloadBegin(ListenerManagerDecorator):
+class OnGithubCommitsRefresh(ListenerManagerDecorator):
     manager = ListenerManager()
 
 
-class OnDownloadComplete(ListenerManagerDecorator):
+class OnGithubCommitsRefreshed(ListenerManagerDecorator):
     manager = ListenerManager()
 
 
-class OnGithubFailed(ListenerManagerDecorator):
+class OnGithubModuleFailed(ListenerManagerDecorator):
     manager = ListenerManager()
 
 
-class OnGithubRefresh(ListenerManagerDecorator):
+class OnGithubModulesRefresh(ListenerManagerDecorator):
     manager = ListenerManager()
 
 
-class OnGithubRefreshed(ListenerManagerDecorator):
+class OnGithubModulesRefreshed(ListenerManagerDecorator):
     manager = ListenerManager()
 
 
-class OnGithubInstalled(ListenerManagerDecorator):
+class OnGithubModuleInstalled(ListenerManagerDecorator):
     manager = ListenerManager()
 
 
-class OnGithubUpdated(ListenerManagerDecorator):
+class OnGithubModuleUpdated(ListenerManagerDecorator):
     manager = ListenerManager()
 
 
-class OnGithubUninstalled(ListenerManagerDecorator):
+class OnGithubModuleUninstalled(ListenerManagerDecorator):
+    manager = ListenerManager()
+
+
+class OnGithubNewVersionChecked(ListenerManagerDecorator):
+    manager = ListenerManager()
+
+
+class OnGithubNewVersionInstalled(ListenerManagerDecorator):
     manager = ListenerManager()
 
 

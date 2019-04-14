@@ -33,7 +33,6 @@ from events import Event
 #   Filters
 from filters.weapons import WeaponClassIter
 #   Listeners
-from listeners import OnLevelInit
 from listeners import OnServerOutput
 from listeners.tick import Delay
 from listeners.tick import Repeat
@@ -84,8 +83,6 @@ from .core.config import cfg_bot_bomb_defuse_xp
 from .core.config import cfg_bot_bomb_explode_xp
 from .core.config import cfg_bot_hostage_rescue_xp
 from .core.config import cfg_bot_ability_chance
-from .core.config import cfg_github_mod_update
-from .core.config import cfg_github_refresh_rate
 #   Constants
 from .core.constants import IS_ESC_SUPPORT_ENABLED
 from .core.constants import ModuleType
@@ -105,7 +102,8 @@ from .core.events import _events
 from .core.helpers.github import github_manager
 from .core.helpers.overwrites import SayText2
 #   Listeners
-from .core.listeners import OnDownloadComplete
+from .core.listeners import OnGithubNewVersionChecked
+from .core.listeners import OnGithubNewVersionInstalled
 from .core.listeners import OnIsSkillExecutableText
 from .core.listeners import OnPlayerChangeRace
 from .core.listeners import OnPlayerDelete
@@ -233,10 +231,8 @@ class QuietTypedClientCommand(TypedClientCommand):
 # >> FUNCTIONS
 # ============================================================================
 def load():
-    github_manager.refresh()
-
-    if cfg_github_mod_update.get_int():
-        github_manager.download_update()
+    github_manager.refresh_commits()
+    github_manager.refresh_modules()
 
     database_manager.connect()
 
@@ -425,11 +421,6 @@ def _fire_post_player_spawn(wcsplayer, delay):
 def round_start(event):
     for _, wcsplayer in PlayerReadyIter(not_filters=['un', 'spec']):
         wcsplayer.execute('roundstartcmd', event, define=True)
-
-    if _new_version is not None:
-        for _, wcsplayer in PlayerReadyIter():
-            if wcsplayer.privileges.get('wcsadmin'):
-                github_mod_update_message.send(wcsplayer.index, old=info.version, new=_new_version)
 
 
 @Event('round_end')
@@ -764,24 +755,23 @@ if IS_ESC_SUPPORT_ENABLED:
         return OutputReturn.CONTINUE
 
 
-@OnDownloadComplete
-def on_download_complete(version):
-    if version is not None:
-        global _new_version
+@OnGithubNewVersionChecked
+def on_github_new_version_checked(version):
+    global _new_version
 
-        _new_version = version
+    _new_version = version
 
+
+@OnGithubNewVersionInstalled
+def on_github_new_version_installed():
+    global _new_version
+
+    if _new_version is not None:
         for _, wcsplayer in PlayerReadyIter():
             if wcsplayer.privileges.get('wcsadmin'):
-                github_mod_update_message.send(wcsplayer.index, old=info.version, new=version)
+                github_mod_update_message.send(wcsplayer.index, old=info.version, new=_new_version)
 
-
-@OnLevelInit
-def on_level_init(map_name):
-    github_manager.refresh()
-
-    if cfg_github_mod_update.get_int():
-        github_manager.download_update()
+        _new_version = None
 
 
 @OnPlayerChangeRace
@@ -1388,12 +1378,3 @@ def save_data_repeat():
 
     database_manager.execute('player offline', callback=_query_refresh_offline)
 save_data_repeat.start(60 * 1)
-
-
-@Repeat
-def github_refresh_repeat():
-    github_manager.refresh()
-
-
-if cfg_github_refresh_rate.get_int():
-    github_refresh_repeat.start(cfg_github_refresh_rate.get_int() * 60)

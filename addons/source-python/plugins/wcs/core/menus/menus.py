@@ -6,6 +6,8 @@
 # Python Imports
 #   Copy
 from copy import deepcopy
+#   Textwrap
+from textwrap import wrap
 
 # Source.Python Imports
 #   Menus
@@ -18,12 +20,17 @@ from menus.radio import BUTTON_CLOSE_SLOT
 # WCS Imports
 #   Constants
 from ..constants import GithubStatus
+from ..constants.info import info
 #   Listeners
-from ..listeners import OnGithubRefresh
-from ..listeners import OnGithubRefreshed
-from ..listeners import OnGithubInstalled
-from ..listeners import OnGithubUpdated
-from ..listeners import OnGithubUninstalled
+from ..listeners import OnGithubCommitsRefresh
+from ..listeners import OnGithubCommitsRefreshed
+from ..listeners import OnGithubModuleInstalled
+from ..listeners import OnGithubModuleUpdated
+from ..listeners import OnGithubModuleUninstalled
+from ..listeners import OnGithubModulesRefresh
+from ..listeners import OnGithubModulesRefreshed
+from ..listeners import OnGithubNewVersionChecked
+from ..listeners import OnGithubNewVersionInstalled
 from ..listeners import OnPlayerQuery
 #   Menus
 from . import main_menu
@@ -66,6 +73,10 @@ from . import wcsadmin_github_races_repository_menu
 from . import wcsadmin_github_items_menu
 from . import wcsadmin_github_items_options_menu
 from . import wcsadmin_github_items_repository_menu
+from . import wcsadmin_github_info_menu
+from . import wcsadmin_github_info_confirm_menu
+from . import wcsadmin_github_info_commits_menu
+from .base import PagedMenu
 #   Translations
 from ..translations import menu_strings
 
@@ -100,6 +111,10 @@ wcsadmin_github_races_menu.title = menu_strings['wcsadmin_github_races_menu titl
 wcsadmin_github_races_repository_menu.title = menu_strings['wcsadmin_github_races_repository_menu title']
 wcsadmin_github_items_menu.title = menu_strings['wcsadmin_github_items_menu title']
 wcsadmin_github_items_repository_menu.title = menu_strings['wcsadmin_github_items_repository_menu title']
+wcsadmin_github_info_commits_menu.title = menu_strings['wcsadmin_github_info_commits_menu title']
+
+wcsadmin_github_info_menu._checking_cycle = None
+wcsadmin_github_info_menu._installing_cycle = None
 
 
 # ============================================================================
@@ -287,8 +302,6 @@ welcome_menu.extend(
     ]
 )
 
-welcome_menu[15].text.tokens['slot'] = BUTTON_CLOSE_SLOT
-
 
 # ============================================================================
 # >> ADMIN MENU FILLER
@@ -419,7 +432,7 @@ wcsadmin_github_menu.extend(
         Text(' '),
         SimpleOption(1, menu_strings['wcsadmin_github_menu races'], wcsadmin_github_races_menu, selectable=False, highlight=False),
         SimpleOption(2, menu_strings['wcsadmin_github_menu items'], wcsadmin_github_items_menu, selectable=False, highlight=False),
-        Text(' '),
+        SimpleOption(3, menu_strings['wcsadmin_github_menu info'], wcsadmin_github_info_menu),
         Text(' '),
         Text(' '),
         Text(' '),
@@ -461,10 +474,45 @@ wcsadmin_github_items_options_menu.extend(
     ]
 )
 
+wcsadmin_github_info_menu.extend(
+    [
+        Text(menu_strings['wcsadmin_github_info_menu title']),
+        Text(' '),
+        Text(menu_strings['wcsadmin_github_info_menu version']),
+        SimpleOption(1, menu_strings['wcsadmin_github_info_menu check']),
+        Text(' '),
+        SimpleOption(3, menu_strings['wcsadmin_github_info_menu commits'], wcsadmin_github_info_commits_menu),
+        Text(' '),
+        Text(' '),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_github_menu),
+        Text(' '),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
+    ]
+)
+
+wcsadmin_github_info_confirm_menu.extend(
+    [
+        Text(menu_strings['wcsadmin_github_info_confirm_menu title']),
+        Text(' '),
+        Text(menu_strings['wcsadmin_github_info_confirm_menu line 1']),
+        Text(menu_strings['wcsadmin_github_info_confirm_menu line 2']),
+        SimpleOption(1, menu_strings['yes']),
+        SimpleOption(2, menu_strings['no'], wcsadmin_github_info_menu),
+        Text(' '),
+        Text(' '),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_github_info_menu),
+        Text(' '),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
+    ]
+)
+
 
 # ============================================================================
 # >> MENU ENHANCEMENTS
 # ============================================================================
+welcome_menu[15].text.tokens['slot'] = BUTTON_CLOSE_SLOT
+wcsadmin_github_info_menu[2].text.tokens['version'] = info.version
+
 if BUTTON_BACK == 8:
     wcsadmin_menu.insert(-3, Text(' '))
     wcsadmin_players_sub_menu.insert(-3, Text(' '))
@@ -476,6 +524,8 @@ if BUTTON_BACK == 8:
     wcsadmin_github_menu.insert(-3, Text(' '))
     wcsadmin_github_races_options_menu.insert(-3, Text(' '))
     wcsadmin_github_items_options_menu.insert(-3, Text(' '))
+    wcsadmin_github_info_menu.insert(-3, Text(' '))
+    wcsadmin_github_info_confirm_menu.insert(-3, Text(' '))
 
 
 for i in range(2, 7):
@@ -486,8 +536,41 @@ for i in range(2, 7):
 # ============================================================================
 # >> LISTENERS
 # ============================================================================
-@OnGithubRefresh
-def on_github_refresh():
+@OnGithubCommitsRefresh
+def on_github_commits_refresh():
+    wcsadmin_github_info_commits_menu.clear()
+
+    wcsadmin_github_info_commits_menu._cycle = 0
+    wcsadmin_github_info_commits_menu.append(menu_strings['wcsadmin_github_info_commits_menu querying'])
+
+
+@OnGithubCommitsRefreshed
+def on_github_commits_refreshed(commits):
+    wcsadmin_github_info_commits_menu._cycle = None
+    wcsadmin_github_info_commits_menu.clear()
+
+    for i, commit in enumerate(commits):
+        menu = PagedMenu(title=menu_strings['wcsadmin_github_info_commits_detail_menu title'], parent_menu=wcsadmin_github_info_commits_menu)
+        menu.append(Text(deepcopy(menu_strings['wcsadmin_github_info_commits_menu line 1'])))
+        menu.append(Text(deepcopy(menu_strings['wcsadmin_github_info_commits_menu line 2'])))
+        menu.append(Text(menu_strings['wcsadmin_github_info_commits_menu line 3']))
+
+        menu[0].text.tokens['name'] = commit['author']
+        menu[1].text.tokens['date'] = commit['date']
+
+        for message in commit['messages'].splitlines():
+            for text in wrap('   ' + message, 50):
+                menu.append(Text(text))
+
+        wcsadmin_github_info_commits_menu.append(PagedOption(commit['date'], value=menu))
+
+    for index in wcsadmin_github_info_commits_menu._player_pages:
+        if wcsadmin_github_info_commits_menu.is_active_menu(index):
+            wcsadmin_github_info_commits_menu._refresh(index)
+
+
+@OnGithubModulesRefresh
+def on_github_modules_refresh():
     wcsadmin_github_races_menu.clear()
     wcsadmin_github_items_menu.clear()
 
@@ -497,8 +580,8 @@ def on_github_refresh():
     wcsadmin_github_items_menu.close([*wcsadmin_github_items_menu._player_pages])
 
 
-@OnGithubRefreshed
-def on_github_refreshed(races, items):
+@OnGithubModulesRefreshed
+def on_github_modules_refreshed(races, items):
     for name, data in races.items():
         option = PagedOption(name, name)
         repository = data['repository']
@@ -527,19 +610,40 @@ def on_github_refreshed(races, items):
     wcsadmin_github_menu[3].selectable = wcsadmin_github_menu[3].highlight = bool(items)
 
 
-@OnGithubInstalled
-def on_github_installed(repository, module, name, userid):
+@OnGithubModuleInstalled
+def on_github_module_installed(repository, module, name, userid):
     _update_menu(module, name, True)
 
 
-@OnGithubUpdated
-def on_github_updated(repository, module, name, userid):
+@OnGithubModuleUpdated
+def on_github_module_updated(repository, module, name, userid):
     _update_menu(module, name, True)
 
 
-@OnGithubUninstalled
-def on_github_uninstalled(repository, module, name, userid):
+@OnGithubModuleUninstalled
+def on_github_module_uninstalled(repository, module, name, userid):
     _update_menu(module, name, False)
+
+
+@OnGithubNewVersionChecked
+def on_github_new_version_checked(version):
+    wcsadmin_github_info_menu._checking_cycle = None
+    wcsadmin_github_info_menu[3] = SimpleOption(1, menu_strings['wcsadmin_github_info_menu check'])
+
+    if version is None:
+        wcsadmin_github_info_menu[4] = Text(' ')
+        wcsadmin_github_info_confirm_menu[2].text.tokens['version'] = ''
+    else:
+        wcsadmin_github_info_menu[4] = SimpleOption(2, menu_strings['wcsadmin_github_info_menu update'])
+        wcsadmin_github_info_menu[4].text.tokens['version'] = version
+        wcsadmin_github_info_confirm_menu[2].text.tokens['version'] = version
+
+
+@OnGithubNewVersionInstalled
+def on_github_new_version_installed():
+    wcsadmin_github_info_menu._installing_cycle = None
+    wcsadmin_github_info_menu[3] = SimpleOption(1, menu_strings['wcsadmin_github_info_menu check'])
+    wcsadmin_github_info_menu[4] = Text(' ')
 
 
 @OnPlayerQuery

@@ -76,6 +76,8 @@ from . import wcsadmin_github_races_options_menu
 from . import wcsadmin_github_races_repository_menu
 from . import wcsadmin_github_items_options_menu
 from . import wcsadmin_github_items_repository_menu
+from . import wcsadmin_github_info_menu
+from . import wcsadmin_github_info_commits_menu
 #   Modules
 from ..modules.items.manager import item_manager
 from ..modules.races.manager import race_manager
@@ -558,7 +560,7 @@ def wcsadmin_menu_build(menu, client):
 
     menu[2].selectable = menu[2].highlight = wcsplayer.privileges.get('wcsadmin_playersmanagement', False)
     menu[3].selectable = menu[3].highlight = wcsplayer.privileges.get('wcsadmin_managementaccess', False)
-    menu[4].selectable = menu[4].highlight = wcsplayer.privileges.get('wcsadmin_githubaccess', False) and (github_manager['races'] or github_manager['items'])
+    menu[4].selectable = menu[4].highlight = wcsplayer.privileges.get('wcsadmin_githubaccess', False)
 
 
 @wcsadmin_players_menu.register_build_callback
@@ -838,3 +840,24 @@ def wcsadmin_github_items_repository_menu_build(menu, client):
         option.text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['repositories'][repository]['last_modified']))
 
         menu.append(option)
+
+
+@wcsadmin_github_info_menu.register_build_callback
+def wcsadmin_github_info_menu_build(menu, client):
+    if menu._checking_cycle is not None:
+        menu[3].text.tokens['cycle'] = '.' * (menu._checking_cycle % 3 + 1)
+
+        menu._checking_cycle += 1
+
+    if menu._installing_cycle is not None:
+        menu[4].text.tokens['cycle'] = '.' * (menu._installing_cycle % 3 + 1)
+
+        menu._installing_cycle += 1
+
+
+@wcsadmin_github_info_commits_menu.register_build_callback
+def wcsadmin_github_info_commits_menu_build(menu, client):
+    if menu._cycle is not None:
+        menu[0].tokens['cycle'] = '.' * (menu._cycle % 3 + 1)
+
+        menu._cycle += 1
