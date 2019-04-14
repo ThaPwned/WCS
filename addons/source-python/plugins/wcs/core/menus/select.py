@@ -634,15 +634,15 @@ def wcsadmin_github_races_options_menu_select(menu, client, option):
             else:
                 github_installing_message.send(client, name=name)
 
-                github_manager.install(list(github_manager['races'][name]['repositories'])[0], 'races', name, userid_from_index(client))
+                github_manager.install_module(list(github_manager['races'][name]['repositories'])[0], 'races', name, userid_from_index(client))
         elif option.value is GithubStatus.UPDATING:
             github_updating_message.send(client, name=name)
 
-            github_manager.update('races', name, userid_from_index(client))
+            github_manager.update_module('races', name, userid_from_index(client))
         else:
             github_uninstalling_message.send(client, name=name)
 
-            github_manager.uninstall('races', name, userid_from_index(client))
+            github_manager.uninstall_module('races', name, userid_from_index(client))
     elif isinstance(option.value, SimpleMenu):
         return option.value
 
@@ -656,7 +656,7 @@ def wcsadmin_github_races_repository_menu_select(menu, client, option):
 
     github_installing_message.send(client, name=name)
 
-    github_manager.install(option.value, 'races', name, userid_from_index(client))
+    github_manager.install_module(option.value, 'races', name, userid_from_index(client))
 
     return wcsadmin_github_races_repository_menu.parent_menu
 
@@ -685,15 +685,15 @@ def wcsadmin_github_items_options_menu_select(menu, client, option):
             else:
                 github_installing_message.send(client, name=name)
 
-                github_manager.install(list(github_manager['items'][name]['repositories'])[0], 'items', name, userid_from_index(client))
+                github_manager.install_module(list(github_manager['items'][name]['repositories'])[0], 'items', name, userid_from_index(client))
         elif option.value is GithubStatus.UPDATING:
             github_updating_message.send(client, name=name)
 
-            github_manager.update('items', name, userid_from_index(client))
+            github_manager.update_module('items', name, userid_from_index(client))
         else:
             github_uninstalling_message.send(client, name=name)
 
-            github_manager.uninstall('items', name, userid_from_index(client))
+            github_manager.uninstall_module('items', name, userid_from_index(client))
     elif isinstance(option.value, SimpleMenu):
         return option.value
 

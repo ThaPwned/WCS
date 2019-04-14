@@ -257,12 +257,12 @@ class _GithubManager(dict):
             _output.put(None)
             raise
 
-    def _install(self, repository, module, name, userid):
+    def _install_module(self, repository, module, name, userid):
         try:
             _github = self._connect()
             _repo = _github.get_repo(repository)
 
-            self._download(_repo, f'{module}/{name}')
+            self._download_module(_repo, f'{module}/{name}')
 
             _path = MODULE_PATH / module / name / '.wcs_install'
 
@@ -278,7 +278,7 @@ class _GithubManager(dict):
             _output.put((OnGithubFailed.manager.notify, repository, module, name, userid, GithubStatus.INSTALLING))
             raise
 
-    def _update(self, repository, module, name, userid):
+    def _update_module(self, repository, module, name, userid):
         try:
             _github = self._connect()
             _repo = _github.get_repo(repository)
@@ -290,7 +290,7 @@ class _GithubManager(dict):
             if config_path.isfile():
                 config_path.rename(config_tmp_path)
 
-            self._download(_repo, f'{module}/{name}')
+            self._download_module(_repo, f'{module}/{name}')
 
             if config_tmp_path.isfile():
                 with open(config_tmp_path) as inputfile:
@@ -336,7 +336,7 @@ class _GithubManager(dict):
             _output.put((OnGithubFailed.manager.notify, repository, module, name, userid, GithubStatus.UPDATING))
             raise
 
-    def _uninstall(self, repository, module, name, userid):
+    def _uninstall_module(self, repository, module, name, userid):
         try:
             if (MODULE_PATH_ES / module / name).isdir():
                 (MODULE_PATH_ES / module / name).rmtree()
@@ -352,7 +352,7 @@ class _GithubManager(dict):
             _output.put((OnGithubFailed.manager.notify, repository, module, name, userid, GithubStatus.UNINSTALLING))
             raise
 
-    def _download(self, repository, from_path):
+    def _download_module(self, repository, from_path):
         contents = repository.get_contents(from_path)
         name = from_path.split('/')[1]
 
@@ -366,7 +366,7 @@ class _GithubManager(dict):
                 if not path.isdir():
                     path.makedirs()
 
-                self._download(repository, content.path)
+                self._download_module(repository, content.path)
             else:
                 if not path.parent.isdir():
                     path.parent.makedirs()
@@ -384,13 +384,13 @@ class _GithubManager(dict):
         def stop(self):
             pass
 
-        def install(self, repository, module, name, userid=None):
+        def install_module(self, repository, module, name, userid=None):
             pass
 
-        def update(self, repository, module, name, userid=None):
+        def update_module(self, repository, module, name, userid=None):
             pass
 
-        def uninstall(self, repository, module, name, userid=None):
+        def uninstall_module(self, repository, module, name, userid=None):
             pass
     else:
         def download_update(self):
@@ -436,7 +436,7 @@ class _GithubManager(dict):
 
             self._repeat.stop()
 
-        def install(self, repository, module, name, userid=None):
+        def install_module(self, repository, module, name, userid=None):
             assert self[module][name]['status'] is GithubStatus.UNINSTALLED
 
             if not self._counter:
@@ -446,12 +446,12 @@ class _GithubManager(dict):
 
             self[module][name]['status'] = GithubStatus.INSTALLING
 
-            thread = Thread(target=self._install, name=f'wcs.install.{module}.{name}', args=(repository, module, name, userid))
+            thread = Thread(target=self._install_module, name=f'wcs.install.{module}.{name}', args=(repository, module, name, userid))
             thread.start()
 
             self._threads.append(thread)
 
-        def update(self, module, name, userid=None):
+        def update_module(self, module, name, userid=None):
             assert self[module][name]['status'] is GithubStatus.INSTALLED
 
             if not self._counter:
@@ -461,12 +461,12 @@ class _GithubManager(dict):
 
             self[module][name]['status'] = GithubStatus.UPDATING
 
-            thread = Thread(target=self._update, name=f'wcs.update.{module}.{name}', args=(self[module][name]['repository'], module, name, userid))
+            thread = Thread(target=self._update_module, name=f'wcs.update.{module}.{name}', args=(self[module][name]['repository'], module, name, userid))
             thread.start()
 
             self._threads.append(thread)
 
-        def uninstall(self, module, name, userid=None):
+        def uninstall_module(self, module, name, userid=None):
             assert self[module][name]['status'] is GithubStatus.INSTALLED
 
             if not self._counter:
@@ -476,7 +476,7 @@ class _GithubManager(dict):
 
             self[module][name]['status'] = GithubStatus.UNINSTALLING
 
-            thread = Thread(target=self._uninstall, name=f'wcs.uninstall.{module}.{name}', args=(self[module][name]['repository'], module, name, userid))
+            thread = Thread(target=self._uninstall_module, name=f'wcs.uninstall.{module}.{name}', args=(self[module][name]['repository'], module, name, userid))
             thread.start()
 
             self._threads.append(thread)
