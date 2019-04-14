@@ -4,6 +4,8 @@
 # >> IMPORTS
 # ============================================================================
 # Python Imports
+#   Collections
+from collections import OrderedDict
 #   Disutils
 from distutils.dir_util import copy_tree
 #   Github
@@ -296,51 +298,26 @@ class _GithubManager(dict):
                 config_tmp_path.remove()
 
                 if not old_data == new_data:
-                    modified = False
+                    def merge(container, original, updated):
+                        for key in updated:
+                            if key in original:
+                                if isinstance(original[key], dict) and isinstance(updated[key], dict):
+                                    container[key] = merge(OrderedDict(), original[key], updated[key])
+                                else:
+                                    container[key] = original[key]
+                            else:
+                                container[key] = updated[key]
 
-                    # TODO: Make this prettier...
+                        return container
+
+                    container = merge(OrderedDict(), old_data, new_data)
+
                     if module == 'races':
-                        for key in old_data:
-                            if key == 'skills':
-                                if 'skills' in new_data:
-                                    for skill_name in old_data['skills']:
-                                        if skill_name in new_data['skills']:
-                                            for key, value in old_data['skills'][skill_name].items():
-                                                if key == 'variables':
-                                                    for variable, value in old_data['skills'][skill_name]['variables'].items():
-                                                        new_value = new_data['skills'][skill_name]['variables'].get(variable)
+                        # Don't modify the author
+                        container['author'] = new_data['author']
 
-                                                        if new_value is not None and not value == new_value:
-                                                            new_data['skills'][skill_name]['variables'][variable] = value
-
-                                                            modified = True
-                                                else:
-                                                    new_value = new_data['skills'][skill_name].get(key)
-
-                                                    if new_value is not None and not value == new_value:
-                                                        new_data['skills'][skill_name][key] = value
-
-                                                        modified = True
-                            # Don't modify the author
-                            elif not key == 'author':
-                                value = old_data[key]
-
-                                if not value == new_data.get(key):
-                                    new_data[key] = value
-
-                                    modified = True
-                    elif module == 'items':
-                        for key, value in old_data.items():
-                            if not value == new_data.get(key):
-                                new_data[key] = value
-
-                                modified = True
-                    else:
-                        raise ValueError(f'Invalid module name: "{module}"')
-
-                    if modified:
-                        with open(config_path, 'w') as outputfile:
-                            dump(new_data, outputfile, indent=4)
+                    with open(config_path, 'w') as outputfile:
+                        dump(container, outputfile, indent=4)
 
             _path = MODULE_PATH / module / name / '.wcs_install'
 
