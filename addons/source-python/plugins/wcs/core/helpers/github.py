@@ -129,6 +129,10 @@ class _GithubManager(dict):
                 else:
                     items()
 
+            for thread in self._threads.copy():
+                if not thread.is_alive():
+                    self._threads.remove(thread)
+
     def _connect(self):
         if GITHUB_ACCESS_TOKEN is not None:
             return Github(GITHUB_ACCESS_TOKEN)
@@ -497,42 +501,32 @@ def on_github_failed(repository, module, name, userid, task):
 
         github_manager[module][name]['status'] = GithubStatus.INSTALLED
 
-    _remove_dead_threads()
 
 
 @OnDownloadComplete
 def on_download_complete(version):
     github_manager._downloading = False
 
-    _remove_dead_threads()
 
 
 @OnGithubRefreshed
 def on_github_refreshed(races, items):
     github_manager._refreshing = False
 
-    _remove_dead_threads()
-
 
 @OnGithubInstalled
 def on_github_installed(repository, module, name, userid):
     _send_message(module, github_installing_success_message, userid, name=name)
-
-    _remove_dead_threads()
 
 
 @OnGithubUpdated
 def on_github_updated(repository, module, name, userid):
     _send_message(module, github_updating_success_message, userid, name=name)
 
-    _remove_dead_threads()
-
 
 @OnGithubUninstalled
 def on_github_uninstalled(repository, module, name, userid):
     _send_message(module, github_uninstalling_success_message, userid, name=name)
-
-    _remove_dead_threads()
 
 
 # ============================================================================
@@ -552,9 +546,3 @@ def _send_message(module, message, userid, **kwargs):
     for index in menu._player_pages:
         if menu.is_active_menu(index):
             menu._refresh(index)
-
-
-def _remove_dead_threads():
-    for thread in github_manager._threads.copy():
-        if not thread.is_alive():
-            github_manager._threads.remove(thread)
