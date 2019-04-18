@@ -72,6 +72,7 @@ from . import wcsadmin_github_items_options_menu
 from . import wcsadmin_github_items_repository_menu
 from . import wcsadmin_github_info_menu
 from . import wcsadmin_github_info_confirm_menu
+from . import wcsadmin_github_info_confirm_commits_menu
 from . import wcsadmin_github_info_commits_menu
 #   Modules
 from ..modules.items.manager import item_manager
@@ -742,6 +743,11 @@ def wcsadmin_github_info_confirm_menu_select(menu, client, option):
 
         return
 
+    return option.value
+
+
+@wcsadmin_github_info_confirm_commits_menu.register_select_callback
+def wcsadmin_github_info_confirm_commits_menu(menu, client, option):
     return option.value
 
 

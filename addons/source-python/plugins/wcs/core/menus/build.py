@@ -72,8 +72,10 @@ from . import wcsadmin_management_races_add_menu
 from . import wcsadmin_management_items_add_menu
 from . import wcsadmin_management_races_editor_menu
 from . import wcsadmin_management_items_editor_menu
+from . import wcsadmin_github_races_menu
 from . import wcsadmin_github_races_options_menu
 from . import wcsadmin_github_races_repository_menu
+from . import wcsadmin_github_items_menu
 from . import wcsadmin_github_items_options_menu
 from . import wcsadmin_github_items_repository_menu
 from . import wcsadmin_github_info_menu
@@ -715,6 +717,22 @@ def wcsadmin_management_items_editor_menu_build(menu, client):
 
     menu[0].text.tokens['name'] = name[1:] if name.startswith('_') else name
     menu[2].text = menu_strings[f'wcsadmin_management_items_editor_menu toggle {int(name.startswith("_"))}']
+
+
+@wcsadmin_github_races_menu.register_build_callback
+def wcsadmin_github_races_menu_build(menu, client):
+    if menu._cycle is not None:
+        menu[0].tokens['cycle'] = '.' * (menu._cycle % 3 + 1)
+
+        menu._cycle += 1
+
+
+@wcsadmin_github_items_menu.register_build_callback
+def wcsadmin_github_items_menu_build(menu, client):
+    if menu._cycle is not None:
+        menu[0].tokens['cycle'] = '.' * (menu._cycle % 3 + 1)
+
+        menu._cycle += 1
 
 
 @wcsadmin_github_races_options_menu.register_build_callback

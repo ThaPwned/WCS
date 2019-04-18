@@ -160,16 +160,41 @@ class _GithubManager(dict):
             else:
                 raise ValueError("Unable to locate 'version'.")
 
-            new_version_epoch = new_version.split('-')
-            new_version_epoch = mktime(strptime(new_version_epoch[0], r'%Y.%m.%d')) + int(new_version_epoch[1])
-
-            local_version_epoch = info.version.split('-')
-            local_version_epoch = mktime(strptime(local_version_epoch[0], r'%Y.%m.%d')) + int(local_version_epoch[1])
-
-            if new_version_epoch > local_version_epoch:
-                _output.put((OnGithubNewVersionChecked.manager.notify, new_version))
+            if (DATA_PATH / 'metadata.wcs_install').isfile():
+                with open(DATA_PATH / 'metadata.wcs_install') as inputfile:
+                    sha = inputfile.read()
             else:
-                _output.put((OnGithubNewVersionChecked.manager.notify, None))
+                sha = None
+                commits = _repo.get_commits(path='addons/source-python/plugins/wcs/info.ini')
+
+                for commit in commits:
+                    for file_ in commit.files:
+                        if file_.filename == 'addons/source-python/plugins/wcs/info.ini':
+                            for line in file_.patch.splitlines():
+                                if line.startswith('+version'):
+                                    old_version = line.split()[2].strip()[1:-1]
+
+                                    if old_version == new_version:
+                                        sha = commit.sha
+
+                                    break
+                            break
+
+                    if sha is not None:
+                        break
+
+            commit = _repo.get_commit(sha)
+            response = _repo.get_commits(since=commit.commit.committer.date)
+
+            if response.totalCount > 1:
+                commits = []
+
+                for response in list(response)[:-1]:
+                    commits.append({'date':response.commit.author.date, 'author':response.commit.author.name, 'messages':response.commit.message})
+
+                _output.put((OnGithubNewVersionChecked.manager.notify, new_version, commits))
+            else:
+                _output.put((OnGithubNewVersionChecked.manager.notify, None, []))
         except:
             _output.put(None)
             raise
@@ -181,8 +206,8 @@ class _GithubManager(dict):
             _repo = _github.get_repo(f'{info.author.replace(" ", "")}/WCS')
 
             if (DATA_PATH / 'update_blacklist.txt').isfile():
-                with open(DATA_PATH / 'update_blacklist.txt') as f:
-                    blacklist = f.read().splitlines()
+                with open(DATA_PATH / 'update_blacklist.txt') as inputfile:
+                    blacklist = inputfile.read().splitlines()
             else:
                 blacklist = []
 
@@ -203,6 +228,12 @@ class _GithubManager(dict):
                             ref.extract(member, path=tmpdir)
 
                         copy_tree(Path(tmpdir) / unique_name, GAME_PATH)
+
+            commits = _repo.get_commits()
+            sha = commits[0].sha
+
+            with open(DATA_PATH / 'metadata.wcs_install', 'w') as outputfile:
+                outputfile.write(sha)
 
             _output.put(OnGithubNewVersionInstalled.manager.notify)
         except:
@@ -576,7 +607,7 @@ def on_github_failed(repository, module, name, userid, task):
 
 
 @OnGithubNewVersionChecked
-def on_github_new_version_checked(version):
+def on_github_new_version_checked(version, commits):
     github_manager._checking_new_version = False
 
 

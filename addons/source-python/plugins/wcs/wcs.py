@@ -755,7 +755,7 @@ if IS_ESC_SUPPORT_ENABLED:
 
 
 @OnGithubNewVersionChecked
-def on_github_new_version_checked(version):
+def on_github_new_version_checked(version, commits):
     global _new_version
 
     _new_version = version
