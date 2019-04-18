@@ -551,9 +551,9 @@ def on_github_commits_refreshed(commits):
 
     for i, commit in enumerate(commits):
         menu = PagedMenu(title=menu_strings['wcsadmin_github_info_commits_detail_menu title'], parent_menu=wcsadmin_github_info_commits_menu)
-        menu.append(Text(deepcopy(menu_strings['wcsadmin_github_info_commits_menu line 1'])))
-        menu.append(Text(deepcopy(menu_strings['wcsadmin_github_info_commits_menu line 2'])))
-        menu.append(Text(menu_strings['wcsadmin_github_info_commits_menu line 3']))
+        menu.append(Text(deepcopy(menu_strings['wcsadmin_github_info_commits_detail_menu line 1'])))
+        menu.append(Text(deepcopy(menu_strings['wcsadmin_github_info_commits_detail_menu line 2'])))
+        menu.append(Text(menu_strings['wcsadmin_github_info_commits_detail_menu line 3']))
 
         menu[0].text.tokens['name'] = commit['author']
         menu[1].text.tokens['date'] = commit['date']
