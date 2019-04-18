@@ -4,10 +4,14 @@
 # >> IMPORTS
 # ============================================================================
 # Python Imports
+#   Random
+from random import choice
 #   Shlex
 from shlex import split
 #   String
 from string import Template
+#   Time
+from time import time
 
 # Source.Python Imports
 #   Colors
@@ -592,3 +596,45 @@ def wcs_unrestrict_command(command_info, player:convert_userid_to_player, weapon
 @TypedServerCommand('wcs_getlanguage')
 def wcs_getlanguage_command(command_info, var:ConVar, id_:str, language:str='en'):
     var.set_string(_languages.get(language, {}).get(id_, 'n/a'))
+
+
+@TypedServerCommand('wcs_randplayer')
+def wcs_randplayer_command(command_info, var:ConVar, players:convert_identifier_to_players):
+    players = list(players)
+
+    if players:
+        var.set_int(choice(list(players)).userid)
+    else:
+        var.set_int(0)
+
+
+@TypedServerCommand('wcs_get_cooldown')
+def wcs_get_cooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer, var:ConVar):
+    active_race = wcsplayer.active_race
+
+    for skill in active_race.skills.values():
+        if 'player_ultimate' in skill.config['event']:
+            var.set_float(max(skill.cooldown - time(), 0))
+            break
+    else:
+        var.set_int(-1)
+
+
+@TypedServerCommand('wcs_getcooldown')
+def wcs_getcooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer, var:ConVar):
+    wcs_get_cooldown_command(command_info, wcsplayer, var)
+
+
+@TypedServerCommand('wcs_set_cooldown')
+def wcs_set_cooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:float):
+    active_race = wcsplayer.active_race
+
+    for skill in active_race.skills.values():
+        if 'player_ultimate' in skill.config['event']:
+            skill.reset_cooldown(value)
+            break
+
+
+@TypedServerCommand('wcs_setcooldown')
+def wcs_setcooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:float):
+    wcs_set_cooldown_command(command_info, wcsplayer, value)
