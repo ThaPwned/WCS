@@ -719,6 +719,9 @@ def wcsadmin_github_info_menu_select(menu, client, option):
                 menu._refresh(index)
     elif option.choice_index == 2:
         return wcsadmin_github_info_confirm_menu
+    elif option.choice_index == 3:
+        if not option.value:
+            github_manager.refresh_commits()
 
     return option.value or menu
 

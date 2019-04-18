@@ -231,7 +231,6 @@ class QuietTypedClientCommand(TypedClientCommand):
 # >> FUNCTIONS
 # ============================================================================
 def load():
-    github_manager.refresh_commits()
     github_manager.refresh_modules()
 
     database_manager.connect()
