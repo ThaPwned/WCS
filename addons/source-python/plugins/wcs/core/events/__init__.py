@@ -53,7 +53,7 @@ class Event(_Event):
         super()._add_instance(caller)
 
     def _unload_instance(self):
-        if _events.pop(self._caller)['counter']:
+        if _events[self._caller]['counter']:
             if self.callback is None:
                 return
 
