@@ -7,7 +7,7 @@
 #   Paths
 from paths import CFG_PATH as _CFG_PATH
 from paths import TRANSLATION_PATH as _TRANSLATION_PATH
-from paths import PLUGIN_PATH
+from paths import PLUGIN_PATH as _PLUGIN_PATH
 from paths import PLUGIN_DATA_PATH
 
 # WCS Imports
@@ -25,6 +25,7 @@ __all__ = (
     'ITEM_PATH_ES',
     'MODULE_PATH',
     'MODULE_PATH_ES',
+    'PLUGIN_PATH',
     'RACE_PATH',
     'RACE_PATH_ES',
     'STRUCTURE_PATH',
@@ -43,14 +44,16 @@ TRANSLATION_PATH = _TRANSLATION_PATH / info.name
 DATA_PATH = PLUGIN_DATA_PATH / info.name
 # Structure path
 STRUCTURE_PATH = DATA_PATH / 'structure'
+# Plugin path
+PLUGIN_PATH = _PLUGIN_PATH / info.name
 # Module path
-MODULE_PATH = PLUGIN_PATH / info.name / 'modules'
+MODULE_PATH = PLUGIN_PATH / 'modules'
 # Race path
 RACE_PATH = MODULE_PATH / 'races'
 # Item path
 ITEM_PATH = MODULE_PATH / 'items'
 # EventScripts module path
-MODULE_PATH_ES = PLUGIN_PATH / 'es_emulator' / 'eventscripts' / 'wcs' / 'modules'
+MODULE_PATH_ES = _PLUGIN_PATH / 'es_emulator' / 'eventscripts' / 'wcs' / 'modules'
 # EventScripts race path
 RACE_PATH_ES = MODULE_PATH_ES / 'races'
 # EventScripts item path

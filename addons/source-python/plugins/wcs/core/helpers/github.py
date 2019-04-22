@@ -55,6 +55,7 @@ from ..constants.info import info
 from ..constants.paths import DATA_PATH
 from ..constants.paths import MODULE_PATH
 from ..constants.paths import MODULE_PATH_ES
+from ..constants.paths import PLUGIN_PATH
 #   Helpers
 from ..helpers.overwrites import SayText2
 #   Listeners
@@ -164,24 +165,39 @@ class _GithubManager(dict):
                 with open(DATA_PATH / 'metadata.wcs_install') as inputfile:
                     sha = inputfile.read()
             else:
+                if (PLUGIN_PATH / 'info.ini').isfile():
+                    with open(PLUGIN_PATH / 'info.ini') as inputfile:
+                        for line in inputfile.read().splitlines():
+                            if line.startswith('version'):
+                                current_version = line.split()[2].strip()[1:-1]
+                                break
+                        else:
+                            current_version = None
+                else:
+                    current_version = None
+
                 sha = None
                 commits = _repo.get_commits(path='addons/source-python/plugins/wcs/info.ini')
 
-                for commit in commits:
-                    for file_ in commit.files:
-                        if file_.filename == 'addons/source-python/plugins/wcs/info.ini':
-                            for line in file_.patch.splitlines():
-                                if line.startswith('+version'):
-                                    old_version = line.split()[2].strip()[1:-1]
+                if current_version is None:
+                    sha = list(commits)[-1].sha
+                else:
+                    for commit in commits:
+                        for file_ in commit.files:
+                            if file_.filename == 'addons/source-python/plugins/wcs/info.ini':
+                                for line in file_.patch.splitlines():
+                                    if line.startswith('+version'):
+                                        old_version = line.split()[2].strip()[1:-1]
 
-                                    if old_version == new_version:
-                                        sha = commit.sha
+                                        if old_version == current_version:
+                                            sha = commit.sha
 
-                                    break
+                                        break
+
+                                break
+
+                        if sha is not None:
                             break
-
-                    if sha is not None:
-                        break
 
             commit = _repo.get_commit(sha)
             response = _repo.get_commits(since=commit.commit.committer.date)
@@ -189,7 +205,7 @@ class _GithubManager(dict):
             if response.totalCount > 1:
                 commits = []
 
-                for response in list(response)[:-1]:
+                for response in (list(response) if current_version is None else list(response)[:-1]):
                     commits.append({'date':response.commit.author.date, 'author':response.commit.author.name, 'messages':response.commit.message})
 
                 _output.put((OnGithubNewVersionChecked.manager.notify, new_version, commits))
