@@ -329,7 +329,7 @@ def parse_key_races():
                 skill['maximum'] = numberoflevels
 
             settings.strings['name'] = _LanguageString(name)
-            settings.strings['description'] = _LanguageString(_get_string(data['shortdescription']).replace(r'\n', ''))
+            settings.strings['description'] = _LanguageString(_get_string(data['shortdescription']).replace(r'\n', '') if data['shortdescription'] else '')
 
             settings.add_to_category(None)
 
@@ -394,7 +394,7 @@ def parse_key_items():
             settings.config['event'] = [data['itemconfig']]
 
             settings.strings['name'] = _LanguageString(_get_string(data['name']))
-            settings.strings['description'] = _LanguageString(_get_string(data['description']).replace(r'\n', ''))
+            settings.strings['description'] = _LanguageString(_get_string(data['description']).replace(r'\n', '') if data['description'] else '')
 
             if isinstance(data['category'], int):
                 categories[str(data['category'])]['items'].append(settings)

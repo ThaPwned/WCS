@@ -188,13 +188,18 @@ def shopinfo_detail_menu_build(menu, client):
     settings.execute('on_item_desc', wcsplayer, kwargs)
 
     info = settings.strings['description']
-    info = info.get_string(get_client_language(client), **kwargs)
 
-    for i, text in enumerate(wrap(info, 30), 5):
-        menu.insert(i, text)
+    if info:
+        info = info.get_string(get_client_language(client), **kwargs)
 
-    for i in range(i + 1, MAX_ITEM_COUNT + 2):
-        menu.insert(i, Text(' '))
+        for i, text in enumerate(wrap(info, 30), 5):
+            menu.insert(i, text)
+
+        for i in range(i + 1, MAX_ITEM_COUNT + 2):
+            menu.insert(i, Text(' '))
+    else:
+        for i in range(i + 1, MAX_ITEM_COUNT + 2):
+            menu.insert(i, Text(' '))
 
 
 @showskills_menu.register_build_callback
@@ -395,13 +400,18 @@ def raceinfo_skills_detail_menu_build(menu, client):
     settings.execute('on_skill_desc', wcsplayer, skill_name, kwargs)
 
     info = settings.strings[f'{skill_name} description']
-    info = info.get_string(get_client_language(client), **kwargs)
 
-    for i, text in enumerate(wrap(info, 30), 2):
-        menu.insert(i, text)
+    if info:
+        info = info.get_string(get_client_language(client), **kwargs)
 
-    for i in range(i + 1, MAX_ITEM_COUNT + 2):
-        menu.insert(i, Text(' '))
+        for i, text in enumerate(wrap(info, 30), 2):
+            menu.insert(i, text)
+
+        for i in range(i + 1, MAX_ITEM_COUNT + 2):
+            menu.insert(i, Text(' '))
+    else:
+        for i in range(2, MAX_ITEM_COUNT + 2):
+            menu.insert(i, Text(' '))
 
 
 @raceinfo_race_detail_menu.register_build_callback
@@ -419,13 +429,18 @@ def raceinfo_race_detail_menu_build(menu, client):
     settings.execute('on_race_desc', wcsplayer, kwargs)
 
     info = settings.strings['description']
-    info = info.get_string(get_client_language(client), **kwargs)
 
-    for i, text in enumerate(wrap(info, 30), 2):
-        menu.insert(i, text)
+    if info:
+        info = info.get_string(get_client_language(client), **kwargs)
 
-    for i in range(i + 1, MAX_ITEM_COUNT + 2):
-        menu.insert(i, Text(' '))
+        for i, text in enumerate(wrap(info, 30), 2):
+            menu.insert(i, text)
+
+        for i in range(i + 1, MAX_ITEM_COUNT + 2):
+            menu.insert(i, Text(' '))
+    else:
+        for i in range(2, MAX_ITEM_COUNT + 2):
+            menu.insert(i, Text(' '))
 
 
 @playerinfo_menu.register_build_callback
