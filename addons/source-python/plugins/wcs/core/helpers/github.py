@@ -162,6 +162,8 @@ class _GithubManager(dict):
                 raise ValueError("Unable to locate 'version'.")
 
             if (DATA_PATH / 'metadata.wcs_install').isfile():
+                valid_version = True
+
                 with open(DATA_PATH / 'metadata.wcs_install') as inputfile:
                     sha = inputfile.read()
             else:
@@ -199,13 +201,15 @@ class _GithubManager(dict):
                         if sha is not None:
                             break
 
+                valid_version = current_version is not None
+
             commit = _repo.get_commit(sha)
             response = _repo.get_commits(since=commit.commit.committer.date)
 
             if response.totalCount > 1:
                 commits = []
 
-                for response in (list(response) if current_version is None else list(response)[:-1]):
+                for response in (list(response)[:-1] if valid_version else list(response)):
                     commits.append({'date':response.commit.author.date, 'author':response.commit.author.name, 'messages':response.commit.message})
 
                 _output.put((OnGithubNewVersionChecked.manager.notify, new_version, commits))
