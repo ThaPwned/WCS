@@ -358,7 +358,7 @@ def parse_key_items():
             warn(f'Unable to find the "es_WCSshop_cat_db" file.')
             categories = {}
 
-        for number, data in categories.items():
+        for data in categories.values():
             fixed_category = FIX_NAME.sub('', data['name'].lower().replace(' ', '_'))
 
             if fixed_category not in item_manager._category_max_items:
@@ -396,12 +396,12 @@ def parse_key_items():
             settings.strings['name'] = _LanguageString(_get_string(data['name']))
             settings.strings['description'] = _LanguageString(_get_string(data['description']).replace(r'\n', '') if data['description'] else '')
 
-            if isinstance(data['category'], int):
+            if categories and isinstance(data['category'], int):
                 categories[str(data['category'])]['items'].append(settings)
             else:
                 no_category.append(settings)
 
-        for number, data in categories.items():
+        for data in categories.values():
             for settings in data['items']:
                 settings.add_to_category(data['id'])
 
