@@ -151,6 +151,7 @@ from .core.translations import menu_strings
 if IS_ESC_SUPPORT_ENABLED:
     #   Helpers
     from .core.helpers.esc.events import _execute_ability
+    from .core.helpers.esc.monkeypatch import cmd_manager  # Just to load it
     #   Modules
     from .core.modules.oldesc import parse_ini_items
     from .core.modules.oldesc import parse_ini_races
