@@ -23,6 +23,9 @@ from time import time
 from warnings import warn
 
 # Source.Python Imports
+#   Commands
+from commands import CommandReturn
+from commands.say import SayFilter
 #   CVars
 from cvars import ConVar
 #   Engines
@@ -44,6 +47,8 @@ from hooks.exceptions import except_hooks
 from listeners import OnClientActive
 from listeners import OnClientDisconnect
 from listeners.tick import Delay
+from listeners.tick import Repeat
+from listeners.tick import RepeatStatus
 #   Memory
 from memory import make_object
 #   Players
@@ -82,6 +87,10 @@ from ..listeners import OnPlayerQuery
 from ..listeners import OnPlayerReady
 from ..listeners import OnTakeDamage
 from ..listeners import OnTakeDamageAlive
+#   Helpers
+from ..helpers.overwrites import SayText2
+#   Menus
+from ..menus import input_menu
 #   Modules
 from ..modules.items.calls import _callbacks as _item_callbacks
 from ..modules.items.manager import item_manager
@@ -92,6 +101,8 @@ from . import team_data
 from . import set_weapon_name
 #   Ranks
 from ..ranks import rank_manager
+#   Translations
+from ..translations import chat_strings
 
 # Is ESC supported?
 if IS_ESC_SUPPORT_ENABLED:
@@ -158,6 +169,8 @@ _players = PlayerDictionary()
 _global_bypass = False
 _round_started = True
 _delays = defaultdict(set)
+
+input_invalid_message = SayText2(chat_strings['input invalid'])
 
 
 # ============================================================================
@@ -545,6 +558,48 @@ class Player(object, metaclass=_PlayerMeta):
             attacker = 0
 
         self.take_damage(damage, attacker, skip_hooks)
+
+    def request_input(self, callback, return_menu=None):
+        assert self.data.get('_internal_input_callback') is None
+
+        self.data['_internal_input_callback'] = callback
+        self.data['_internal_input_menu'] = return_menu
+        self.data['_internal_input_repeat'] = Repeat(self._request_update)
+        self.data['_internal_input_repeat'].start(0.25, 39)
+        self.data['_internal_input_delay'] = Delay(10, self._request_end)
+
+        return input_menu
+
+    def _request_update(self):
+        if self.data['_internal_input_repeat'].status == RepeatStatus.RUNNING:
+            input_menu._refresh(self.index)
+
+    def _request_receive(self, value):
+        self.data['_internal_input_delay'].cancel()
+
+        try:
+            accepted = self.data['_internal_input_callback'](self, value)
+        except:
+            except_hooks.print_exception()
+        else:
+            if not accepted:
+                input_invalid_message.send(self.index, value=value)
+        finally:
+            self._request_end()
+
+    def _request_end(self):
+        if self.data['_internal_input_repeat'].status == RepeatStatus.RUNNING:
+            self.data['_internal_input_repeat'].stop()
+
+        input_menu.close(self.index)
+
+        if self.data['_internal_input_menu'] is not None:
+            self.data['_internal_input_menu'].send(self.index)
+
+        del self.data['_internal_input_callback']
+        del self.data['_internal_input_menu']
+        del self.data['_internal_input_repeat']
+        del self.data['_internal_input_delay']
 
     @property
     def userid(self):
@@ -1358,3 +1413,17 @@ def player_death(event):
         delay.cancel()
 
     del _delays[userid]
+
+
+# ============================================================================
+# >> COMMANDS
+# ============================================================================
+@SayFilter
+def say_filter(command, index, team_only):
+    wcsplayer = Player.from_index(index)
+    menu = wcsplayer.data.get('_internal_input_menu')
+
+    if menu is not None:
+        wcsplayer._request_receive(command.command_string)
+
+        return CommandReturn.BLOCK

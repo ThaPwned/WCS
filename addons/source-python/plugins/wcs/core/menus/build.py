@@ -61,6 +61,7 @@ from . import playerinfo_detail_skills_menu
 from . import playerinfo_detail_stats_menu
 from . import wcstop_menu
 from . import wcstop_detail_menu
+from . import input_menu
 from . import wcsadmin_menu
 from . import wcsadmin_players_menu
 from . import wcsadmin_players_sub_menu
@@ -72,6 +73,9 @@ from . import wcsadmin_management_races_add_menu
 from . import wcsadmin_management_items_add_menu
 from . import wcsadmin_management_races_editor_menu
 from . import wcsadmin_management_items_editor_menu
+from . import wcsadmin_management_races_editor_modify_menu
+from . import wcsadmin_management_races_editor_modify_from_selection_menu
+from . import wcsadmin_management_races_editor_modify_restricted_team_menu
 from . import wcsadmin_github_races_menu
 from . import wcsadmin_github_races_options_menu
 from . import wcsadmin_github_races_repository_menu
@@ -568,6 +572,14 @@ def wcstop_detail_menu_build(menu, client):
         menu[4].text.tokens['name'] = settings.strings['name']
 
 
+@input_menu.register_build_callback
+def input_menu_build(menu, client):
+    wcsplayer = Player.from_index(client)
+    repeat = wcsplayer.data['_internal_input_repeat']
+
+    menu[1].text.tokens['duration'] = repeat.total_time_remaining
+
+
 # ============================================================================
 # >> ADMIN BUILD CALLBACKS
 # ============================================================================
@@ -732,6 +744,62 @@ def wcsadmin_management_items_editor_menu_build(menu, client):
 
     menu[0].text.tokens['name'] = name[1:] if name.startswith('_') else name
     menu[2].text = menu_strings[f'wcsadmin_management_items_editor_menu toggle {int(name.startswith("_"))}']
+
+
+@wcsadmin_management_races_editor_modify_menu.register_build_callback
+def wcsadmin_management_races_editor_modify_menu_build(menu, client):
+    wcsplayer = Player.from_index(client)
+    name = wcsplayer.data['_internal_wcsadmin_editor_value']
+    actual_name = name[1:] if name.startswith('_') else name
+
+    menu.title.tokens['name'] = actual_name
+
+    with open(RACE_PATH / actual_name / 'config.json') as inputfile:
+        config = load(inputfile)
+
+    for i, key in enumerate(['required', 'maximum', 'restrictmap', 'restrictitem', 'restrictweapon', 'restrictteam', 'teamlimit', 'allowonly']):
+        if i == 5:
+            menu[i].text.tokens['value'] = menu_strings[f'wcsadmin_management_races_editor_modify_restricted_team_menu {config["restrictteam"]}']
+        else:
+            menu[i].text.tokens['value'] = config[key] if i in (0, 1, 6) else len(config[key])
+
+
+@wcsadmin_management_races_editor_modify_from_selection_menu.register_build_callback
+def wcsadmin_management_races_editor_modify_from_selection_menu_build(menu, client):
+    wcsplayer = Player.from_index(client)
+    name = wcsplayer.data['_internal_wcsadmin_editor_value']
+    key = wcsplayer.data['_internal_wcsadmin_editor_key']
+    actual_name = name[1:] if name.startswith('_') else name
+
+    menu.title.tokens['name'] = actual_name
+
+    del menu[1:]
+
+    with open(RACE_PATH / actual_name / 'config.json') as inputfile:
+        config = load(inputfile)
+
+    for value in config[key]:
+        menu.append(PagedOption(value, value))
+
+
+@wcsadmin_management_races_editor_modify_restricted_team_menu.register_build_callback
+def wcsadmin_management_races_editor_modify_restricted_team_menu_build(menu, client):
+    wcsplayer = Player.from_index(client)
+    name = wcsplayer.data['_internal_wcsadmin_editor_value']
+    actual_name = name[1:] if name.startswith('_') else name
+
+    menu[0].text.tokens['name'] = actual_name
+
+    with open(RACE_PATH / actual_name / 'config.json') as inputfile:
+        config = load(inputfile)
+
+    menu[2].text.tokens['value'] = menu_strings[f'wcsadmin_management_races_editor_modify_restricted_team_menu {config["restrictteam"]}']
+    menu[2].text.tokens['real_value'] = config['restrictteam']
+
+    currently_selected_index = config['restrictteam'] + 2 if config['restrictteam'] else 3
+
+    for index in (3, 4, 5):
+        menu[index].selectable = menu[index].highlight = not index == currently_selected_index
 
 
 @wcsadmin_github_races_menu.register_build_callback

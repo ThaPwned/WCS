@@ -54,6 +54,7 @@ from . import wcstop_menu
 from . import wcstop_detail_menu
 from . import wcshelp_menu
 from . import welcome_menu
+from . import input_menu
 from . import wcsadmin_menu
 from . import wcsadmin_players_menu
 from . import wcsadmin_players_sub_menu
@@ -66,6 +67,9 @@ from . import wcsadmin_management_races_add_menu
 from . import wcsadmin_management_items_add_menu
 from . import wcsadmin_management_races_editor_menu
 from . import wcsadmin_management_items_editor_menu
+from . import wcsadmin_management_races_editor_modify_menu
+from . import wcsadmin_management_races_editor_modify_from_selection_menu
+from . import wcsadmin_management_races_editor_modify_restricted_team_menu
 from . import wcsadmin_github_menu
 from . import wcsadmin_github_races_menu
 from . import wcsadmin_github_races_options_menu
@@ -78,6 +82,9 @@ from . import wcsadmin_github_info_confirm_menu
 from . import wcsadmin_github_info_confirm_commits_menu
 from . import wcsadmin_github_info_commits_menu
 from .base import PagedMenu
+from .select import _request_required
+from .select import _request_maximum
+from .select import _request_team_limit
 #   Translations
 from ..translations import menu_strings
 
@@ -108,6 +115,8 @@ wcsadmin_management_races_menu.title = menu_strings['wcsadmin_management_races_m
 wcsadmin_management_items_menu.title = menu_strings['wcsadmin_management_items_menu title']
 wcsadmin_management_races_add_menu.title = menu_strings['wcsadmin_management_races_add_menu title']
 wcsadmin_management_items_add_menu.title = menu_strings['wcsadmin_management_items_add_menu title']
+wcsadmin_management_races_editor_modify_menu.title = menu_strings['wcsadmin_management_races_editor_modify_menu title']
+wcsadmin_management_races_editor_modify_from_selection_menu.title = menu_strings['wcsadmin_management_races_editor_modify_from_selection_menu title']
 wcsadmin_github_races_menu.title = menu_strings['wcsadmin_github_races_menu title']
 wcsadmin_github_races_repository_menu.title = menu_strings['wcsadmin_github_races_repository_menu title']
 wcsadmin_github_items_menu.title = menu_strings['wcsadmin_github_items_menu title']
@@ -306,6 +315,14 @@ welcome_menu.extend(
     ]
 )
 
+input_menu.extend(
+    [
+        Text(menu_strings['input_menu title']),
+        Text(menu_strings['input_menu timeleft']),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['cancel']),
+    ]
+)
+
 
 # ============================================================================
 # >> ADMIN MENU FILLER
@@ -404,7 +421,7 @@ wcsadmin_management_races_editor_menu.extend(
         Text(' '),
         SimpleOption(1, menu_strings['wcsadmin_management_races_editor_menu toggle 0']),
         SimpleOption(2, menu_strings['wcsadmin_management_races_editor_menu remove']),
-        Text(' '),
+        SimpleOption(3, menu_strings['wcsadmin_management_races_editor_menu modify'], wcsadmin_management_races_editor_modify_menu),
         Text(' '),
         Text(' '),
         Text(' '),
@@ -425,6 +442,43 @@ wcsadmin_management_items_editor_menu.extend(
         Text(' '),
         Text(' '),
         SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_management_items_menu),
+        Text(' '),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
+    ]
+)
+
+wcsadmin_management_races_editor_modify_menu.extend(
+    [
+        PagedOption(menu_strings['wcsadmin_management_races_editor_modify_menu line 1'], _request_required),
+        PagedOption(menu_strings['wcsadmin_management_races_editor_modify_menu line 2'], _request_maximum),
+        PagedOption(menu_strings['wcsadmin_management_races_editor_modify_menu line 3'], 'restrictmap'),
+        PagedOption(menu_strings['wcsadmin_management_races_editor_modify_menu line 4'], 'restrictitem'),
+        PagedOption(menu_strings['wcsadmin_management_races_editor_modify_menu line 5'], 'restrictweapon'),
+        PagedOption(menu_strings['wcsadmin_management_races_editor_modify_menu line 6'], wcsadmin_management_races_editor_modify_restricted_team_menu),
+        PagedOption(menu_strings['wcsadmin_management_races_editor_modify_menu line 7'], _request_team_limit),
+        PagedOption(menu_strings['wcsadmin_management_races_editor_modify_menu line 8'], 'allowonly'),
+        PagedOption(menu_strings['wcsadmin_management_races_editor_modify_menu line 9'], selectable=False, highlight=False)
+    ]
+)
+
+wcsadmin_management_races_editor_modify_from_selection_menu.extend(
+    [
+        PagedOption(menu_strings['wcsadmin_management_races_editor_modify_from_selection_menu line'])
+    ]
+)
+
+wcsadmin_management_races_editor_modify_restricted_team_menu.extend(
+    [
+        Text(menu_strings['wcsadmin_management_races_editor_modify_restricted_team_menu title']),
+        Text(' '),
+        Text(menu_strings['wcsadmin_management_races_editor_modify_restricted_team_menu line 1']),
+        SimpleOption(1, menu_strings['wcsadmin_management_races_editor_modify_restricted_team_menu 0'], 0),
+        SimpleOption(2, menu_strings['wcsadmin_management_races_editor_modify_restricted_team_menu 2'], 2),
+        SimpleOption(3, menu_strings['wcsadmin_management_races_editor_modify_restricted_team_menu 3'], 3),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_management_races_editor_modify_menu),
         Text(' '),
         SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]

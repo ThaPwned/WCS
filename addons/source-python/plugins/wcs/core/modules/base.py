@@ -88,6 +88,8 @@ class _BaseManager(dict):
         self._category_menus = {}
         self._info_category_menus = {}
 
+        self._refresh_config = set()
+
     def _load_categories_and_values(self, module, config, path, path_es):
         value_categories = OrderedDict()
 

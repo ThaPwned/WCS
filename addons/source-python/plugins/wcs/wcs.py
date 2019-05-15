@@ -10,6 +10,8 @@ from collections import defaultdict
 from copy import deepcopy
 #   Enum
 from enum import IntEnum
+#   JSON
+from json import load as json_load
 #   Random
 from random import choice
 #   Time
@@ -33,6 +35,7 @@ from events import Event
 #   Filters
 from filters.weapons import WeaponClassIter
 #   Listeners
+from listeners import OnLevelInit
 from listeners import OnServerOutput
 from listeners.tick import Delay
 from listeners.tick import Repeat
@@ -89,6 +92,8 @@ from .core.constants import ModuleType
 from .core.constants import RaceReason
 from .core.constants import SkillReason
 from .core.constants.info import info
+from .core.constants.paths import ITEM_PATH
+from .core.constants.paths import RACE_PATH
 #   Database
 from .core.database.manager import database_manager
 from .core.database.thread import _repeat
@@ -742,6 +747,32 @@ def player_jump(event):
 # ============================================================================
 # >> LISTENERS
 # ============================================================================
+@OnLevelInit
+def on_level_init(map_name):
+    for name in race_manager._refresh_config:
+        settings = race_manager[name]
+
+        with open(RACE_PATH / name / 'config.json') as inputfile:
+            config = json_load(inputfile)
+
+        for key in ['required', 'maximum', 'restrictmap', 'restrictitem', 'restrictweapon', 'restrictteam', 'teamlimit', 'allowonly']:
+            if key in config:
+                settings.config[key] = config[key]
+
+    for name in item_manager._refresh_config:
+        settings = item_manager[name]
+
+        with open(ITEM_PATH / name / 'config.json') as inputfile:
+            config = json_load(inputfile)
+
+        for key in ['cost', 'required', 'duration', 'count']:
+            if key in config:
+                settings.config[key] = config[key]
+
+    race_manager._refresh_config.clear()
+    item_manager._refresh_config.clear()
+
+
 # Is ESC supported?
 if IS_ESC_SUPPORT_ENABLED:
     #  Used to clean up loading/unloading of wcs

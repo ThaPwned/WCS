@@ -30,6 +30,7 @@ from ..constants import GithubStatus
 from ..constants import ItemReason
 from ..constants import RaceReason
 from ..constants.paths import CFG_PATH
+from ..constants.paths import RACE_PATH
 #   Helpers
 from ..helpers.github import github_manager
 from ..helpers.overwrites import SayText2
@@ -63,6 +64,9 @@ from . import wcsadmin_management_races_add_menu
 from . import wcsadmin_management_items_add_menu
 from . import wcsadmin_management_races_editor_menu
 from . import wcsadmin_management_items_editor_menu
+from . import wcsadmin_management_races_editor_modify_menu
+from . import wcsadmin_management_races_editor_modify_from_selection_menu
+from . import wcsadmin_management_races_editor_modify_restricted_team_menu
 from . import wcsadmin_github_menu
 from . import wcsadmin_github_races_menu
 from . import wcsadmin_github_races_options_menu
@@ -610,6 +614,45 @@ def wcsadmin_management_races_editor_menu_select(menu, client, option):
     return option.value
 
 
+@wcsadmin_management_races_editor_modify_menu.register_select_callback
+def wcsadmin_management_races_editor_modify_menu_select(menu, client, option):
+    if callable(option.value):
+        wcsplayer = Player.from_index(client)
+
+        return wcsplayer.request_input(option.value, return_menu=menu)
+    elif isinstance(option.value, str):
+        wcsplayer = Player.from_index(client)
+        wcsplayer.data['_internal_wcsadmin_editor_key'] = option.value
+
+        return wcsadmin_management_races_editor_modify_from_selection_menu
+
+    return option.value
+
+
+@wcsadmin_management_races_editor_modify_from_selection_menu.register_select_callback
+def wcsadmin_management_races_editor_modify_from_selection_menu_select(menu, client, option):
+    if option.value is None:
+        wcsplayer = Player.from_index(client)
+
+        return wcsplayer.request_input(_request_add_new_value, return_menu=menu)
+    elif isinstance(option.value, str):
+        wcsplayer = Player.from_index(client)
+
+        _update_config(RACE_PATH, wcsplayer.data['_internal_wcsadmin_editor_value'], wcsplayer.data['_internal_wcsadmin_editor_key'], option.value, False)
+
+    return menu
+
+
+@wcsadmin_management_races_editor_modify_restricted_team_menu.register_select_callback
+def wcsadmin_management_races_editor_modify_restricted_team_menu_select(menu, client, option):
+    if isinstance(option.value, int):
+        wcsplayer = Player.from_index(client)
+
+        _update_config(RACE_PATH, wcsplayer.data['_internal_wcsadmin_editor_value'], 'restrictteam', option.value)
+
+    return wcsadmin_management_races_editor_modify_menu
+
+
 @wcsadmin_github_menu.register_select_callback
 def wcsadmin_github_menu_select(menu, client, option):
     return option.value
@@ -754,3 +797,64 @@ def wcsadmin_github_info_confirm_commits_menu(menu, client, option):
 @wcsadmin_github_info_commits_menu.register_select_callback
 def wcsadmin_github_info_commits_menu_select(menu, client, option):
     return option.value
+
+
+# ============================================================================
+# >> REQUEST CALLBACKS
+# ============================================================================
+def _request_required(wcsplayer, value):
+    if not value.isdigit():
+        return False
+
+    _update_config(RACE_PATH, wcsplayer.data['_internal_wcsadmin_editor_value'], 'required', int(value))
+
+    return True
+
+
+def _request_maximum(wcsplayer, value):
+    if not value.isdigit():
+        return False
+
+    _update_config(RACE_PATH, wcsplayer.data['_internal_wcsadmin_editor_value'], 'maximum', int(value))
+
+    return True
+
+
+def _request_team_limit(wcsplayer, value):
+    if not value.isdigit():
+        return False
+
+    _update_config(RACE_PATH, wcsplayer.data['_internal_wcsadmin_editor_value'], 'teamlimit', int(value))
+
+    return True
+
+
+def _request_add_new_value(wcsplayer, value):
+    _update_config(RACE_PATH, wcsplayer.data['_internal_wcsadmin_editor_value'], wcsplayer.data['_internal_wcsadmin_editor_key'], value)
+
+    return True
+
+
+# ============================================================================
+# >> HELPERS
+# ============================================================================
+def _update_config(path, name, key, value, append=True):
+    name = name[1:] if name.startswith('_') else name
+    path = path / name
+
+    with open(path / 'config.json') as inputfile:
+        config = load(inputfile)
+
+    if isinstance(config[key], list):
+        if append:
+            if value not in config[key]:
+                config[key].append(value)
+        else:
+            config[key].remove(value)
+    else:
+        config[key] = value
+
+    with open(path / 'config.json', 'w') as outputfile:
+        dump(config, outputfile, indent=4)
+
+    race_manager._refresh_config.add(name)
