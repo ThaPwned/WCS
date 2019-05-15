@@ -63,6 +63,8 @@ from .converts import real_value
 from .converts import valid_operators
 from .converts import split_str
 from .converts import deprecated
+from .est.commands import armor_command  # Just to load it
+from .est.effects import effect101  # Just to load it
 #   Players
 from ...players import team_data
 from ...players.entity import Player as WCSPlayer
