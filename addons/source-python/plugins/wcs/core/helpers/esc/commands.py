@@ -16,6 +16,8 @@ from time import time
 # Source.Python Imports
 #   Colors
 from colors import Color
+#   Commands
+from commands.typed import TypedServerCommand
 #   CVars
 from cvars import ConVar
 #   Engines
@@ -61,7 +63,6 @@ from .converts import real_value
 from .converts import valid_operators
 from .converts import split_str
 from .converts import deprecated
-from .effects import TypedServerCommand
 #   Players
 from ...players import team_data
 from ...players.entity import Player as WCSPlayer
@@ -610,6 +611,10 @@ def wcs_randplayer_command(command_info, var:ConVar, players:convert_identifier_
 
 @TypedServerCommand('wcs_get_cooldown')
 def wcs_get_cooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer, var:ConVar):
+    if wcsplayer is None:
+        var.set_int(-1)
+        return
+
     active_race = wcsplayer.active_race
 
     for skill in active_race.skills.values():
@@ -627,6 +632,9 @@ def wcs_getcooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer,
 
 @TypedServerCommand('wcs_set_cooldown')
 def wcs_set_cooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:float):
+    if wcsplayer is None:
+        return
+
     active_race = wcsplayer.active_race
 
     for skill in active_race.skills.values():
@@ -638,3 +646,8 @@ def wcs_set_cooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer
 @TypedServerCommand('wcs_setcooldown')
 def wcs_setcooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:float):
     wcs_set_cooldown_command(command_info, wcsplayer, value)
+
+
+@TypedServerCommand('wcs_cancelulti')
+def wcs_cancelulti_command(command_info, wcsplayer:convert_userid_to_wcsplayer):
+    wcs_set_cooldown_command(command_info, wcsplayer, time())
