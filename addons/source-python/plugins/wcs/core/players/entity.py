@@ -255,7 +255,6 @@ class Player(object, metaclass=_PlayerMeta):
         self._items = _ItemContainer(self)
         self._userid = None
         self._index = None
-        self._player = None
         self._ready = False
         self._is_bot = uniqueid.startswith('BOT_')
         self._privileges = privileges['players'].get(uniqueid, {})
@@ -644,10 +643,7 @@ class Player(object, metaclass=_PlayerMeta):
 
     @property
     def player(self):
-        if self._player is None:
-            self._player = _players[self.index]
-
-        return self._player
+        return _players[self.index]
 
     @property
     def current_race(self):
