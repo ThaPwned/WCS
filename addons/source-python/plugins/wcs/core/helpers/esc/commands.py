@@ -24,6 +24,7 @@ from cvars import ConVar
 from engines.server import execute_server_command
 #   Entities
 from entities.constants import MoveType
+from entities.entity import Entity
 #   Filters
 from filters.weapons import WeaponClassIter
 #   Keyvalues
@@ -61,6 +62,7 @@ from .converts import convert_identifier_to_players
 from .converts import convert_userid_identifier_to_players
 from .converts import real_value
 from .converts import valid_operators
+from .converts import convert_to_vector
 from .converts import split_str
 from .converts import deprecated
 from .est.commands import armor_command  # Just to load it
@@ -606,7 +608,7 @@ def wcs_randplayer_command(command_info, var:ConVar, players:convert_identifier_
     players = list(players)
 
     if players:
-        var.set_int(choice(list(players)).userid)
+        var.set_int(choice(players).userid)
     else:
         var.set_int(0)
 
@@ -653,3 +655,78 @@ def wcs_setcooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer,
 @TypedServerCommand('wcs_cancelulti')
 def wcs_cancelulti_command(command_info, wcsplayer:convert_userid_to_wcsplayer):
     wcs_set_cooldown_command(command_info, wcsplayer, time())
+
+
+@TypedServerCommand('wcs_getviewcoords')
+def wcs_getviewcoords_command(command_info, player:convert_userid_to_player, x:ConVar, y:ConVar, z:ConVar):
+    if player is None:
+        x.set_int(0)
+        y.set_int(0)
+        z.set_int(0)
+        return
+
+    view_coordinates = player.view_coordinates
+
+    x.set_float(view_coordinates[0])
+    y.set_float(view_coordinates[1])
+    z.set_float(view_coordinates[2])
+
+
+@TypedServerCommand('wcs_getdistance')
+def wcs_getdistance_command(command_info, var:ConVar, x:float, y:float, z:float, x2:float, y2:float, z2:float):
+    vector = Vector(x, y, z)
+    vector2 = Vector(x2, y2, z2)
+
+    var.set_float(vector.get_distance(vector2))
+
+
+@TypedServerCommand('wcs_pushto')
+def wcs_pushto_command(command_info, *args):
+    if len(args) == 5:
+        execute_server_command('_wcs_pushto', args[0], ','.join(args[1:3]), args[4])
+    else:
+        execute_server_command('_wcs_pushto', *args)
+
+
+@TypedServerCommand('_wcs_pushto')
+def _wcs_pushto_command(command_info, player:convert_userid_to_player, vector:convert_to_vector, force:float):
+    if player is None:
+        return
+
+    position = player.origin
+    vector -= position
+    vector *= force
+
+    player.set_property_vector('m_vecBaseVelocity', vector)
+
+
+@TypedServerCommand('wcs_explosion')
+def wcs_explosion_command(command_info, player:convert_userid_to_player, magnitude:int, radius:int, damage:bool=True):
+    if player is None:
+        return
+
+    entity = Entity.create('env_explosion')
+    entity.set_property_int('m_iMagnitude', magnitude)
+    entity.set_property_int('m_iRadiusOverride', radius)
+
+    entity.spawn_flags = 8 if damage else 1
+    entity.owner_handle = player.inthandle
+    entity.origin = player.origin
+
+    entity.spawn()
+
+    entity.call_input('Explode')
+
+
+@TypedServerCommand('wcs_getrandomrace')
+def wcs_getrandomrace_command(command_info,wcsplayer:convert_userid_to_wcsplayer, var:ConVar):
+    if wcsplayer is None:
+        var.set_int(0)
+        return
+
+    available_races = list(wcsplayer.available_races)
+
+    if available_races:
+        var.set_string(choice(available_races))
+    else:
+        var.set_int(0)
