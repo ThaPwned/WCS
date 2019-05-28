@@ -81,7 +81,7 @@ def convert_userid_identifier_to_players(filter_):
         except ValueError:
             yield StopIteration()
     else:
-        return convert_identifier_to_players(filter_)
+        yield from convert_identifier_to_players(filter_)
 
 
 def real_value(value):

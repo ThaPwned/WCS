@@ -421,7 +421,7 @@ def wcs_get_skill_level_command(command_info, wcsplayer:convert_userid_to_wcspla
 
 
 @TypedServerCommand(['wcs_foreach', 'player'])
-def wcs_foreach_command(command_info, var:str, players:convert_userid_identifier_to_players, command:str):
+def wcs_foreach_command(command_info, var:str, players:convert_identifier_to_players, command:str):
     for player in players:
         for cmd in [f'es_xset {var} {player.userid}'] + command.split(';'):
             execute_server_command(*split(cmd))
