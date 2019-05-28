@@ -55,7 +55,7 @@ _operator_convert = {
 # ============================================================================
 # >> HELPER FUNCTIONS
 # ============================================================================
-def convert_identifier_to_players(filter_):
+def convert_userid_identifier_to_players(filter_):
     # TODO: Do not use es.getuserid
     userid = es.getuserid(filter_)
 
@@ -84,9 +84,4 @@ def convert_identifier_to_players(filter_):
 
 
 def convert_operator(value):
-    operator = _operator_convert.get(value)
-
-    if operator is None:
-        return '='
-
-    return operator
+    return _operator_convert.get(value, '=')
