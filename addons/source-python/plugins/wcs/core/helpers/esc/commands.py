@@ -556,7 +556,11 @@ def wcs_getcolors_command(command_info, player:convert_userid_to_player, red:Con
 @TypedServerCommand('wcs_getinfo')
 def wcs_getinfo_command(command_info, wcsplayer:convert_userid_to_wcsplayer, var:ConVar, attribute:str, key:str):
     if wcsplayer is None:
-        var.set_int(0)
+        var.set_int(-1)
+        return
+
+    if not wcsplayer.ready:
+        var.set_int(-1)
         return
 
     if key == 'race':
@@ -593,6 +597,10 @@ def wcs_restrict_command(command_info, player:convert_userid_to_player, weapons:
 @TypedServerCommand('wcs_unrestrict')
 def wcs_unrestrict_command(command_info, player:convert_userid_to_player, weapons:split_str()):
     if player is None:
+        return
+
+    if weapons[0] == 'all':
+        _restrictions.remove_player_restrictions(player, *_all_weapons)
         return
 
     _restrictions.remove_player_restrictions(player, *weapons)
