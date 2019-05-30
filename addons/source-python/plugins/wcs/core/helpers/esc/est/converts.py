@@ -84,4 +84,4 @@ def convert_userid_identifier_to_players(filter_):
 
 
 def convert_operator(value):
-    return _operator_convert.get(value, '=')
+    return _operator_convert.get(value, _operator_convert['='])
