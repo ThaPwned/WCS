@@ -709,7 +709,7 @@ def _wcs_pushto_command(command_info, player:convert_userid_to_player, vector:co
 
 
 @TypedServerCommand('wcs_explosion')
-def wcs_explosion_command(command_info, player:convert_userid_to_player, magnitude:int, radius:int, damage:bool=True):
+def wcs_explosion_command(command_info, player:convert_userid_to_player, magnitude:int, radius:int, deal_damage:int=1):
     if player is None:
         return
 
@@ -717,7 +717,7 @@ def wcs_explosion_command(command_info, player:convert_userid_to_player, magnitu
     entity.set_property_int('m_iMagnitude', magnitude)
     entity.set_property_int('m_iRadiusOverride', radius)
 
-    entity.spawn_flags = 8 if damage else 1
+    entity.spawn_flags = 8 if deal_damage else 1
     entity.owner_handle = player.inthandle
     entity.origin = player.origin
 
