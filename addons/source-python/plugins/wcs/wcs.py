@@ -857,35 +857,36 @@ def on_player_level_up(wcsplayer, race, old_level):
         if cfg_level_up_effect.get_int():
             player = wcsplayer.player
 
-            origin = Vector(*player.origin)
-            origin.z += 10
+            if not player.dead:
+                origin = Vector(*player.origin)
+                origin.z += 10
 
-            entity = Entity.create('env_smokestack')
-            entity.origin = origin
-            entity.base_spread = 28
-            entity.spread_speed = 10
-            entity.initial_state = 0
-            entity.speed = 10
-            entity.start_size = 1
-            entity.end_size = 7
-            entity.rate = 173
-            entity.jet_length = 13
-            entity.render_color = _level_effect_color
-            entity.render_mode = RenderMode.NONE
-            entity.render_amt = 200
-            entity.smoke_material = 'effects/combinemuzzle2.vmt'
-            entity.angles = _effect_angle
-            entity.twist = 15
+                entity = Entity.create('env_smokestack')
+                entity.origin = origin
+                entity.base_spread = 28
+                entity.spread_speed = 10
+                entity.initial_state = 0
+                entity.speed = 10
+                entity.start_size = 1
+                entity.end_size = 7
+                entity.rate = 173
+                entity.jet_length = 13
+                entity.render_color = _level_effect_color
+                entity.render_mode = RenderMode.NONE
+                entity.render_amt = 200
+                entity.smoke_material = 'effects/combinemuzzle2.vmt'
+                entity.angles = _effect_angle
+                entity.twist = 15
 
-            entity.spawn()
+                entity.spawn()
 
-            entity.set_parent(player)
+                entity.set_parent(player)
 
-            entity.add_output('OnUser1 !self,TurnOff,,3.5,1')
-            entity.add_output('OnUser1 !self,Kill,,6,1')
+                entity.add_output('OnUser1 !self,TurnOff,,3.5,1')
+                entity.add_output('OnUser1 !self,Kill,,6,1')
 
-            entity.call_input('TurnOn')
-            entity.call_input('FireUser1', '1')
+                entity.call_input('TurnOn')
+                entity.call_input('FireUser1', '1')
 
 
 @OnPlayerQuery
