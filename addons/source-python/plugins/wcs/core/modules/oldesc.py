@@ -111,20 +111,21 @@ def parse_ini_races():
             fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
             settings = races[fixed_name] = ImportedRace(fixed_name, ModuleType.ESS_INI)
 
-            settings.cmds['preloadcmd'] = data['preloadcmd']
-            settings.cmds['roundstartcmd'] = data['roundstartcmd']
-            settings.cmds['roundendcmd'] = data['roundendcmd']
-            settings.cmds['spawncmd'] = data['spawncmd']
-            settings.cmds['deathcmd'] = data['deathcmd']
-            settings.cmds['changeintocmd'] = None
-            settings.cmds['changefromcmd'] = data['onchange']
+            settings.cmds['preloadcmd'] = data['preloadcmd'] or None
+            settings.cmds['roundstartcmd'] = data['roundstartcmd'] or None
+            settings.cmds['roundendcmd'] = data['roundendcmd'] or None
+            settings.cmds['spawncmd'] = data['spawncmd'] or None
+            settings.cmds['deathcmd'] = data['deathcmd'] or None
+            settings.cmds['changeintocmd'] = data.get('changeintocmd') or None
+            settings.cmds['changefromcmd'] = data['onchange'] or None
 
             settings.config['required'] = int(data['required'])
             settings.config['maximum'] = int(data['maximum'])
 
+            settings.config['restrictbot'] = int(data.get('restrictbot', 0))
             settings.config['restrictmap'] = data['restrictmap'].split('|') if data['restrictmap'] else []
             settings.config['restrictitem'] = data['restrictitem'].split('|') if data['restrictitem'] else []
-            settings.config['restrictweapon'] = []
+            settings.config['restrictweapon'] = data['restrictweapon'].split('|') if 'restrictweapon' in data and data['restrictweapon'] else []
             settings.config['restrictteam'] = int(data['restrictteam'])
             settings.config['teamlimit'] = int(data.get('teamlimit', 0))
 
@@ -276,21 +277,22 @@ def parse_key_races():
             fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
             settings = races[fixed_name] = ImportedRace(fixed_name, ModuleType.ESS_KEY)
 
-            settings.cmds['preloadcmd'] = data['preloadcmd'] if data['preloadcmd'] else None
-            settings.cmds['roundstartcmd'] = data['round_start_cmd'] if data['round_start_cmd'] else None
-            settings.cmds['roundendcmd'] = data['round_end_cmd'] if data['round_end_cmd'] else None
-            settings.cmds['spawncmd'] = data['player_spawn_cmd'] if data['player_spawn_cmd'] else None
-            settings.cmds['deathcmd'] = None
-            settings.cmds['changeintocmd'] = None
-            settings.cmds['changefromcmd'] = None
+            settings.cmds['preloadcmd'] = data['preloadcmd'] or None
+            settings.cmds['roundstartcmd'] = data['round_start_cmd'] or None
+            settings.cmds['roundendcmd'] = data['round_end_cmd'] or None
+            settings.cmds['spawncmd'] = data['player_spawn_cmd'] or None
+            settings.cmds['deathcmd'] = data.get('deathcmd') or None
+            settings.cmds['changeintocmd'] = data.get('changeintocmd') or None
+            settings.cmds['changefromcmd'] = data.get('changefromcmd') or None
 
             settings.config['required'] = data['required_level']
             settings.config['maximum'] = data['maximum_level']
 
-            settings.config['restrictmap'] = []
+            settings.config['restrictbot'] = int(data.get('restrictbot', 0))
+            settings.config['restrictmap'] = data['restrictmap'].split('|') if data.get('restrictmap') else []
             settings.config['restrictitem'] = data['restrict_shop'].replace('<', '').split('>')[:-1] if 'restrict_shop' in data and data['restrict_shop'] else []
-            settings.config['restrictweapon'] = []
-            settings.config['restrictteam'] = None
+            settings.config['restrictweapon'] = data['restrictweapon'].split('|') if data.get('restrictweapon') else []
+            settings.config['restrictteam'] = int(data.get('restrictteam', 0))
             settings.config['teamlimit'] = data['teamlimit']
 
             settings.config['author'] = data['author']
