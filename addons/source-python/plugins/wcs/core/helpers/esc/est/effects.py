@@ -75,37 +75,37 @@ def effect101_command(command_info, filter_:convert_userid_identifier_to_players
 
 
 @ESTCommand('Effect_02')
-def effect102_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, start_entity_index:optional(int), start_point:optional(convert_to_vector), end_entity_index:optional(int), end_point:optional(convert_to_vector), frame_rate:clamp(0), life_time:float, start_width:clamp(0, type_=float), end_width:clamp(0, type_=float), fade_length:int, amplitude:clamp(0, type_=float), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), speed:clamp(0)):
+def effect102_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, start_entity_index:optional(int), start_point:optional(convert_to_vector), end_entity_index:optional(int), end_point:optional(convert_to_vector), frame_rate:clamp(0), life_time:float, start_width:clamp(0, is_int=False), end_width:clamp(0, is_int=False), fade_length:int, amplitude:clamp(0, is_int=False), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), speed:clamp(0)):
     effect102(model, start_entity_index, start_point, end_entity_index, end_point, frame_rate, life_time, start_width, end_width, fade_length, amplitude, red, green, blue, alpha, speed).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_03')
-def effect103_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, start_entity_index:int, end_entity_index:int, frame_rate:clamp(0), start_width:clamp(0, type_=float), end_width:clamp(0, type_=float), fade_length:int, amplitude:clamp(0, type_=float), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), speed:clamp(0)):
+def effect103_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, start_entity_index:int, end_entity_index:int, frame_rate:clamp(0), start_width:clamp(0, is_int=False), end_width:clamp(0, is_int=False), fade_length:int, amplitude:clamp(0, is_int=False), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), speed:clamp(0)):
     effect103(model, start_entity_index, end_entity_index, frame_rate, start_width, end_width, fade_length, amplitude, red, green, blue, alpha, speed).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_04')
-def effect104_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, entity_index:int, life_time:float, start_width:clamp(0, type_=float), end_width:clamp(0, type_=float), fade_length:int, red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255)):
+def effect104_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, entity_index:int, life_time:float, start_width:clamp(0, is_int=False), end_width:clamp(0, is_int=False), fade_length:int, red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255)):
     effect104(model, entity_index, life_time, start_width, end_width, fade_length, red, green, blue, alpha).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_05')
-def effect105_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, start_entity_index:int, end_entity_index:int, frame_rate:clamp(0), life_time:float, start_width:clamp(0, type_=float), end_width:clamp(0, type_=float), fade_length:int, amplitude:clamp(0, type_=float), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), speed:clamp(0)):
+def effect105_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, start_entity_index:int, end_entity_index:int, frame_rate:clamp(0), life_time:float, start_width:clamp(0, is_int=False), end_width:clamp(0, is_int=False), fade_length:int, amplitude:clamp(0, is_int=False), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), speed:clamp(0)):
     effect105(model, start_entity_index, end_entity_index, frame_rate, life_time, start_width, end_width, fade_length, amplitude, red, green, blue, alpha, speed).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_06')
-def effect106_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, start_point:convert_to_vector, end_point:convert_to_vector, frame_rate:clamp(0), life_time:float, start_width:clamp(0, type_=float), end_width:clamp(0, type_=float), fade_length:int, amplitude:clamp(0, type_=float), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), speed:clamp(0)):
+def effect106_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, start_point:convert_to_vector, end_point:convert_to_vector, frame_rate:clamp(0), life_time:float, start_width:clamp(0, is_int=False), end_width:clamp(0, is_int=False), fade_length:int, amplitude:clamp(0, is_int=False), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), speed:clamp(0)):
     effect106(model, start_point, end_point, frame_rate, life_time, start_width, end_width, fade_length, amplitude, red, green, blue, alpha, speed).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_07')
-def effect107_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, start_point:convert_to_vector, end_point:convert_to_vector, frame_rate:clamp(0), life_time:float, width:float, fade_length:int, amplitude:clamp(0, type_=float), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), speed:clamp(0)):
+def effect107_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, start_point:convert_to_vector, end_point:convert_to_vector, frame_rate:clamp(0), life_time:float, width:float, fade_length:int, amplitude:clamp(0, is_int=False), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), speed:clamp(0)):
     effect107(model, start_point, end_point, frame_rate, life_time, width, fade_length, amplitude, red, green, blue, alpha, speed).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_08')
-def effect108_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, center:convert_to_vector, start_radius:float, end_radius:float, frame_rate:clamp(0), life_time:float, width:float, fade_length:int, amplitude:clamp(0, type_=float), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), speed:clamp(0), flags:int):
+def effect108_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, center:convert_to_vector, start_radius:float, end_radius:float, frame_rate:clamp(0), life_time:float, width:float, fade_length:int, amplitude:clamp(0, is_int=False), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), speed:clamp(0), flags:int):
     effect108(model, center, start_radius, end_radius, frame_rate, life_time, width, fade_length, amplitude, red, green, blue, alpha, speed, flags).create(filter_, delay=delay)
 
 
@@ -250,22 +250,22 @@ def effect1_command(command_info, filter_:convert_userid_identifier_to_players, 
 
 
 @ESTCommand(['est_Effect', '2'])
-def effect2_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, start_userid:valid_userid, end_userid:valid_userid, life_time:float, start_width:clamp(0, type_=float), end_width:clamp(0, type_=float), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255)):
+def effect2_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, start_userid:valid_userid, end_userid:valid_userid, life_time:float, start_width:clamp(0, is_int=False), end_width:clamp(0, is_int=False), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255)):
     effect2(model, start_userid, end_userid, life_time, start_width, end_width, red, green, blue, alpha).create(filter_, delay=delay)
 
 
 @ESTCommand(['est_Effect', '3'])
-def effect3_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, x1:float, y1:float, z1:float, x2:float, y2:float, z2:float, life_time:float, start_width:clamp(0, type_=float), end_width:clamp(0, type_=float), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255)):
+def effect3_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, x1:float, y1:float, z1:float, x2:float, y2:float, z2:float, life_time:float, start_width:clamp(0, is_int=False), end_width:clamp(0, is_int=False), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255)):
     effect3(model, x1, y1, z1, x2, y2, z2, life_time, start_width, end_width, red, green, blue, alpha).create(filter_, delay=delay)
 
 
 @ESTCommand(['est_Effect', '4'])
-def effect4_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, userid:valid_userid, life_time:float, start_width:clamp(0, type_=float), end_width:clamp(0, type_=float), fade_length:int, red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255)):
+def effect4_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, userid:valid_userid, life_time:float, start_width:clamp(0, is_int=False), end_width:clamp(0, is_int=False), fade_length:int, red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255)):
     effect4(model, userid, life_time, start_width, end_width, fade_length, red, green, blue, alpha).create(filter_, delay=delay)
 
 
 @ESTCommand(['est_Effect', '5'])
-def effect5_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, start_userid:valid_userid, end_entity_index:int, life_time:float, width:float, fade_length:int, amplitude:clamp(0, type_=float), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), speed:clamp(0)):
+def effect5_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, start_userid:valid_userid, end_entity_index:int, life_time:float, width:float, fade_length:int, amplitude:clamp(0, is_int=False), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), speed:clamp(0)):
     effect5(model, start_userid, end_entity_index, life_time, width, fade_length, amplitude, red, green, blue, alpha, speed).create(filter_, delay=delay)
 
 
@@ -290,7 +290,7 @@ def effect9_command(command_info, filter_:convert_userid_identifier_to_players, 
 
 
 @ESTCommand(['est_Effect', '10'])
-def effect10_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, x:float, y:float, z:float, start_radius:float, end_radius:float, life_time:float, width:float, fade_length:int, amplitude:clamp(0, type_=float), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), speed:clamp(0)):
+def effect10_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, x:float, y:float, z:float, start_radius:float, end_radius:float, life_time:float, width:float, fade_length:int, amplitude:clamp(0, is_int=False), red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255), speed:clamp(0)):
     effect10(model, x, y, z, start_radius, end_radius, life_time, width, fade_length, amplitude, red, green, blue, alpha, speed).create(filter_, delay=delay)
 
 

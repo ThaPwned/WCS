@@ -98,14 +98,34 @@ def valid_operators(operators=('=', '+', '-')):
     def validate_operator(value):
         return value if value in operators else '='
 
+    validate_operator.__name__ = 'operator (' + ', '.join(operators) + ')'
+
     return validate_operator
 
 
-def clamp(min_value=None, max_value=None, type_=int):
+def clamp(min_value=None, max_value=None, is_int=True):
     def clamping(value):
-        value = type_(value)
+        value = int(float(value)) if is_int else float(value)
 
         return min_value if (min_value is not None and value < min_value) else max_value if (max_value is not None and value > max_value) else value
+
+    clamping.__name__ = 'int' if is_int else 'float'
+
+    if min_value is None and max_value is None:
+        return clamping
+
+    clamping.__name__ += ' ('
+
+    if min_value is not None:
+        clamping.__name__ += f'min. {min_value}'
+
+        if max_value is not None:
+            clamping.__name__ += ' '
+
+    if max_value is not None:
+        clamping.__name__ += f'max. {max_value}'
+
+    clamping.__name__ += ')'
 
     return clamping
 
