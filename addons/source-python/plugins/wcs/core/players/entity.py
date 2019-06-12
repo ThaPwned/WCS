@@ -256,7 +256,7 @@ class Player(object, metaclass=_PlayerMeta):
         self._userid = None
         self._index = None
         self._ready = False
-        self._is_bot = uniqueid.startswith('BOT_')
+        self._fake_client = uniqueid.startswith('BOT_')
         self._privileges = privileges['players'].get(uniqueid, {})
 
         self._id = None
@@ -367,7 +367,7 @@ class Player(object, metaclass=_PlayerMeta):
         online = self.online
 
         if online:
-            if self.active_race.settings.usable_by(self) is not RaceReason.ALLOWED or (self._is_bot and cfg_bot_random_race.get_int()):
+            if self.active_race.settings.usable_by(self) is not RaceReason.ALLOWED or (self.fake_client and cfg_bot_random_race.get_int()):
                 usable_races = self.available_races
 
                 if not usable_races:
@@ -636,6 +636,10 @@ class Player(object, metaclass=_PlayerMeta):
     @property
     def ready(self):
         return self._ready
+
+    @property
+    def fake_client(self):
+        return self._fake_client
 
     @property
     def privileges(self):
@@ -1042,7 +1046,7 @@ class _Race(object):
         #     player = self.wcsplayer.player
 
         #     if player.dead:
-        #         if not self.wcsplayer._is_bot:
+        #         if not self.wcsplayer.fake_client:
         #             player.play_sound('ambient/machines/teleport1.wav', volume=0.4)
         #     else:
         #         player.emit_sound('ambient/machines/teleport1.wav', volume=0.8, attenuation=0.3)
@@ -1050,7 +1054,7 @@ class _Race(object):
         if value > from_level:
             OnPlayerLevelUp.manager.notify(self.wcsplayer, self, from_level)
 
-            if self.wcsplayer._is_bot:
+            if self.wcsplayer.fake_client:
                 self._upgrade_skills()
         else:
             OnPlayerLevelDown.manager.notify(self.wcsplayer, self, from_level)

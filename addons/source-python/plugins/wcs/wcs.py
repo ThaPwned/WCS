@@ -354,7 +354,7 @@ def _give_xp_if_set(userid, config, bot_config, message):
     if not wcsplayer.ready:
         return
 
-    if wcsplayer._is_bot:
+    if wcsplayer.fake_client:
         value = bot_config.get_int()
 
         if value == -1:
@@ -363,7 +363,7 @@ def _give_xp_if_set(userid, config, bot_config, message):
         value = config.get_int()
 
     if value:
-        if wcsplayer._is_bot:
+        if wcsplayer.fake_client:
             wcsplayer.xp += value
         else:
             active_race = wcsplayer.active_race
@@ -390,7 +390,7 @@ def _give_players_xp_if_set(wcsplayers, config, bot_config, message):
         bot_value = value
 
     for _, wcsplayer in wcsplayers:
-        if wcsplayer._is_bot:
+        if wcsplayer.fake_client:
             if bot_value:
                 wcsplayer.xp += bot_value
         else:
@@ -526,7 +526,7 @@ def player_spawn(event):
 
     if wcsplayer.ready:
         if wcsplayer.player.team_index >= 2:
-            if not wcsplayer._is_bot:
+            if not wcsplayer.fake_client:
                 if cfg_resetskills_next_round.get_int():
                     if wcsplayer.data.pop('_internal_reset_skills', False):
                         unused = 0
@@ -630,7 +630,7 @@ def player_death(event):
                         if headshot_xp:
                             value += headshot_xp
 
-                            if not wcsattacker._is_bot:
+                            if not wcsattacker.fake_client:
                                 delay = Delay(1, _send_message_and_remove, (gain_xp_headshot_message, wcsattacker), {'value':headshot_xp})
                                 delay.args += (delay, )
                                 _delays[wcsattacker].add(delay)
@@ -645,7 +645,7 @@ def player_death(event):
                                 gained = difference * bonus_xp
                                 value += gained
 
-                                if not wcsattacker._is_bot:
+                                if not wcsattacker.fake_client:
                                     delay = Delay(1, _send_message_and_remove, (gain_xp_killed_higher_level_message, wcsattacker), {'value':gained, 'difference':difference})
                                     delay.args += (delay, )
                                     _delays[wcsattacker].add(delay)
@@ -656,13 +656,13 @@ def player_death(event):
                         if knife_xp:
                             value += knife_xp
 
-                            if not wcsattacker._is_bot:
+                            if not wcsattacker.fake_client:
                                 delay = Delay(1, _send_message_and_remove, (gain_xp_knife_message, wcsattacker), {'value':knife_xp})
                                 delay.args += (delay, )
                                 _delays[wcsattacker].add(delay)
 
                     if value:
-                        if not wcsattacker._is_bot:
+                        if not wcsattacker.fake_client:
                             for delay in _delays[wcsattacker]:
                                 if delay.callback is _xp_gained:
                                     delay.kwargs['_allow'] = False
@@ -674,7 +674,7 @@ def player_death(event):
 
                         active_race.xp += value
 
-    if wcsvictim._is_bot:
+    if wcsvictim.fake_client:
         if cfg_bot_random_race.get_int():
             if wcsvictim.ready:
                 usable_races = wcsvictim.available_races
@@ -846,7 +846,7 @@ def on_player_destroy(wcsplayer):
 @OnPlayerLevelUp
 def on_player_level_up(wcsplayer, race, old_level):
     if wcsplayer.current_race == race.name:
-        if not wcsplayer._is_bot:
+        if not wcsplayer.fake_client:
             for skill in wcsplayer.skills.values():
                 if skill.level < skill.config['maximum']:
                     delay = Delay(2, _send_message_and_remove, (spendskills_menu, wcsplayer))
@@ -908,7 +908,7 @@ def on_player_rank_update(wcsplayer, old, new):
             if cfg_top_public_announcement.get_int():
                 top_public_announcement_message.send(name=wcsplayer.name, min_rank=min_rank if min_rank else '', old=old + 1, new=new + 1)
             else:
-                if not wcsplayer._is_bot:
+                if not wcsplayer.fake_client:
                     top_private_announcement_message.send(wcsplayer.index, min_rank=min_rank if min_rank else '', old=old + 1, new=new + 1)
 
         if new < old:
@@ -959,7 +959,7 @@ def on_player_rank_update(wcsplayer, old, new):
 @OnPlayerReady
 def on_player_ready(wcsplayer):
     if wcsplayer.player.team_index >= 2:
-        if not wcsplayer._is_bot:
+        if not wcsplayer.fake_client:
             if cfg_spawn_text.get_int():
                 if wcsplayer.total_level <= cfg_disable_text_on_level.get_int():
                     help_text_message.send(wcsplayer.index)
@@ -970,7 +970,7 @@ def on_player_ready(wcsplayer):
 
         wcsplayer.execute('readycmd', define=True)
 
-    if not wcsplayer._is_bot:
+    if not wcsplayer.fake_client:
         if wcsplayer.total_level <= cfg_disable_text_on_level.get_int():
             if cfg_welcome_text.get_int():
                 delay = Delay(10, _send_message_and_remove, (welcome_text_message, wcsplayer))
