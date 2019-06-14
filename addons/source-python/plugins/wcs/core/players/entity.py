@@ -44,8 +44,6 @@ from filters.weapons import WeaponClassIter
 #   Hooks
 from hooks.exceptions import except_hooks
 #   Listeners
-from listeners import OnClientActive
-from listeners import OnClientDisconnect
 from listeners.tick import Delay
 from listeners.tick import Repeat
 from listeners.tick import RepeatStatus
@@ -53,11 +51,10 @@ from listeners.tick import RepeatStatus
 from memory import make_object
 #   Players
 from players.dictionary import PlayerDictionary
+from players.entity import Player as _Player
 from players.helpers import index_from_uniqueid
 from players.helpers import index_from_userid
-from players.helpers import uniqueid_from_playerinfo
 from players.helpers import userid_from_index
-from players.helpers import playerinfo_from_index
 #   Weapons
 from weapons.manager import weapon_manager
 from weapons.restrictions import WeaponRestrictionHandler
@@ -77,6 +74,8 @@ from ..database.manager import database_manager
 from ..database.manager import statements
 from ..database.thread import _thread
 #   Listeners
+from ..listeners import OnClientAuthorized
+from ..listeners import OnClientDisconnect
 from ..listeners import OnIsSkillExecutable
 from ..listeners import OnPlayerChangeRace
 from ..listeners import OnPlayerDelete
@@ -97,6 +96,7 @@ from ..modules.items.manager import item_manager
 from ..modules.races.calls import _callbacks as _race_callbacks
 from ..modules.races.manager import race_manager
 #   Players
+from . import BasePlayer
 from . import team_data
 from . import set_weapon_name
 #   Ranks
@@ -169,6 +169,7 @@ _players = PlayerDictionary()
 _global_bypass = False
 _round_started = True
 _delays = defaultdict(set)
+_save_queue = set()
 
 input_invalid_message = SayText2(chat_strings['input invalid'])
 
@@ -180,18 +181,27 @@ class _PlayerMeta(type):
     def __new__(mcs, name, bases, odict):
         cls = super().__new__(mcs, name, bases, odict)
         cls._players = {}
-        cls._cache_userids = {}
-        cls._cache_indexes = {}
+        cls._uniqueid_players = {}
+        cls._reconnect_cache = {}
 
         return cls
 
-    def __call__(cls, uniqueid):
-        player = cls._players.get(uniqueid)
+    def __call__(cls, index):
+        wcsplayer = cls._players.get(index)
 
-        if player is None:
-            player = cls._players[uniqueid] = super().__call__(uniqueid)
+        if wcsplayer is None:
+            if isinstance(index, str):
+                wcsplayer = cls._uniqueid_players.get(index)
 
-        return player
+                if wcsplayer is None:
+                    wcsplayer = cls._uniqueid_players[index] = super().__call__(None, index)
+                    wcsplayer._retrieve_data()
+
+                return wcsplayer
+
+            wcsplayer = cls._players[index] = super().__call__(index)
+
+        return wcsplayer
 
 
 class _RaceContainer(dict):
@@ -249,15 +259,20 @@ class _Stats(object):
 
 
 class Player(object, metaclass=_PlayerMeta):
-    def __init__(self, uniqueid):
-        self._uniqueid = uniqueid
+    def __init__(self, index, uniqueid=None):
+        if index is None:
+            self._index = None
+            self._baseplayer = None
+            self._uniqueid = uniqueid
+        else:
+            self._index = index
+            self._baseplayer = BasePlayer(index)
+
         self._races = _RaceContainer(self)
         self._items = _ItemContainer(self)
-        self._userid = None
-        self._index = None
         self._ready = False
-        self._fake_client = uniqueid.startswith('BOT_')
-        self._privileges = privileges['players'].get(uniqueid, {})
+        self._retrieving = False
+        self._privileges = {}
 
         self._id = None
         self._name = None
@@ -266,20 +281,19 @@ class Player(object, metaclass=_PlayerMeta):
 
         self.data = {}
 
-        try:
-            self._index = index_from_uniqueid(uniqueid)
-        except ValueError:
-            name = None
+    def _retrieve_data(self):
+        if self._retrieving:
+            return
+
+        self._retrieving = True
+
+        if self.online:
+            name = self._baseplayer.name
         else:
-            self._userid = userid_from_index(self._index)
-
-            Player._cache_userids[self.userid] = self
-            Player._cache_indexes[self.index] = self
-
-            name = playerinfo_from_index(self.index).name
+            name = None
 
         if not _thread.unloading:
-            database_manager.execute('player get', (uniqueid, ), callback=self._query_get_player, name=name)
+            database_manager.execute('player get', (self.uniqueid, ), callback=self._query_get_player, name=name)
 
     def _query_get_player(self, result):
         if _thread.unloading:
@@ -400,17 +414,45 @@ class Player(object, metaclass=_PlayerMeta):
         # This has to be done here, as it'll cause errors if it's done in OnClientDisconnect
         self.data.clear()
 
+        _save_queue.discard(self.uniqueid)
+
         try:
             self._index = index_from_uniqueid(self.uniqueid)
         except ValueError:
             OnPlayerDestroy.manager.notify(self)
-
-            del Player._players[self.uniqueid]
-
-            self._userid = None
-            self._index = None
         else:
-            self._userid = userid_from_index(self.index)
+            self._baseplayer = BasePlayer(self._index)
+
+            Player._players[self.index] = self
+
+            Player._reconnect_cache[self.uniqueid] = self
+
+            on_client_authorized(self._baseplayer)
+
+            if self.ready:
+                if self.active_race.settings.usable_by(self) is not RaceReason.ALLOWED or (self.fake_client and cfg_bot_random_race.get_int()):
+                    usable_races = self.available_races
+
+                    if not usable_races:
+                        self._ready = False
+
+                        raise RuntimeError(f'Unable to find a usable race to "{self.name}".')
+
+                    self._current_race = choice(usable_races)
+
+                OnPlayerQuery.manager.notify(self)
+
+                team = self.player.team_index
+
+                if team >= 2:
+                    key = f'_internal_{self._current_race}_limit_allowed'
+
+                    if key not in team_data[team]:
+                        team_data[team][key] = []
+
+                    team_data[team][key].append(self.userid)
+
+                OnPlayerReady.manager.notify(self)
 
     def save(self):
         assert self.ready
@@ -602,28 +644,31 @@ class Player(object, metaclass=_PlayerMeta):
 
     @property
     def userid(self):
-        assert self._userid is not None
-
-        return self._userid
+        return self._baseplayer.userid
 
     @property
     def index(self):
-        assert self._index is not None
+        assert self._index == self._baseplayer.index
 
         return self._index
 
     @property
+    def fake_client(self):
+        return self._baseplayer.fake_client
+
+    @property
     def online(self):
         try:
-            index_from_uniqueid(self.uniqueid)
-        except ValueError:
+            return self._baseplayer.connected
+        except AttributeError:
             return False
-
-        return True
 
     @property
     def uniqueid(self):
-        return self._uniqueid
+        try:
+            return self._baseplayer.uniqueid
+        except AttributeError:
+            return self._uniqueid
 
     @property
     def id(self):
@@ -638,16 +683,13 @@ class Player(object, metaclass=_PlayerMeta):
         return self._ready
 
     @property
-    def fake_client(self):
-        return self._fake_client
-
-    @property
     def privileges(self):
         return self._privileges
 
     @property
     def player(self):
-        return _players[self.index]
+        return _Player(self.index)
+        # return _players[self.index]
 
     @property
     def current_race(self):
@@ -770,29 +812,17 @@ class Player(object, metaclass=_PlayerMeta):
         return self.active_race.execute
 
     @classmethod
-    def from_index(cls, index):
-        wcsplayer = cls._cache_indexes.get(index)
-
-        if wcsplayer is None:
-            playerinfo = playerinfo_from_index(index)
-            uniqueid = uniqueid_from_playerinfo(playerinfo)
-
-            wcsplayer = cls._cache_indexes[index] = cls(uniqueid)
-
-        return wcsplayer
+    def from_userid(cls, userid):
+        return cls(index_from_userid(userid))
 
     @classmethod
-    def from_userid(cls, userid):
-        wcsplayer = cls._cache_userids.get(userid)
-
-        if wcsplayer is None:
-            index = index_from_userid(userid)
-            playerinfo = playerinfo_from_index(index)
-            uniqueid = uniqueid_from_playerinfo(playerinfo)
-
-            wcsplayer = cls._cache_userids[userid] = cls(uniqueid)
-
-        return wcsplayer
+    def from_uniqueid(cls, uniqueid):
+        try:
+            index = index_from_uniqueid(uniqueid)
+        except ValueError:
+            return cls(uniqueid)
+        else:
+            return cls(index)
 
 
 class _Race(object):
@@ -1294,38 +1324,51 @@ class _Item(object):
 # ============================================================================
 # >> LISTENERS
 # ============================================================================
-@OnClientActive
-def on_client_active(index):
-    wcsplayer = Player(uniqueid_from_playerinfo(playerinfo_from_index(index)))
+@OnClientAuthorized
+def on_client_authorized(baseplayer):
+    wcsplayer = Player._uniqueid_players.pop(baseplayer.uniqueid, None)
 
-    wcsplayer._userid = userid_from_index(index)
-    wcsplayer._index = index
+    if wcsplayer is None:
+        wcsplayer = Player._reconnect_cache.pop(baseplayer.uniqueid, None)
+
+        if wcsplayer is None:
+            if baseplayer.uniqueid in _save_queue:
+                return
+
+            wcsplayer = Player(baseplayer.index)
+
+            wcsplayer._privileges = privileges['players'].get(baseplayer.uniqueid, {})
+
+            wcsplayer._retrieve_data()
+        else:
+            wcsplayer._baseplayer = baseplayer
+    else:
+        Player._players[baseplayer.index] = wcsplayer
+
+        wcsplayer._index = baseplayer.index
+        wcsplayer._baseplayer = baseplayer
+
+        # Not really needed...
+        del wcsplayer._uniqueid
 
 
 @OnClientDisconnect
-def on_client_disconnect(index):
-    # This can occur if the player leaves the server before OnClientActive was called
-    try:
-        uniqueid = uniqueid_from_playerinfo(playerinfo_from_index(index))
-    except ValueError:
+def on_client_disconnect(baseplayer):
+    wcsplayer = Player._players.pop(baseplayer.index, None)
+
+    if baseplayer.uniqueid in _save_queue or wcsplayer is None:
         return
-
-    wcsplayer = Player(uniqueid)
-
-    # If we failed to get the correct uniqueid for some reason, do not proceed
-    assert wcsplayer.uniqueid == uniqueid, (wcsplayer.uniqueid, uniqueid)
 
     OnPlayerDelete.manager.notify(wcsplayer)
 
-    for delay in _delays.pop(wcsplayer.userid, []):
+    for delay in _delays.pop(baseplayer.userid, []):
         delay.cancel()
-
-    del Player._cache_userids[wcsplayer.userid]
-    del Player._cache_indexes[wcsplayer.index]
 
     if wcsplayer.ready:
         wcsplayer._lastconnect = time()
         wcsplayer.save()
+
+    _save_queue.add(baseplayer.uniqueid)
 
     database_manager.callback(wcsplayer._query_save)
 
@@ -1339,12 +1382,12 @@ def pre_on_take_damage(stack):
     attacker = info.attacker
 
     if 0 < attacker <= global_vars.max_clients:
-        wcsattacker = Player.from_index(attacker)
+        wcsattacker = Player(attacker)
     else:
         wcsattacker = None
 
     index = index_from_pointer(stack[0])
-    wcsvictim = Player.from_index(index)
+    wcsvictim = Player(index)
 
     OnTakeDamage.manager.notify(wcsvictim, wcsattacker, info)
 
@@ -1358,12 +1401,12 @@ def pre_on_take_damage_alive(stack):
     attacker = info.attacker
 
     if 0 < attacker <= global_vars.max_clients:
-        wcsattacker = Player.from_index(attacker)
+        wcsattacker = Player(attacker)
     else:
         wcsattacker = None
 
     index = index_from_pointer(stack[0])
-    wcsvictim = Player.from_index(index)
+    wcsvictim = Player(index)
 
     OnTakeDamageAlive.manager.notify(wcsvictim, wcsattacker, info)
 
@@ -1420,7 +1463,7 @@ def player_death(event):
 # ============================================================================
 @SayFilter
 def say_filter(command, index, team_only):
-    wcsplayer = Player.from_index(index)
+    wcsplayer = Player(index)
     menu = wcsplayer.data.get('_internal_input_menu')
 
     if menu is not None:

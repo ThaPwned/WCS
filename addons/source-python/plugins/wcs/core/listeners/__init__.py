@@ -13,6 +13,9 @@ from listeners import ListenerManagerDecorator
 # >> ALL DECLARATION
 # ============================================================================
 __all__ = (
+    'OnClientAuthorized',
+    'OnClientConnect',
+    'OnClientDisconnect',
     'OnGithubCommitsRefresh',
     'OnGithubCommitsRefreshed',
     'OnGithubModuleFailed',
@@ -46,6 +49,18 @@ __all__ = (
 # ============================================================================
 # >> CLASSES
 # ============================================================================
+class OnClientAuthorized(ListenerManagerDecorator):
+    manager = ListenerManager()
+
+
+class OnClientConnect(ListenerManagerDecorator):
+    manager = ListenerManager()
+
+
+class OnClientDisconnect(ListenerManagerDecorator):
+    manager = ListenerManager()
+
+
 class OnGithubCommitsRefresh(ListenerManagerDecorator):
     manager = ListenerManager()
 

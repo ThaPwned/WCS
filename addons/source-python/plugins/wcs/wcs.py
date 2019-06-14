@@ -142,9 +142,9 @@ from .core.menus.select import main_menu_select  # Just to load it
 from .core.modules.items.manager import item_manager
 from .core.modules.races.manager import race_manager
 #   Players
+from .core.players import _initialize_players
 from .core.players import team_data
 from .core.players.entity import Player
-from .core.players.filters import PlayerIter
 from .core.players.filters import PlayerReadyIter
 #   Ranks
 from .core.ranks import rank_manager
@@ -250,8 +250,7 @@ def load():
     race_manager.load_all()
     item_manager.load_all()
 
-    for _, player in PlayerIter():
-        Player(player.uniqueid)
+    _initialize_players()
 
     for settings in race_manager.values():
         settings.execute('preloadcmd')
@@ -749,6 +748,9 @@ def player_jump(event):
 # ============================================================================
 @OnLevelInit
 def on_level_init(map_name):
+    # Remove all offline players from the cache (better place for this?)
+    Player._uniqueid_players.clear()
+
     for name in race_manager._refresh_config:
         settings = race_manager[name]
 
@@ -1025,7 +1027,7 @@ def on_take_damage_alive(wcsvictim, wcsattacker, info):
 # ============================================================================
 @QuietTypedClientCommand('_wcsadmin_input_xp')
 def _wcsadmin_input_xp_command(command, value:int):
-    wcsplayer = Player.from_index(command.index)
+    wcsplayer = Player(command.index)
 
     if not wcsplayer.privileges.get('wcsadmin_playersmanagement'):
         return CommandReturn.CONTINUE
@@ -1049,7 +1051,7 @@ def _wcsadmin_input_xp_command(command, value:int):
 
         admin_gain_xp_all_message.send(wcsplayer.index, value=value)
     else:
-        wcstarget = Player(uniqueid)
+        wcstarget = Player.from_uniqueid(uniqueid)
 
         if wcstarget.ready:
             active_race = wcstarget.active_race
@@ -1071,7 +1073,7 @@ def _wcsadmin_input_xp_command(command, value:int):
 
 @QuietTypedClientCommand('_wcsadmin_input_level')
 def _wcsadmin_input_level_command(command, value:int):
-    wcsplayer = Player.from_index(command.index)
+    wcsplayer = Player(command.index)
 
     if not wcsplayer.privileges.get('wcsadmin_playersmanagement'):
         return CommandReturn.CONTINUE
@@ -1089,7 +1091,7 @@ def _wcsadmin_input_level_command(command, value:int):
 
         admin_gain_levels_all_message.send(wcsplayer.index, value=value)
     else:
-        wcstarget = Player(uniqueid)
+        wcstarget = Player.from_uniqueid(uniqueid)
 
         if wcstarget.ready:
             wcstarget.level += value
@@ -1112,7 +1114,7 @@ def say_command_wcs(command):
 
 @TypedSayCommand('shopmenu')
 def say_command_shopmenu(command):
-    wcsplayer = Player.from_index(command.index)
+    wcsplayer = Player(command.index)
 
     if wcsplayer.ready:
         shopmenu_menu.send(command.index)
@@ -1131,7 +1133,7 @@ def say_command_shopinfo(command):
 
 @TypedSayCommand('showskills')
 def say_command_showskills(command):
-    wcsplayer = Player.from_index(command.index)
+    wcsplayer = Player(command.index)
 
     if wcsplayer.ready:
         showskills_menu.send(command.index)
@@ -1143,7 +1145,7 @@ def say_command_showskills(command):
 
 @TypedSayCommand('resetskills')
 def say_command_resetskills(command):
-    wcsplayer = Player.from_index(command.index)
+    wcsplayer = Player(command.index)
 
     if wcsplayer.ready:
         resetskills_menu.send(command.index)
@@ -1155,7 +1157,7 @@ def say_command_resetskills(command):
 
 @TypedSayCommand('spendskills')
 def say_command_spendskills(command):
-    wcsplayer = Player.from_index(command.index)
+    wcsplayer = Player(command.index)
 
     if wcsplayer.ready:
         active_race = wcsplayer.active_race
@@ -1175,7 +1177,7 @@ def say_command_spendskills(command):
 
 @TypedSayCommand('changerace')
 def say_command_changerace(command):
-    wcsplayer = Player.from_index(command.index)
+    wcsplayer = Player(command.index)
 
     if wcsplayer.ready:
         if not cfg_changerace_next_round.get_int():
@@ -1218,7 +1220,7 @@ def say_command_wcshelp(command):
 
 @TypedSayCommand('wcsadmin')
 def say_command_wcsadmin(command):
-    wcsplayer = Player.from_index(command.index)
+    wcsplayer = Player(command.index)
 
     if wcsplayer.privileges.get('wcsadmin', False):
         wcsadmin_menu.send(command.index)
@@ -1230,7 +1232,7 @@ def say_command_wcsadmin(command):
 
 @TypedSayCommand('showxp')
 def say_command_showxp(command):
-    wcsplayer = Player.from_index(command.index)
+    wcsplayer = Player(command.index)
     active_race = wcsplayer.active_race
 
     xp_required_message.send(wcsplayer.index, name=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
@@ -1240,7 +1242,7 @@ def say_command_showxp(command):
 
 @TypedClientCommand('+ability')
 def client_ability_plus_command(command, ability:int=1, *args:str):
-    wcsplayer = Player.from_index(command.index)
+    wcsplayer = Player(command.index)
 
     if wcsplayer.ready:
         # TODO: Monkeypatch until it's been fixed in SP (don't create a race with 32 abilities, please)
@@ -1289,7 +1291,7 @@ def client_ability_plus_command(command, ability:int=1, *args:str):
 
 @TypedClientCommand('-ability')
 def client_ability_minus_command(command, ability:int=1, *args:str):
-    wcsplayer = Player.from_index(command.index)
+    wcsplayer = Player(command.index)
 
     if wcsplayer.ready:
         # TODO: Monkeypatch until it's been fixed in SP (don't create a race with 32 abilities, please)
@@ -1319,7 +1321,7 @@ def client_ability_minus_command(command, ability:int=1, *args:str):
 
 @TypedClientCommand('ability')
 def client_ability_command(command):
-    wcsplayer = Player.from_index(command.index)
+    wcsplayer = Player(command.index)
 
     if wcsplayer.ready:
         active_race = wcsplayer.active_race
@@ -1362,7 +1364,7 @@ def client_ability_command(command):
 
 @TypedClientCommand('ultimate')
 def client_ultimate_command(command):
-    wcsplayer = Player.from_index(command.index)
+    wcsplayer = Player(command.index)
 
     if wcsplayer.ready:
         active_race = wcsplayer.active_race

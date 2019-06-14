@@ -34,7 +34,7 @@ class PlayerIter(_PlayerIter):
 
     def _is_valid(self, item):
         if super()._is_valid(item):
-            return True, Player.from_index(item.index)
+            return True, Player(item.index)
 
         return False, None
 

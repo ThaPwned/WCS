@@ -137,7 +137,7 @@ def main_menu_select(menu, client, option):
 
 @shopmenu_menu.register_select_callback
 def shopmenu_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
 
     if isinstance(option.value, PagedMenu):
         wcsplayer.data['_internal_shopmenu'] = option.value.name
@@ -159,7 +159,7 @@ def shopmenu_menu_select(menu, client, option):
 
 @shopinfo_menu.register_select_callback
 def shopinfo_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
 
     if isinstance(option.value, PagedMenu):
         wcsplayer.data['_internal_shopinfo_category'] = option.value.name
@@ -174,7 +174,7 @@ def shopinfo_menu_select(menu, client, option):
 @shopinfo_detail_menu.register_select_callback
 def shopinfo_detail_menu_select(menu, client, option):
     if option.choice_index == BUTTON_BACK:
-        wcsplayer = Player.from_index(client)
+        wcsplayer = Player(client)
         name = wcsplayer.data.get('_internal_shopinfo')
         category = wcsplayer.data.get('_internal_shopinfo_category')
 
@@ -191,7 +191,7 @@ def shopinfo_detail_menu_select(menu, client, option):
 
 @resetskills_menu.register_select_callback
 def resetskills_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
 
     if option.choice_index == 1:
         if cfg_resetskills_next_round.get_int():
@@ -226,7 +226,7 @@ def resetskills_menu_select(menu, client, option):
 def spendskills_menu_select(menu, client, option):
     race, skill = option.value
 
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
     active_race = wcsplayer.active_race
 
     if not active_race.name == race:
@@ -248,7 +248,7 @@ def spendskills_menu_select(menu, client, option):
 
 @changerace_menu.register_select_callback
 def changerace_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
 
     if isinstance(option.value, PagedMenu):
         return option.value
@@ -277,7 +277,7 @@ def changerace_menu_select(menu, client, option):
 
 @raceinfo_menu.register_select_callback
 def raceinfo_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
 
     if isinstance(option.value, PagedMenu):
         wcsplayer.data['_internal_raceinfo_category'] = option.value.name
@@ -292,7 +292,7 @@ def raceinfo_menu_select(menu, client, option):
 @raceinfo_detail_menu.register_select_callback
 def raceinfo_detail_menu_select(menu, client, option):
     if option.choice_index in (3, 4, BUTTON_BACK):
-        wcsplayer = Player.from_index(client)
+        wcsplayer = Player(client)
         name = wcsplayer.data.get('_internal_raceinfo')
         category = wcsplayer.data.get('_internal_raceinfo_category')
 
@@ -324,7 +324,7 @@ def raceinfo_detail_menu_select(menu, client, option):
 
 @raceinfo_skills_menu.register_select_callback
 def raceinfo_skills_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
 
     wcsplayer.data['_internal_raceinfo_skill'] = option.value
 
@@ -343,7 +343,7 @@ def raceinfo_race_detail_menu_select(menu, client, option):
 
 @playerinfo_menu.register_select_callback
 def playerinfo_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
 
     wcsplayer.data['_internal_playerinfo'] = option.value
     wcsplayer.data['_internal_playerinfo_name'] = option.text
@@ -363,7 +363,7 @@ def playerinfo_detail_stats_menu_select(menu, client, option):
 
 @wcstop_menu.register_select_callback
 def wcstop_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
 
     wcsplayer.data['_internal_wcstop'] = option.value
 
@@ -385,7 +385,7 @@ def wcsadmin_menu_select(menu, client, option):
 
 @wcsadmin_players_menu.register_select_callback
 def wcsadmin_players_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
 
     wcsplayer.data['_internal_wcsadmin_player'] = option.value
 
@@ -405,7 +405,7 @@ def wcsadmin_players_sub_menu_select(menu, client, option):
 @wcsadmin_players_sub_xp_menu.register_select_callback
 def wcsadmin_players_sub_xp_menu_select(menu, client, option):
     if isinstance(option.value, int):
-        wcsplayer = Player.from_index(client)
+        wcsplayer = Player(client)
         uniqueid = wcsplayer.data['_internal_wcsadmin_player']
 
         if uniqueid is None:
@@ -425,7 +425,7 @@ def wcsadmin_players_sub_xp_menu_select(menu, client, option):
 
             admin_gain_xp_all_message.send(wcsplayer.index, value=option.value)
         else:
-            wcstarget = Player(uniqueid)
+            wcstarget = Player.from_uniqueid(uniqueid)
             active_race = wcstarget.active_race
             old_level = active_race.level
 
@@ -442,7 +442,7 @@ def wcsadmin_players_sub_xp_menu_select(menu, client, option):
 
         return menu
     elif option.value is None:
-        wcsplayer = Player.from_index(client)
+        wcsplayer = Player(client)
 
         if wcsplayer.data['_internal_wcsadmin_player'] is None:
             name = menu_strings['wcsadmin_players_menu all']
@@ -459,7 +459,7 @@ def wcsadmin_players_sub_xp_menu_select(menu, client, option):
 @wcsadmin_players_sub_levels_menu.register_select_callback
 def wcsadmin_players_sub_levels_menu_select(menu, client, option):
     if isinstance(option.value, int):
-        wcsplayer = Player.from_index(client)
+        wcsplayer = Player(client)
         uniqueid = wcsplayer.data['_internal_wcsadmin_player']
 
         if uniqueid is None:
@@ -473,7 +473,7 @@ def wcsadmin_players_sub_levels_menu_select(menu, client, option):
 
             admin_gain_levels_all_message.send(wcsplayer.index, value=option.value)
         else:
-            wcstarget = Player(uniqueid)
+            wcstarget = Player.from_uniqueid(uniqueid)
 
             wcstarget.level += option.value
 
@@ -485,7 +485,7 @@ def wcsadmin_players_sub_levels_menu_select(menu, client, option):
 
         return menu
     elif option.value is None:
-        wcsplayer = Player.from_index(client)
+        wcsplayer = Player(client)
 
         if wcsplayer.data['_internal_wcsadmin_player'] is None:
             name = menu_strings['wcsadmin_players_menu all']
@@ -506,7 +506,7 @@ def wcsadmin_management_menu_select(menu, client, option):
 
 @wcsadmin_management_races_menu.register_select_callback
 def wcsadmin_management_races_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
 
     if isinstance(option.value, str):
         wcsplayer.data['_internal_wcsadmin_editor_value'] = option.value
@@ -518,7 +518,7 @@ def wcsadmin_management_races_menu_select(menu, client, option):
 
 @wcsadmin_management_items_menu.register_select_callback
 def wcsadmin_management_items_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
 
     if isinstance(option.value, str):
         wcsplayer.data['_internal_wcsadmin_editor_value'] = option.value
@@ -570,7 +570,7 @@ def wcsadmin_management_items_add_menu_select(menu, client, option):
 
 @wcsadmin_management_races_editor_menu.register_select_callback
 def wcsadmin_management_races_editor_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
 
     if option.choice_index == 1:
         value = wcsplayer.data['_internal_wcsadmin_editor_value']
@@ -617,11 +617,11 @@ def wcsadmin_management_races_editor_menu_select(menu, client, option):
 @wcsadmin_management_races_editor_modify_menu.register_select_callback
 def wcsadmin_management_races_editor_modify_menu_select(menu, client, option):
     if callable(option.value):
-        wcsplayer = Player.from_index(client)
+        wcsplayer = Player(client)
 
         return wcsplayer.request_input(option.value, return_menu=menu)
     elif isinstance(option.value, str):
-        wcsplayer = Player.from_index(client)
+        wcsplayer = Player(client)
         wcsplayer.data['_internal_wcsadmin_editor_key'] = option.value
 
         return wcsadmin_management_races_editor_modify_from_selection_menu
@@ -632,11 +632,11 @@ def wcsadmin_management_races_editor_modify_menu_select(menu, client, option):
 @wcsadmin_management_races_editor_modify_from_selection_menu.register_select_callback
 def wcsadmin_management_races_editor_modify_from_selection_menu_select(menu, client, option):
     if option.value is None:
-        wcsplayer = Player.from_index(client)
+        wcsplayer = Player(client)
 
         return wcsplayer.request_input(_request_add_new_value, return_menu=menu)
     elif isinstance(option.value, str):
-        wcsplayer = Player.from_index(client)
+        wcsplayer = Player(client)
 
         _update_config(RACE_PATH, wcsplayer.data['_internal_wcsadmin_editor_value'], wcsplayer.data['_internal_wcsadmin_editor_key'], option.value, False)
 
@@ -646,7 +646,7 @@ def wcsadmin_management_races_editor_modify_from_selection_menu_select(menu, cli
 @wcsadmin_management_races_editor_modify_restricted_team_menu.register_select_callback
 def wcsadmin_management_races_editor_modify_restricted_team_menu_select(menu, client, option):
     if isinstance(option.value, int):
-        wcsplayer = Player.from_index(client)
+        wcsplayer = Player(client)
 
         _update_config(RACE_PATH, wcsplayer.data['_internal_wcsadmin_editor_value'], 'restrictteam', option.value)
 
@@ -660,7 +660,7 @@ def wcsadmin_github_menu_select(menu, client, option):
 
 @wcsadmin_github_races_menu.register_select_callback
 def wcsadmin_github_races_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
 
     wcsplayer.data['_internal_wcsadmin_github_name'] = option.value
 
@@ -669,7 +669,7 @@ def wcsadmin_github_races_menu_select(menu, client, option):
 
 @wcsadmin_github_races_options_menu.register_select_callback
 def wcsadmin_github_races_options_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
 
     if isinstance(option.value, GithubStatus):
         wcsplayer.data['_internal_wcsadmin_github_cycle'] = 0
@@ -699,7 +699,7 @@ def wcsadmin_github_races_options_menu_select(menu, client, option):
 
 @wcsadmin_github_races_repository_menu.register_select_callback
 def wcsadmin_github_races_repository_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
     name = wcsplayer.data['_internal_wcsadmin_github_name']
 
     github_installing_message.send(client, name=name)
@@ -711,7 +711,7 @@ def wcsadmin_github_races_repository_menu_select(menu, client, option):
 
 @wcsadmin_github_items_menu.register_select_callback
 def wcsadmin_github_items_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
 
     wcsplayer.data['_internal_wcsadmin_github_name'] = option.value
 
@@ -720,7 +720,7 @@ def wcsadmin_github_items_menu_select(menu, client, option):
 
 @wcsadmin_github_items_options_menu.register_select_callback
 def wcsadmin_github_items_options_menu_select(menu, client, option):
-    wcsplayer = Player.from_index(client)
+    wcsplayer = Player(client)
 
     if isinstance(option.value, GithubStatus):
         wcsplayer.data['_internal_wcsadmin_github_cycle'] = 0
