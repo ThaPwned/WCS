@@ -49,7 +49,6 @@ from menus import Text
 from players.helpers import index_from_uniqueid
 from players.helpers import index_from_userid
 #   Weapons
-from weapons.entity import Weapon
 from weapons.manager import weapon_manager
 
 # WCS Imports
@@ -991,17 +990,21 @@ def on_take_damage_alive(wcsvictim, wcsattacker, info):
         if wcsvictim is not wcsattacker:
             if wcsvictim.ready:
                 if info.attacker == info.inflictor:
-                    weapon = wcsattacker.player.active_weapon
+                    entity = wcsattacker.player.active_weapon
                 else:
-                    weapon = Weapon(info.inflictor)
+                    entity = Entity(info.inflictor)
 
-                if weapon is None:
+                if entity is None:
                     return
 
-                class_name = weapon.class_name
+                class_name = entity.class_name
 
                 if class_name not in ('point_hurt', 'worldspawn') and not class_name.startswith('wcs_'):
-                    weapon_name = weapon_manager[class_name].basename
+                    try:
+                        weapon_name = weapon_manager[class_name].basename
+                    except KeyError:
+                        weapon_name = class_name
+
                     health = wcsvictim.player.health - info.damage
 
                     if not wcsvictim.player.team_index == wcsattacker.player.team_index:
