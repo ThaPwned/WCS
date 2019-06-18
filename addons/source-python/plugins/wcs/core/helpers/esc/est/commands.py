@@ -6,6 +6,13 @@
 # Source.Python Imports
 #   CVars
 from cvars import ConVar
+#   Engines
+from engines.trace import ContentMasks
+from engines.trace import engine_trace
+from engines.trace import GameTrace
+from engines.trace import Ray
+#   Mathlib
+from mathlib import Vector
 
 # WCS Imports
 #   Helpers
@@ -103,3 +110,16 @@ def cash_get_command(command_info, var:ConVar, player:convert_userid_to_player):
         return
 
     var.set_int(player.cash)
+
+
+@ESTCommand('GetWallBetween')
+def get_wall_between_command(command_info, var:ConVar, x:float, y:float, z:float, x2:float, y2:float, z2:float):
+    vector = Vector(x, y, z)
+    vector2 = Vector(x, y, z)
+
+    trace = GameTrace()
+    ray = Ray(vector, vector2)
+
+    engine_trace.trace_ray(ray, ContentMasks.ALL, None, trace)
+
+    var.set_int(trace.did_hit_world())
