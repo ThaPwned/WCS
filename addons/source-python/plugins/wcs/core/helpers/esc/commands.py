@@ -12,16 +12,23 @@ from shlex import split
 from string import Template
 #   Time
 from time import time
+#   Warnings
+from warnings import warn
 
 # Source.Python Imports
 #   Colors
 from colors import Color
 #   Commands
+from commands.typed import InvalidArgumentValue
 from commands.typed import TypedServerCommand
 #   CVars
 from cvars import ConVar
 #   Engines
 from engines.server import execute_server_command
+from engines.trace import ContentMasks
+from engines.trace import engine_trace
+from engines.trace import GameTrace
+from engines.trace import Ray
 #   Entities
 from entities.constants import MoveType
 from entities.entity import Entity
@@ -43,6 +50,7 @@ from players.helpers import index_from_userid
 #   Translations
 from translations.strings import LangStrings
 #   Weapons
+from weapons.manager import weapon_manager
 from weapons.restrictions import WeaponRestrictionHandler
 
 # WCS Imports
@@ -369,6 +377,135 @@ def wcs_setfx_longjump_command(command_info, wcsplayer:convert_userid_to_wcsplay
         Delay(time, validate_userid_after_delay, (wcs_setfx_longjump_command, wcsplayer.userid, '+', value), {'validator':convert_userid_to_wcsplayer})
 
 
+@TypedServerCommand(['wcs_setfx', '1stclip'])
+def wcs_setfx_1stclip_command(command_info, player:convert_userid_to_player, operator:valid_operators(), value:int, time:float=0):
+    if player is None:
+        return
+
+    weapon = player.get_weapon(is_filters='primary')
+
+    if weapon is None:
+        return
+
+    if operator == '=':
+        old_value = weapon.clip
+        weapon.clip = value
+        value = old_value - value
+    elif operator == '+':
+        weapon.clip += value
+        value *= -1
+    else:
+        old_value = weapon.clip
+
+        if not old_value:
+            return
+
+        weapon.clip = max(old_value - value, 0)
+
+    if time > 0:
+        Delay(time, validate_userid_after_delay, (wcs_setfx_1stclip_command, player.userid, '+', value), {'validator':convert_userid_to_player})
+
+
+@TypedServerCommand(['wcs_setfx', '2ndclip'])
+def wcs_setfx_2ndclip_command(command_info, player:convert_userid_to_player, operator:valid_operators(), value:int, time:float=0):
+    if player is None:
+        return
+
+    weapon = player.get_weapon(is_filters='secondary')
+
+    if weapon is None:
+        return
+
+    if operator == '=':
+        old_value = weapon.clip
+        weapon.clip = value
+        value = old_value - value
+    elif operator == '+':
+        weapon.clip += value
+        value *= -1
+    else:
+        old_value = weapon.clip
+
+        if not old_value:
+            return
+
+        weapon.clip = max(old_value - value, 0)
+
+    if time > 0:
+        Delay(time, validate_userid_after_delay, (wcs_setfx_2ndclip_command, player.userid, '+', value), {'validator':convert_userid_to_player})
+
+
+@TypedServerCommand(['wcs_setfx', '1stammo'])
+def wcs_setfx_1stammo_command(command_info, player:convert_userid_to_player, operator:valid_operators(), value:int, time:float=0):
+    if player is None:
+        return
+
+    weapon = player.get_weapon(is_filters='secondary')
+
+    if weapon is None:
+        return
+
+    if operator == '=':
+        old_value = weapon.ammo
+        weapon.ammo = value
+        value = old_value - value
+    elif operator == '+':
+        weapon.ammo += value
+        value *= -1
+    else:
+        old_value = weapon.ammo
+
+        if not old_value:
+            return
+
+        weapon.ammo = max(old_value - value, 0)
+
+    if time > 0:
+        Delay(time, validate_userid_after_delay, (wcs_setfx_1stammo_command, player.userid, '+', value), {'validator':convert_userid_to_player})
+
+
+@TypedServerCommand(['wcs_setfx', '2ndammo'])
+def wcs_setfx_2ndammo_command(command_info, player:convert_userid_to_player, operator:valid_operators(), value:int, time:float=0):
+    if player is None:
+        return
+
+    weapon = player.get_weapon(is_filters='secondary')
+
+    if weapon is None:
+        return
+
+    if operator == '=':
+        old_value = weapon.ammo
+        weapon.ammo = value
+        value = old_value - value
+    elif operator == '+':
+        weapon.ammo += value
+        value *= -1
+    else:
+        old_value = weapon.ammo
+
+        if not old_value:
+            return
+
+        weapon.ammo = max(old_value - value, 0)
+
+    if time > 0:
+        Delay(time, validate_userid_after_delay, (wcs_setfx_2ndammo_command, player.userid, '+', value), {'validator':convert_userid_to_player})
+
+
+@TypedServerCommand(['wcs_setfx', 'flicker'])
+def wcs_setfx_flicker_command(command_info, player:convert_userid_to_player, operator:valid_operators(), value:int, time:float=0):
+    warn('"wcs_setfx flicker" will be removed in the future. Use "wcs_getplayerindex" together with "es_entitysetvalue <index> renderfx 13/0" instead.', PendingDeprecationWarning)
+
+    if player is None:
+        return
+
+    player.set_key_value_int('renderfx', 13 if value else 0)
+
+    if time > 0:
+        Delay(time, validate_userid_after_delay, (wcs_setfx_flicker_command, player.userid, '=', not value), {'validator':convert_userid_to_player})
+
+
 @TypedServerCommand('wcs_removefx')
 def wcs_removefx_freeze_command(command_info, *args):
     raise NotImplementedError(args)
@@ -530,6 +667,9 @@ def wcs_centertell_command(command_info, player:convert_userid_to_player, *messa
 @TypedServerCommand('wcs_dealdamage')
 def wcs_dealdamage_command(command_info, wcstarget:convert_userid_to_wcsplayer, attacker:valid_userid, damage:int, weapon:str=None):
     if wcstarget is None:
+        return
+
+    if wcstarget.player.dead:
         return
 
     if attacker is None:
@@ -708,6 +848,16 @@ def _wcs_pushto_command(command_info, player:convert_userid_to_player, vector:co
     player.base_velocity = vector
 
 
+@TypedServerCommand('wcs_pushed')
+def wcs_pushed_command(command_info, player:convert_userid_to_player, x:float, y:float, z:float):
+    if player is None:
+        return
+
+    vector = Vector(x, y, z)
+
+    player.base_velocity = vector
+
+
 @TypedServerCommand('wcs_explosion')
 def wcs_explosion_command(command_info, player:convert_userid_to_player, magnitude:int, radius:int, deal_damage:int=1):
     if player is None:
@@ -727,7 +877,7 @@ def wcs_explosion_command(command_info, player:convert_userid_to_player, magnitu
 
 
 @TypedServerCommand('wcs_getrandomrace')
-def wcs_getrandomrace_command(command_info,wcsplayer:convert_userid_to_wcsplayer, var:ConVar):
+def wcs_getrandomrace_command(command_info, wcsplayer:convert_userid_to_wcsplayer, var:ConVar):
     if wcsplayer is None:
         var.set_int(0)
         return
@@ -738,3 +888,120 @@ def wcs_getrandomrace_command(command_info,wcsplayer:convert_userid_to_wcsplayer
         var.set_string(choice(available_races))
     else:
         var.set_int(0)
+
+
+@TypedServerCommand('wcs_getwallbetween')
+def wcs_getwallbetween_command(command_info, var:ConVar, player:convert_userid_to_player, target:convert_userid_to_player):
+    if player is None or target is None:
+        var.set_int(-1)
+        return
+
+    vector = player.origin
+    vector2 = target.origin
+
+    trace = GameTrace()
+    ray = Ray(vector, vector2)
+
+    engine_trace.trace_ray(ray, ContentMasks.ALL, None, trace)
+
+    var.set_int(trace.did_hit_world())
+
+
+@TypedServerCommand('wcs_getviewentity')
+def wcs_getviewentity_command(command_info, player:convert_userid_to_player, var:ConVar):
+    if player is None:
+        var.set_int(-1)
+        return
+
+    target = player.view_entity
+
+    if target is None:
+        var.set_int(-1)
+        return
+
+    var.set_int(target.index)
+
+
+@TypedServerCommand('wcs_getviewplayer')
+def wcs_getviewplayer_command(command_info, player:convert_userid_to_player, var:ConVar):
+    if player is None:
+        var.set_int(-1)
+        return
+
+    target = player.view_player
+
+    if target is None:
+        var.set_int(-1)
+        return
+
+    var.set_int(target.userid)
+
+
+@TypedServerCommand('wcs_removeweapon')
+def wcs_removeweapon_command(command_info, player:convert_userid_to_player, slot:str):
+    if player is None:
+        return
+
+    if slot.isdigit():
+        slot = int(slot)
+
+        if slot not in range(1, 6):
+            raise InvalidArgumentValue(f'"{slot}" is an invalid value for "slot:str".')
+
+        if slot == 1:
+            slot = 'primary'
+        elif slot == 2:
+            slot = 'secondary'
+        elif slot == 3:
+            slot = 'melee'
+        elif slot == 4:
+            slot = 'grenade'
+        else:
+            slot = 'objective'
+
+        for weapon in player.weapons(is_filters=slot):
+            player.drop_weapon(weapon)
+
+            weapon.remove()
+
+        return
+
+    try:
+        name = weapon_manager[slot].name
+    except KeyError:
+        raise InvalidArgumentValue(f'"{slot}" is an invalid value for "slot:str".')
+
+    for weapon in player.weapons():
+        if weapon.classname == name:
+            player.drop_weapon(weapon)
+
+            weapon.remove()
+            break
+
+
+@TypedServerCommand('wcs_spawn')
+def wcs_spawn_command(command_info, player:convert_userid_to_player, force:int=0):
+    if player is None:
+        return
+
+    player.spawn(force)
+
+
+@TypedServerCommand('wcs_evasion')
+def wcs_evasion_command(command_info, wcsplayer:convert_userid_to_wcsplayer, toggle:int, chance:int):
+    warn('"wcs_evasion" will be removed in the future. Use "wcsgroup set evasion" and "wcsgroup set evasion_chance" instead.', PendingDeprecationWarning)
+
+    if wcsplayer is None:
+        return
+
+    wcsplayer.data['evasion'] = toggle
+    wcsplayer.data['evasion_chance'] = chance
+
+
+@TypedServerCommand('wcs_getplayerindex')
+def wcs_getplayerindex_command(command_info, player:convert_userid_to_player, var:ConVar):
+    if player is None:
+        var.set_int(-1)
+        return
+
+    var.set_int(player.index)
