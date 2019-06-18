@@ -166,9 +166,11 @@ def parse_ini_races():
                 if 'block' in data[f'skill{i + 1}']:
                     skill['cmds']['cmd'] = 'es_xdoblock ' + data[f'skill{i + 1}']['block']
                 else:
-                    skill['cmds']['cmd'] = data[f'skill{i + 1}']['cmd']
+                    cmd = data[f'skill{i + 1}']['cmd']
+                    skill['cmds']['cmd'] = None if cmd == '0' else cmd
 
-                skill['cmds']['sfx'] = data[f'skill{i + 1}']['sfx']
+                cmd = data[f'skill{i + 1}']['sfx']
+                skill['cmds']['sfx'] = None if cmd == '0' else cmd
 
                 count = len(data[f'skill{i + 1}']['setting'].split('|'))
 
@@ -325,8 +327,12 @@ def parse_key_races():
 
                 skill['cmds'] = {}
                 skill['cmds']['setting'] = data[f'skill{i + 1}_setting'].split('|')
-                skill['cmds']['cmd'] = data[f'skill{i + 1}_cmd']
-                skill['cmds']['sfx'] = data[f'skill{i + 1}_sfx']
+
+                cmd = data[f'skill{i + 1}_cmd']
+                skill['cmds']['cmd'] = None if cmd == '0' else cmd
+
+                cmd = data[f'skill{i + 1}_sfx']
+                skill['cmds']['sfx'] = None if cmd == '0' else cmd
 
                 skill['maximum'] = numberoflevels
 
