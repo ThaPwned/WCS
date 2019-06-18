@@ -705,7 +705,7 @@ def _wcs_pushto_command(command_info, player:convert_userid_to_player, vector:co
     vector -= position
     vector *= force
 
-    player.set_property_vector('m_vecBaseVelocity', vector)
+    player.base_velocity = vector
 
 
 @TypedServerCommand('wcs_explosion')
