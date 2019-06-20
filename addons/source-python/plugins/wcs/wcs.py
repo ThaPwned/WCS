@@ -431,6 +431,10 @@ def round_end(event):
     for _, wcsplayer in PlayerReadyIter(not_filters=['un', 'spec']):
         wcsplayer.execute('roundendcmd', event, define=True)
 
+        for item in wcsplayer.items.values():
+            if item.settings.config['duration'] == 0:
+                item.count = 0
+
     winner = event['winner']
 
     if winner in (2, 3):
@@ -616,65 +620,66 @@ def player_death(event):
                     active_race = wcsattacker.active_race
                     maximum = active_race.settings.config['maximum']
 
-                    if maximum:
-                        if active_race.level >= maximum:
-                            return
+                    if not maximum or active_race.level < maximum:
+                        value = kill_xp = cfg_kill_xp.get_int()
 
-                    value = kill_xp = cfg_kill_xp.get_int()
+                        if event['headshot']:
+                            headshot_xp = cfg_headshot_xp.get_int()
 
-                    if event['headshot']:
-                        headshot_xp = cfg_headshot_xp.get_int()
-
-                        if headshot_xp:
-                            value += headshot_xp
-
-                            if not wcsattacker.fake_client:
-                                delay = Delay(1, _send_message_and_remove, (gain_xp_headshot_message, wcsattacker), {'value':headshot_xp})
-                                delay.args += (delay, )
-                                _delays[wcsattacker].add(delay)
-
-                    if wcsvictim.ready:
-                        difference = wcsvictim.level - active_race.level
-
-                        if difference > 0:
-                            bonus_xp = cfg_bonus_xp.get_int()
-
-                            if bonus_xp:
-                                gained = difference * bonus_xp
-                                value += gained
+                            if headshot_xp:
+                                value += headshot_xp
 
                                 if not wcsattacker.fake_client:
-                                    delay = Delay(1, _send_message_and_remove, (gain_xp_killed_higher_level_message, wcsattacker), {'value':gained, 'difference':difference})
+                                    delay = Delay(1, _send_message_and_remove, (gain_xp_headshot_message, wcsattacker), {'value':headshot_xp})
                                     delay.args += (delay, )
                                     _delays[wcsattacker].add(delay)
 
-                    if event['weapon'] in _melee_weapons:
-                        knife_xp = cfg_knife_xp.get_int()
+                        if wcsvictim.ready:
+                            difference = wcsvictim.level - active_race.level
 
-                        if knife_xp:
-                            value += knife_xp
+                            if difference > 0:
+                                bonus_xp = cfg_bonus_xp.get_int()
 
+                                if bonus_xp:
+                                    gained = difference * bonus_xp
+                                    value += gained
+
+                                    if not wcsattacker.fake_client:
+                                        delay = Delay(1, _send_message_and_remove, (gain_xp_killed_higher_level_message, wcsattacker), {'value':gained, 'difference':difference})
+                                        delay.args += (delay, )
+                                        _delays[wcsattacker].add(delay)
+
+                        if event['weapon'] in _melee_weapons:
+                            knife_xp = cfg_knife_xp.get_int()
+
+                            if knife_xp:
+                                value += knife_xp
+
+                                if not wcsattacker.fake_client:
+                                    delay = Delay(1, _send_message_and_remove, (gain_xp_knife_message, wcsattacker), {'value':knife_xp})
+                                    delay.args += (delay, )
+                                    _delays[wcsattacker].add(delay)
+
+                        if value:
                             if not wcsattacker.fake_client:
-                                delay = Delay(1, _send_message_and_remove, (gain_xp_knife_message, wcsattacker), {'value':knife_xp})
+                                for delay in _delays[wcsattacker]:
+                                    if delay.callback is _xp_gained:
+                                        delay.kwargs['_allow'] = False
+
+                                # I want this to be the last one
+                                delay = Delay(1.01, _xp_gained, (wcsattacker, active_race, active_race.level, kill_xp))
                                 delay.args += (delay, )
                                 _delays[wcsattacker].add(delay)
 
-                    if value:
-                        if not wcsattacker.fake_client:
-                            for delay in _delays[wcsattacker]:
-                                if delay.callback is _xp_gained:
-                                    delay.kwargs['_allow'] = False
+                            active_race.xp += value
 
-                            # I want this to be the last one
-                            delay = Delay(1.01, _xp_gained, (wcsattacker, active_race, active_race.level, kill_xp))
-                            delay.args += (delay, )
-                            _delays[wcsattacker].add(delay)
+    if wcsvictim.ready:
+        for item in wcsvictim.items.values():
+            if item.settings.config['duration'] == 1:
+                item.count = 0
 
-                        active_race.xp += value
-
-    if wcsvictim.fake_client:
-        if cfg_bot_random_race.get_int():
-            if wcsvictim.ready:
+        if wcsvictim.fake_client:
+            if cfg_bot_random_race.get_int():
                 usable_races = wcsvictim.available_races
 
                 if wcsvictim.current_race in usable_races:
