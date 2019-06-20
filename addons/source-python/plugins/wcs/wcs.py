@@ -28,6 +28,7 @@ from colors import Color
 #   Core
 from core import OutputReturn
 #   Entities
+from entities.constants import MoveType
 from entities.constants import RenderMode
 from entities.entity import Entity
 #   Events
@@ -37,6 +38,7 @@ from filters.weapons import WeaponClassIter
 #   Listeners
 from listeners import OnLevelInit
 from listeners import OnServerOutput
+from listeners import OnTick
 from listeners.tick import Delay
 from listeners.tick import Repeat
 from listeners.tick import RepeatStatus
@@ -790,6 +792,27 @@ if IS_ESC_SUPPORT_ENABLED:
             return OutputReturn.BLOCK
 
         return OutputReturn.CONTINUE
+
+
+# TODO: Should probably find a less demanding solution
+@OnTick
+def on_tick():
+    for player, wcsplayer in PlayerReadyIter():
+        new_value = player.move_type
+        data = wcsplayer.data
+
+        old_value = data.get('_internal_movetype')
+
+        if new_value == old_value:
+            if '_internal_gravity' not in data:
+                data['_internal_gravity_holder'] = player.gravity
+        else:
+            if new_value == MoveType.WALK and old_value == MoveType.LADDER:
+                player.gravity = data.pop('_internal_gravity')
+            elif new_value == MoveType.LADDER:
+                data['_internal_gravity'] = data.get('_internal_gravity_holder', 1.0)
+
+        data['_internal_movetype'] = new_value
 
 
 @OnGithubNewVersionChecked
