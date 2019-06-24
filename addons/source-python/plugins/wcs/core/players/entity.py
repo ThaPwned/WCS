@@ -973,7 +973,7 @@ class _Race(object):
                         if executor is not None:
                             executor.run()
                 elif item.settings.type is ModuleType.ESS_INI or item.settings.type is ModuleType.ESS_KEY:
-                    commands = item.settings.cmds.get(name)
+                    commands = item.settings.cmds.get('activatecmd')
 
                     if commands is not None and commands:
                         for cmd in commands.split(';'):
