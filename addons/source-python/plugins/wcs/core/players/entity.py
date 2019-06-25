@@ -952,18 +952,20 @@ class _Race(object):
                     callback = _item_callbacks.get(item.name, {}).get(name)
 
                     if callback is not None:
-                        if event is None:
-                            callback(self.wcsplayer)
-                        else:
-                            callback(event, self.wcsplayer)
+                        for _ in range(item.count):
+                            if event is None:
+                                callback(self.wcsplayer)
+                            else:
+                                callback(event, self.wcsplayer)
                 elif item.settings.type is ModuleType.ESP:
                     callback = es.addons.Blocks.get(f'wcs/modules/items/{item.name}/{name}')
 
                     if callback is not None:
-                        if event is None:
-                            callback(self.wcsplayer)
-                        else:
-                            callback(es.event_var, self.wcsplayer)
+                        for _ in range(item.count):
+                            if event is None:
+                                callback(self.wcsplayer)
+                            else:
+                                callback(es.event_var, self.wcsplayer)
                 elif item.settings.type is ModuleType.ESS:
                     addon = esc.addons.get(f'wcs/modules/items/{item.name}')
 
@@ -971,13 +973,15 @@ class _Race(object):
                         executor = addon.blocks.get(name)
 
                         if executor is not None:
-                            executor.run()
+                            for _ in range(item.count):
+                                executor.run()
                 elif item.settings.type is ModuleType.ESS_INI or item.settings.type is ModuleType.ESS_KEY:
                     commands = item.settings.cmds.get('activatecmd')
 
                     if commands is not None and commands:
-                        for cmd in commands.split(';'):
-                            execute_server_command(*split(cmd))
+                        for _ in range(item.count):
+                            for cmd in commands.split(';'):
+                                execute_server_command(*split(cmd))
 
     def execute(self, name, event=None, define=False):
         if self.settings.type is ModuleType.SP:
