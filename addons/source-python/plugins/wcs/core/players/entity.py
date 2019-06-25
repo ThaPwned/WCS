@@ -1001,20 +1001,23 @@ class _Race(object):
                 else:
                     callback(es.event_var, self.wcsplayer)
         elif self.settings.type is ModuleType.ESS:
-            if define:
-                cvar_wcs_userid.set_int(self.wcsplayer.userid)
-
             addon = esc.addons.get(f'wcs/modules/races/{self.name}')
 
             if addon is not None:
                 executor = addon.blocks.get(name)
 
                 if executor is not None:
+                    if define:
+                        cvar_wcs_userid.set_int(self.wcsplayer.userid)
+
                     executor.run()
         elif self.settings.type is ModuleType.ESS_INI or self.settings.type is ModuleType.ESS_KEY:
             commands = self.settings.cmds.get(name)
 
             if commands is not None and commands:
+                if define:
+                    cvar_wcs_userid.set_int(self.wcsplayer.userid)
+
                 for cmd in commands.split(';'):
                     execute_server_command(*split(cmd))
 
