@@ -4,8 +4,11 @@
 # >> IMPORTS
 # ============================================================================
 # Python Imports
+#   Collections
+from collections import defaultdict
 #   Random
 from random import choice
+from random import randint
 #   Shlex
 from shlex import split
 #   String
@@ -24,26 +27,39 @@ from commands.typed import TypedServerCommand
 #   CVars
 from cvars import ConVar
 #   Engines
+from engines.precache import Model
 from engines.server import execute_server_command
 from engines.trace import ContentMasks
 from engines.trace import engine_trace
 from engines.trace import GameTrace
 from engines.trace import Ray
+from engines.trace import TraceFilterSimple
 #   Entities
 from entities.constants import MoveType
+from entities.constants import TakeDamage
 from entities.entity import Entity
+#   Events
+from events import Event
+from events.hooks import PreEvent
 #   Filters
+from filters.players import PlayerIter
 from filters.weapons import WeaponClassIter
 #   Keyvalues
 from _keyvalues import KeyValues
 # NOTE: Have to prefix it with a _ otherwise it'd import KeyValues from ES Emulator if it's loaded
 #   Listeners
 from listeners.tick import Delay
+from listeners.tick import Repeat
+from listeners.tick import RepeatStatus
 #   Mathlib
+from mathlib import QAngle
 from mathlib import Vector
 #   Messages
+from messages import Fade
+from messages import FadeFlags
 from messages import HudMsg
 from messages import SayText2
+from messages import Shake
 #   Players
 from players.entity import Player
 from players.helpers import index_from_userid
@@ -102,6 +118,8 @@ if (CFG_PATH / 'es_WCSlanguage_db.txt').isfile():
 else:
     _languages = {}
 
+_repeats = defaultdict(list)
+
 
 # ============================================================================
 # >> HELPER FUNCTIONS
@@ -137,6 +155,50 @@ def _format_message(userid, name, args):
             text[language] = Template(message).substitute(tokens)
 
     return players, text
+
+
+# ============================================================================
+# >> FUNCTIONS
+# ============================================================================
+def _remove_overlay(userid):
+    try:
+        player = Player.from_userid(userid)
+    except ValueError:
+        pass
+    else:
+        player.client_command('r_screenoverlay 0')
+
+
+def _regeneration_repeat(userid, value, maxhealth, radius):
+    try:
+        player = Player.from_userid(userid)
+    except ValueError:
+        repeats = _repeats.pop(userid, [])
+
+        for repeat in repeats:
+            if repeat.status == RepeatStatus.RUNNING:
+                repeat.stop()
+    else:
+        if player.team not in (2, 3):
+            repeats = _repeats.pop(userid, [])
+
+            for repeat in repeats:
+                if repeat.status == RepeatStatus.RUNNING:
+                    repeat.stop()
+
+            return
+
+        if player.health < maxhealth:
+            player.health = min(player.health + value, maxhealth)
+
+        if radius:
+            origin = player.origin
+
+            for target in PlayerIter(['alive', 't' if player.team == 2 else 'ct']):
+                if not target == player:
+                    if target.origin.get_distance(origin) <= radius:
+                        if target.health < maxhealth:
+                            target.health = min(target.health + value, maxhealth)
 
 
 # ============================================================================
@@ -979,6 +1041,44 @@ def wcs_removeweapon_command(command_info, player:convert_userid_to_player, slot
             break
 
 
+@TypedServerCommand('wcs_drop')
+def wcs_drop_command(command_info, player:convert_userid_to_player, slot:str):
+    if player is None:
+        return
+
+    if slot.isdigit():
+        slot = int(slot)
+
+        if slot not in range(1, 6):
+            raise InvalidArgumentValue(f'"{slot}" is an invalid value for "slot:str".')
+
+        if slot == 1:
+            slot = 'primary'
+        elif slot == 2:
+            slot = 'secondary'
+        elif slot == 3:
+            slot = 'melee'
+        elif slot == 4:
+            slot = 'grenade'
+        else:
+            slot = 'objective'
+
+        for weapon in player.weapons(is_filters=slot):
+            player.drop_weapon(weapon)
+
+        return
+
+    try:
+        name = weapon_manager[slot].name
+    except KeyError:
+        raise InvalidArgumentValue(f'"{slot}" is an invalid value for "slot:str".')
+
+    for weapon in player.weapons():
+        if weapon.classname == name:
+            player.drop_weapon(weapon)
+            break
+
+
 @TypedServerCommand('wcs_spawn')
 def wcs_spawn_command(command_info, player:convert_userid_to_player, force:int=0):
     if player is None:
@@ -998,6 +1098,16 @@ def wcs_evasion_command(command_info, wcsplayer:convert_userid_to_wcsplayer, tog
     wcsplayer.data['evasion_chance'] = chance
 
 
+@TypedServerCommand('wcs_absorb')
+def wcs_absorb_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:float):
+    warn('"wcs_absorb" will be removed in the future. Use "wcsgroup set absorb" instead.', PendingDeprecationWarning)
+
+    if wcsplayer is None:
+        return
+
+    wcsplayer.data['absorb'] = value
+
+
 @TypedServerCommand('wcs_getplayerindex')
 def wcs_getplayerindex_command(command_info, player:convert_userid_to_player, var:ConVar):
     if player is None:
@@ -1005,3 +1115,193 @@ def wcs_getplayerindex_command(command_info, player:convert_userid_to_player, va
         return
 
     var.set_int(player.index)
+
+
+@TypedServerCommand('wcs_overlay')
+def wcs_overlay_command(command_info, player:convert_userid_to_player, overlay:str, duration:float=0):
+    warn('"wcs_overlay" will be removed in the future. Use "es_cexec" with "r_screenoverlay" and "es_delayed" instead.', PendingDeprecationWarning)
+
+    if player is None:
+        return
+
+    player.client_command(f'r_screenoverlay {overlay}')
+
+    if duration:
+        player.delay(duration, _remove_overlay, (player.userid, ))
+
+
+@TypedServerCommand('wcs_noflash')
+def wcs_noflash_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:int):
+    warn('"wcs_noflash" will be removed in the future. Use "wcsgroup set noflash" instead.', PendingDeprecationWarning)
+
+    if wcsplayer is None:
+        return
+
+    wcsplayer.data['noflash'] = value
+
+
+@TypedServerCommand('wcs_drug')
+def wcs_drug_command(command_info, player:convert_userid_to_player, duration:float=0):
+    warn('"wcs_drug" will be removed in the future. Use "es_cexec" with "r_screenoverlay" and "es_delayed" instead.', PendingDeprecationWarning)
+
+    if player is None:
+        return
+
+    player.client_command('r_screenoverlay effects/tp_eyefx/tp_eyefx')
+
+    if duration:
+        player.delay(duration, _remove_overlay, (player.userid, ))
+
+
+@TypedServerCommand('wcs_setresist')
+def wcs_setresist_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:float, weapon:str):
+    warn('"wcs_setresist" will be removed in the future. Use "wcsgroup set resist_<weapon>" instead.', PendingDeprecationWarning)
+
+    if wcsplayer is None:
+        return
+
+    wcsplayer.data[f'resist_{weapon}'] = value
+
+
+@TypedServerCommand('wcs_create_prop')
+def wcs_create_prop_command(command_info, player:convert_userid_to_player, path:str, health:int):
+    if player is None:
+        return
+
+    if not path.startswith('models/'):
+        path = f'models/{path}'
+
+    entity = Entity.create('prop_physics_multiplayer')
+    entity.origin = player.view_coordinates
+    entity.model = Model(path)
+    entity.spawn()
+    entity.set_property_uchar('m_takedamage', TakeDamage.YES)
+    entity.health = health
+
+
+@TypedServerCommand('wcs_fade')
+def wcs_fade_command(command_info, player:convert_userid_to_player, red:int, green:int, blue:int, alpha:int, time:float):
+    if player is None:
+        return
+
+    color = Color(red, green, blue, alpha)
+
+    Fade(time, time, color, FadeFlags.PURGE).send(player.index)
+
+
+@TypedServerCommand('wcs_shake')
+def wcs_shake_command(command_info, player:convert_userid_to_player, amplitude:float, frequency:float, duration:float):
+    if player is None:
+        return
+
+    Shake(amplitude, duration, frequency).send(player.index)
+
+
+@TypedServerCommand('wcs_teleport')
+def wcs_teleport_command(command_info, player:convert_userid_to_player, x:float, y:float, z:float):
+    if player is None:
+        return
+
+    location = Vector(x, y, z)
+    origin = player.origin
+    angles = QAngle(*player.get_property_vector('m_angAbsRotation'))
+
+    forward = Vector()
+    right = Vector()
+    up = Vector()
+    angles.get_angle_vectors(forward, right, up)
+
+    forward.normalize()
+    forward *= 10
+
+    playerinfo = player.playerinfo
+    mins, maxs = playerinfo.mins, playerinfo.maxs
+    players = TraceFilterSimple(PlayerIter())
+
+    for _ in range(100):
+        ray = Ray(location, location, mins, maxs)
+        trace = GameTrace()
+        engine_trace.trace_ray(ray, ContentMasks.PLAYER_SOLID, players, trace)
+
+        if not trace.did_hit():
+            player.teleport(origin=location)
+            break
+
+        location -= forward
+
+        if location.get_distance(origin) <= 10.0:
+            break
+
+
+@TypedServerCommand('wcs_regeneration')
+def wcs_regeneration_command(command_info, player:convert_userid_to_player, value:int, duration:float, maxhealth:int, maxheal:deprecated, radius:float):
+    if player is None:
+        return
+
+    repeat = Repeat(_regeneration_repeat, (player.userid, value, maxhealth, radius))
+    repeat.start(duration)
+
+    _repeats[player.userid].append(repeat)
+
+
+# ============================================================================
+# >> EVENTS
+# ============================================================================
+@PreEvent('player_hurt')
+def pre_player_hurt(event):
+    if event['attacker']:
+        wcsplayer = WCSPlayer.from_userid(event['userid'])
+
+        absorb = wcsplayer.data.get('absorb')
+
+        if absorb is not None and absorb > 0:
+            health = int(event['dmg_health'] * absorb)
+
+            if health > 0:
+                wcsplayer.player.health += health
+
+        resist = wcsplayer.data.get(f'resist_{event["weapon"]}')
+
+        if resist is not None and resist > 0:
+            health = int(event['dmg_health'] * resist)
+
+            if health > 0:
+                wcsplayer.player.health += health
+
+        evasion = wcsplayer.data.get('evasion')
+
+        if evasion is not None and evasion:
+            chance = wcsplayer.data.get('evasion_chance')
+
+            if chance is not None and chance > 0:
+                if randint(0, 100) <= chance:
+                    wcsplayer.player.health += int(event['dmg_health'])
+
+
+@Event('player_death')
+def player_death(event):
+    repeats = _repeats.pop(event['userid'], [])
+
+    for repeat in repeats:
+        if repeat.status == RepeatStatus.RUNNING:
+            repeat.stop()
+
+
+@Event('player_spawn')
+def player_spawn(event):
+    repeats = _repeats.pop(event['userid'], [])
+
+    for repeat in repeats:
+        if repeat.status == RepeatStatus.RUNNING:
+            repeat.stop()
+
+
+@Event('player_blind')
+def player_blind(event):
+    wcsplayer = WCSPlayer.from_userid(event['userid'])
+
+    if wcsplayer.data.get('noflash'):
+        player = wcsplayer.player
+
+        player.flash_duration = 0
+        player.flash_alpha = 0
