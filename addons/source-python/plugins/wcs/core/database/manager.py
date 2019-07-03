@@ -67,12 +67,12 @@ _driver = _database['driver'] if _database['driver'] in ('sqlite', 'mysql') else
 # ============================================================================
 class _DatabaseManager(object):
     @staticmethod
-    def execute(key, arguments=(), callback=None, format_args=(), **keywords):
-        _queue.put(_Node(NodeType.QUERY, query=statements[key].format(*format_args), arguments=arguments, callback=callback, keywords=keywords))
+    def execute(key, arguments=(), callback=None, blocking=False, format_args=(), **keywords):
+        return _queue.put(_Node(NodeType.QUERY, query=statements[key].format(*format_args), arguments=arguments, callback=callback, keywords=keywords, blocking=blocking))
 
     @staticmethod
-    def executemany(key, arguments=(), callback=None, format_args=(), **keywords):
-        _queue.put(_Node(NodeType.QUERY_MANY, query=statements[key].format(*format_args), arguments=arguments, callback=callback, keywords=keywords))
+    def executemany(key, arguments=(), callback=None, blocking=False, format_args=(), **keywords):
+        return _queue.put(_Node(NodeType.QUERY_MANY, query=statements[key].format(*format_args), arguments=arguments, callback=callback, keywords=keywords, blocking=blocking))
 
     @staticmethod
     def callback(callback, **keywords):

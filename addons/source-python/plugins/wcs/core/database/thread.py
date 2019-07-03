@@ -23,6 +23,7 @@ from time import sleep
 from hooks.exceptions import except_hooks
 #   Listeners
 from listeners.tick import Repeat
+from listeners.tick import RepeatStatus
 
 # WCS Imports
 #   Constants
@@ -41,6 +42,20 @@ class _PriorityQueue(PriorityQueue):
         self._entry += 1
 
         super().put(node)
+
+        if node._blocking:
+            assert _repeat.status == RepeatStatus.RUNNING
+
+            node.priority = 2
+
+            node._executed.wait()
+
+            exception = node._result.exception
+
+            if exception:
+                raise exception[1].with_traceback(exception[2])
+
+            return node._result
 
 
 class _Result(object):
@@ -80,7 +95,7 @@ class _Result(object):
 
 
 class _Node(object):
-    def __init__(self, type_, query=None, arguments=None, callback=None, keywords=None, priority=0):
+    def __init__(self, type_, query=None, arguments=None, callback=None, keywords=None, priority=0, blocking=False):
         self.type = type_
         self.query = query
         self.arguments = arguments
@@ -88,6 +103,12 @@ class _Node(object):
         self.keywords = keywords
         self.priority = priority
         self._entry = None
+
+        self._blocking = blocking
+
+        if blocking:
+            self._executed = Event()
+            self._result = None
 
     def __lt__(self, other):
         return other.priority < self.priority or other._entry > self._entry
@@ -130,28 +151,43 @@ class _Thread(Thread):
                     else:
                         self.cur.executemany(node.query, node.arguments)
                 except (InterfaceError, OperationalError) as e:
-                    node.priority = 1
+                    if node._blocking:
+                        result._exception = exc_info()
 
-                    _queue.put(node)
+                        node._result = result
+                        node._executed.set()
+                    else:
+                        node.priority = 1
 
-                    if isinstance(e, InterfaceError):
-                        self.close()
+                        _queue.put(node)
 
-                        if not self.connect():
-                            sleep(self._reconnect_delay)
+                        if isinstance(e, InterfaceError):
+                            self.close()
+
+                            if not self.connect():
+                                sleep(self._reconnect_delay)
                 except:
-                    node.priority = 1
-
-                    _queue.put(node)
-
                     result._exception = exc_info()
 
-                    _output.put((None, result))
+                    if node._blocking:
+                        node._result = result
+                        node._executed.set()
+                    else:
+                        node.priority = 1
+
+                        _queue.put(node)
+
+                        _output.put((None, result))
                 else:
                     if node.callback is not None:
                         result._data = self.cur.fetchall()
 
                         _output.put((node.callback, result))
+                    elif node._blocking:
+                        result._data = self.cur.fetchall()
+
+                        node._result = result
+                        node._executed.set()
             elif node.type is NodeType.CALLBACK:
                 _output.put((node.callback, _Result(args=node.keywords)))
             elif node.type is NodeType.CONNECT:
@@ -201,13 +237,13 @@ class _Thread(Thread):
         except OperationalError:
             if self.unloading:
                 if self._counter >= 4:
-                    _queue.put(_Node(NodeType.CLOSE, priority=3))
+                    _queue.put(_Node(NodeType.CLOSE, priority=4))
 
                     return False
 
                 self._counter += 1
 
-            _queue.put(_Node(NodeType.CONNECT, priority=2))
+            _queue.put(_Node(NodeType.CONNECT, priority=3))
 
             return False
         except:
