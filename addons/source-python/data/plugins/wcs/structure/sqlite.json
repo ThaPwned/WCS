@@ -4,6 +4,7 @@
     "create skills": "CREATE TABLE IF NOT EXISTS skills (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, race TEXT, playerid INTEGER, level INTEGER DEFAULT 0)",
     "create stats races": "CREATE TABLE IF NOT EXISTS stats_races (id INTEGER PRIMARY KEY AUTOINCREMENT, playerid INTEGER, owner TEXT, key TEXT, value REAL)",
     "create stats items": "CREATE TABLE IF NOT EXISTS stats_items (id INTEGER PRIMARY KEY AUTOINCREMENT, playerid INTEGER, owner TEXT, key TEXT, value REAL)",
+    "create settings": "CREATE TABLE IF NOT EXISTS settings (setting TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL)",
 
     "player offline": "SELECT uniqueid, name FROM players ORDER BY name ASC",
     "player get": "SELECT id, name, current_race, lastconnect FROM players WHERE uniqueid = ?",
@@ -24,6 +25,11 @@
     "stat insert": "INSERT INTO stats_{} (owner, key, value, playerid) VALUES (?, ?, ?, ?)",
     "stat update": "UPDATE stats_{} SET value = CASE {} ELSE value END WHERE playerid = ?",
     "stat join": "WHEN owner = '{}' AND key = '{}' THEN {}",
+
+    "setting get": "SELECT setting, value FROM settings",
+    "setting insert": "INSERT INTO settings (setting, value) VALUES (?, ?)",
+    "setting update": "UPDATE settings SET value = CASE {} ELSE value END",
+    "setting join": "WHEN setting = '{}' THEN {}",
 
     "_rank update": "WITH tmp (uniqueid, name, current_race, total_level) AS (SELECT p.uniqueid, p.name, p.current_race, SUM(r.level) AS total_level FROM races r INNER JOIN players p ON p.id = r.playerid GROUP BY playerid) SELECT tt.uniqueid, tt.name, tt.current_race, tt.total_level, (SELECT count(*)+1 FROM tmp AS t WHERE t.total_level > tt.total_level) AS rank FROM tmp AS tt ORDER BY rank ASC",
     "rank update": "SELECT p.uniqueid, p.name, p.current_race, SUM(r.level) AS total_level FROM races r INNER JOIN players p ON p.id = r.playerid GROUP BY playerid ORDER BY total_level DESC"

@@ -104,7 +104,7 @@ if _driver == 'mysql':
 else:
     _queue.put(_Node(NodeType.CONNECT, query=lambda: sqlite_connect(DATA_PATH.joinpath('players.sqlite'))))
 
-for statement in ('create players', 'create races', 'create skills', 'create stats races', 'create stats items'):
+for statement in ('create players', 'create races', 'create skills', 'create stats races', 'create stats items', 'create settings'):
     database_manager.execute(statement)
 
 if _driver == 'mysql':
