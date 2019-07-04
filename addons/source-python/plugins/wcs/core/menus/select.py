@@ -16,8 +16,6 @@ from menus import SimpleMenu
 from menus import Text
 from menus.radio import BUTTON_BACK
 from menus.radio import MAX_ITEM_COUNT
-#   Messages
-from messages.dialog import DialogEntry
 #   Players
 from players.helpers import userid_from_index
 
@@ -118,9 +116,6 @@ github_installing_message = SayText2(chat_strings['github installing'])
 github_installing_message = SayText2(chat_strings['github installing'])
 github_updating_message = SayText2(chat_strings['github updating'])
 github_uninstalling_message = SayText2(chat_strings['github uninstalling'])
-
-entry_xp_dialog = DialogEntry(menu_strings['wcsadmin_dialog_xp_title'], menu_strings['wcsadmin_dialog_xp_line'], '_wcsadmin_input_xp')
-entry_levels_dialog = DialogEntry(menu_strings['wcsadmin_dialog_levels_title'], menu_strings['wcsadmin_dialog_levels_line'], '_wcsadmin_input_level')
 
 
 # ============================================================================
@@ -444,14 +439,7 @@ def wcsadmin_players_sub_xp_menu_select(menu, client, option):
     elif option.value is None:
         wcsplayer = Player(client)
 
-        if wcsplayer.data['_internal_wcsadmin_player'] is None:
-            name = menu_strings['wcsadmin_players_menu all']
-        else:
-            name = wcsplayer.data['_internal_wcsadmin_player_name']
-
-        entry_xp_dialog.send(client, name=name)
-
-        return menu
+        return wcsplayer.request_input(_give_experience, return_menu=menu)
 
     return option.value
 
@@ -487,14 +475,7 @@ def wcsadmin_players_sub_levels_menu_select(menu, client, option):
     elif option.value is None:
         wcsplayer = Player(client)
 
-        if wcsplayer.data['_internal_wcsadmin_player'] is None:
-            name = menu_strings['wcsadmin_players_menu all']
-        else:
-            name = wcsplayer.data['_internal_wcsadmin_player_name']
-
-        entry_levels_dialog.send(client, name=name)
-
-        return menu
+        return wcsplayer.request_input(_give_levels, return_menu=menu)
 
     return option.value
 
@@ -831,6 +812,84 @@ def _request_team_limit(wcsplayer, value):
 
 def _request_add_new_value(wcsplayer, value):
     _update_config(RACE_PATH, wcsplayer.data['_internal_wcsadmin_editor_value'], wcsplayer.data['_internal_wcsadmin_editor_key'], value)
+
+    return True
+
+
+def _give_experience(wcsplayer, value):
+    if not value.isdigit():
+        return False
+
+    value = int(value)
+
+    uniqueid = wcsplayer.data.get('_internal_wcsadmin_player')
+
+    if uniqueid is None:
+        for _, wcstarget in PlayerReadyIter():
+            active_race = wcstarget.active_race
+            old_level = active_race.level
+
+            active_race.xp += value
+
+            if wcstarget is wcsplayer:
+                admin_gain_xp_self_message.send(wcsplayer.index, value=value)
+            else:
+                admin_gain_xp_receiver_message.send(wcstarget.index, value=value, name=wcsplayer.name)
+
+            if active_race.level > old_level:
+                gain_level_message.send(wcstarget.index, level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
+
+        admin_gain_xp_all_message.send(wcsplayer.index, value=value)
+    else:
+        wcstarget = Player.from_uniqueid(uniqueid)
+
+        if wcstarget.ready:
+            active_race = wcstarget.active_race
+            old_level = active_race.level
+
+            active_race.xp += value
+
+            if wcstarget is wcsplayer:
+                admin_gain_xp_self_message.send(wcsplayer.index, value=value)
+            else:
+                admin_gain_xp_sender_message.send(wcsplayer.index, name=wcstarget.name, value=value)
+                admin_gain_xp_receiver_message.send(wcstarget.index, value=value, name=wcsplayer.name)
+
+            if active_race.level > old_level:
+                gain_level_message.send(wcstarget.index, level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
+
+    return True
+
+
+def _give_levels(wcsplayer, value):
+    if not value.isdigit():
+        return False
+
+    value = int(value)
+
+    uniqueid = wcsplayer.data.get('_internal_wcsadmin_player')
+
+    if uniqueid is None:
+        for _, wcstarget in PlayerReadyIter():
+            wcstarget.level += value
+
+            if wcstarget is wcsplayer:
+                admin_gain_levels_self_message.send(wcsplayer.index, value=value)
+            else:
+                admin_gain_levels_receiver_message.send(wcstarget.index, value=value, name=wcsplayer.name)
+
+        admin_gain_levels_all_message.send(wcsplayer.index, value=value)
+    else:
+        wcstarget = Player.from_uniqueid(uniqueid)
+
+        if wcstarget.ready:
+            wcstarget.level += value
+
+            if wcstarget is wcsplayer:
+                admin_gain_levels_self_message.send(wcsplayer.index, value=value)
+            else:
+                admin_gain_levels_sender_message.send(wcsplayer.index, name=wcstarget.name, value=value)
+                admin_gain_levels_receiver_message.send(wcstarget.index, value=value, name=wcsplayer.name)
 
     return True
 
