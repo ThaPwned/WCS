@@ -58,6 +58,7 @@ from mathlib import Vector
 from messages import Fade
 from messages import FadeFlags
 from messages import HudMsg
+from messages import KeyHintText
 from messages import SayText2
 from messages import Shake
 #   Players
@@ -68,6 +69,10 @@ from translations.strings import LangStrings
 #   Weapons
 from weapons.manager import weapon_manager
 from weapons.restrictions import WeaponRestrictionHandler
+
+# EventScripts Imports
+#   Playerlib
+from playerlib import getPlayer
 
 # WCS Imports
 #   Constants
@@ -167,6 +172,16 @@ def _remove_overlay(userid):
         pass
     else:
         player.client_command('r_screenoverlay 0')
+
+
+def _remove_drunk(userid):
+    try:
+        player = Player.from_userid(userid)
+    except ValueError:
+        pass
+    else:
+        player.default_fov = 90
+        player.fov = 90
 
 
 def _regeneration_repeat(userid, value, maxhealth, radius):
@@ -600,6 +615,367 @@ def wcsgroup_set_command(command_info, key:str, userid:valid_userid_and_team, va
         wcsplayer = WCSPlayer.from_userid(userid)
 
         wcsplayer.data[key] = value
+
+
+@TypedServerCommand(['wcs', 'damage'])
+def wcs_sub_damaget_command(command_info, wcsplayer:convert_userid_to_wcsplayer, damage:int, attacker:int=None, armor:deprecated=None, weapon:deprecated=None, solo:deprecated=None):
+    if wcsplayer is None:
+        return
+
+    wcsplayer.take_damage(damage, attacker)
+
+
+@TypedServerCommand(['wcs', 'spawn'])
+def wcs_sub_spawn_command(command_info, player:convert_userid_to_player, force:int=0):
+    if player is None:
+        return
+
+    player.spawn(force)
+
+
+@TypedServerCommand(['wcs', 'strip'])
+def wcs_sub_strip_command(command_info, player:convert_userid_to_player):
+    if player is None:
+        return
+
+    entity = Entity.create('player_weaponstrip')
+    entity.call_input('Strip', activator=player)
+    entity.remove()
+
+
+@TypedServerCommand(['wcs', 'drop'])
+def wcs_sub_drop_command(command_info, player:convert_userid_to_player, slot:str):
+    if player is None:
+        return
+
+    if slot.isdigit():
+        slot = int(slot)
+
+        if slot not in range(1, 6):
+            raise InvalidArgumentValue(f'"{slot}" is an invalid value for "slot:str".')
+
+        if slot == 1:
+            slot = 'primary'
+        elif slot == 2:
+            slot = 'secondary'
+        elif slot == 3:
+            slot = 'melee'
+        elif slot == 4:
+            slot = 'grenade'
+        else:
+            slot = 'objective'
+
+        for weapon in player.weapons(is_filters=slot):
+            player.drop_weapon(weapon)
+
+        return
+
+    try:
+        name = weapon_manager[slot].name
+    except KeyError:
+        raise InvalidArgumentValue(f'"{slot}" is an invalid value for "slot:str".')
+
+    for weapon in player.weapons():
+        if weapon.classname == name:
+            player.drop_weapon(weapon)
+            break
+
+
+@TypedServerCommand(['wcs', 'push'])
+def wcs_sub_push_command(command_info, player:convert_userid_to_player, x:float, y:float=0, z:float=0):
+    if player is None:
+        return
+
+    vector = Vector(x, y, z)
+
+    player.base_velocity = vector
+
+
+@TypedServerCommand(['wcs', 'pushto'])
+def wcs_sub_pushto_command(command_info, player:convert_userid_to_player, vector:convert_to_vector, force:float):
+    if player is None:
+        return
+
+    player.teleport(velocity=vector - player.origin)
+
+
+@TypedServerCommand(['wcs', 'gravity'])
+def wcs_sub_gravity_command(command_info, player:convert_userid_to_player, value:float):
+    if player is None:
+        return
+
+    player.gravity = value
+
+
+@TypedServerCommand(['wcs', 'removeweapon'])
+def wcs_sub_removeweapon_command(command_info, player:convert_userid_to_player, slot:str):
+    if player is None:
+        return
+
+    if slot.isdigit():
+        slot = int(slot)
+
+        if slot not in range(1, 6):
+            raise InvalidArgumentValue(f'"{slot}" is an invalid value for "slot:str".')
+
+        if slot == 1:
+            slot = 'primary'
+        elif slot == 2:
+            slot = 'secondary'
+        elif slot == 3:
+            slot = 'melee'
+        elif slot == 4:
+            slot = 'grenade'
+        else:
+            slot = 'objective'
+
+        for weapon in player.weapons(is_filters=slot):
+            player.drop_weapon(weapon)
+
+            weapon.remove()
+
+        return
+
+    try:
+        name = weapon_manager[slot].name
+    except KeyError:
+        raise InvalidArgumentValue(f'"{slot}" is an invalid value for "slot:str".')
+
+    for weapon in player.weapons():
+        if weapon.classname == name:
+            player.drop_weapon(weapon)
+
+            weapon.remove()
+            break
+
+
+@TypedServerCommand(['wcs', 'getviewplayer'])
+def wcs_sub_getviewplayer_command(command_info, player:convert_userid_to_player, var:ConVar):
+    if player is None:
+        var.set_int(-1)
+        return
+
+    target = player.view_player
+
+    if target is None:
+        var.set_int(-1)
+        return
+
+    var.set_int(target.userid)
+
+
+@TypedServerCommand(['wcs', 'getviewentity'])
+def wcs_sub_getviewentity_command(command_info, player:convert_userid_to_player, var:ConVar):
+    if player is None:
+        var.set_int(-1)
+        return
+
+    target = player.view_entity
+
+    if target is None:
+        var.set_int(-1)
+        return
+
+    var.set_int(target.entity)
+
+
+@TypedServerCommand(['wcs', 'keyhint'])
+def wcs_sub_keyhint_command(command_info, player:convert_userid_to_player, text:str):
+    if player is None:
+        return
+
+    KeyHintText(text).send(player.index)
+
+
+@TypedServerCommand(['wcs', 'give'])
+def wcs_sub_give_command(command_info, player:convert_userid_to_player, entity:str):
+    warn('"wcs give" will be removed in the future. Use "es_give" instead.', PendingDeprecationWarning)
+
+    if player is None:
+        return
+
+    entity = Entity.create(entity)
+    entity.origin = player.origin
+    entity.spawn()
+
+
+@TypedServerCommand(['wcs', 'fire'])
+def wcs_sub_fire_command(command_info, player:convert_userid_to_player, time:float):
+    warn('"wcs fire" will be removed in the future. Use "wcs_setfx burn" instead.', PendingDeprecationWarning)
+
+    if player is None:
+        return
+
+    player.ignite_lifetime(time if time else 999)
+
+
+@TypedServerCommand(['wcs', 'extinguish'])
+def wcs_sub_extinguish_command(command_info, player:convert_userid_to_player):
+    warn('"wcs extinguish" will be removed in the future. Use "wcs_setfx burn" instead.', PendingDeprecationWarning)
+
+    if player is None:
+        return
+
+    player.ignite_lifetime(0.0)
+
+
+@TypedServerCommand(['wcs', 'drug'])
+def wcs_sub_drug_command(command_info, player:convert_userid_to_player, duration:float=0):
+    warn('"wcs drug" will be removed in the future. Use "es_cexec" with "r_screenoverlay" and "es_delayed" instead.', PendingDeprecationWarning)
+
+    if player is None:
+        return
+
+    player.client_command('r_screenoverlay effects/tp_eyefx/tp_eyefx')
+
+    if duration:
+        player.delay(duration, _remove_overlay, (player.userid, ))
+
+
+@TypedServerCommand(['wcs', 'drunk'])
+def wcs_sub_drunk_command(command_info, player:convert_userid_to_player, duration:float=0, value:int=155):
+    warn('"wcs drunk" will be removed in the future. Use "es_setplayerprop" with "CBasePlayer.m_iDefaultFOV", "CBasePlayer.m_iFOV" and "es_delayed" instead.', PendingDeprecationWarning)
+
+    if player is None:
+        return
+
+    player.default_fov = value
+    player.fov = value
+
+    if time:
+        player.delay(duration, _remove_drunk, (player.userid, ))
+
+
+# @TypedServerCommand(['wcs', 'poison'])
+# def wcs_sub_poison_command(command_info, player:convert_userid_to_player):
+#     if player is None:
+#         return
+
+
+# @TypedServerCommand(['wcs', 'timed_damage'])
+# def wcs_sub_timed_damage_command(command_info, player:convert_userid_to_player):
+#     if player is None:
+#         return
+
+
+@TypedServerCommand(['wcs', 'changeteam'])
+def wcs_sub_changeteam_command(command_info, player:convert_userid_to_player, team:int):
+    if player is None:
+        return
+
+    player.set_team(team)
+
+
+@TypedServerCommand(['wcsx', 'get'])
+def wcsx_get_command(command_info, key:str, var:ConVar, userid:valid_userid):
+    if userid is None:
+        var.set_int(-1)
+        return
+
+    player = getPlayer(userid)
+
+    if not hasattr(player, key):
+        var.set_int(-1)
+        return
+
+    value = getattr(player, key)
+
+    if callable(value):
+        value = value()
+
+    if hasattr(value, '__iter__'):
+        if hasattr(value[0], '__iter__'):
+            if len(value[0]) == 1:
+                value = value[0][0]
+            else:
+                value = ','.join([str(x) for x in value[0]])
+        else:
+            value = value[0]
+
+    var.set_string(value)
+
+
+@TypedServerCommand(['wcsx', 'set'])
+def wcsx_set_command(command_info, key:str, userid:valid_userid, *value:str):
+    if userid is None:
+        return
+
+    player = getPlayer(userid)
+
+    if not hasattr(player, key):
+        return
+
+    if not value:
+        return
+
+    if hasattr(value, '__iter__'):
+        if hasattr(value[0], '__iter__'):
+            if len(value[0]) == 1:
+                value = value[0][0]
+            else:
+                value = ','.join([str(x) for x in value[0]])
+        else:
+            value = value[0]
+
+    if hasattr(value, '__iter__') and not key == 'location':
+        value = value[0]
+
+    if key == 'location' and not hasattr(value, '__iter__'):
+        value = value.split(',')
+
+    method = getattr(player, key)
+
+    if callable(method):
+        method(value)
+    else:
+        setattr(player, key, value)
+
+
+@TypedServerCommand(['wcsx', 'math'])
+def wcsx_math_command(command_info, key:str, userid:valid_userid, operator:valid_operators(), value:real_value):
+    if userid is None:
+        return
+
+    player = getPlayer(userid)
+
+    if not hasattr(player, key):
+        return
+
+    if operator == '+':
+        value = getattr(player, key) + value
+    elif operator == '-':
+        value = getattr(player, key) - value
+
+    setattr(player, key, value)
+
+
+@TypedServerCommand(['wcsx', 'call'])
+def wcsx_call_command(command_info, key:str, userid:valid_userid):
+    if userid is None:
+        return
+
+    player = getPlayer(userid)
+
+    if not hasattr(player, key):
+        return
+
+    method = getattr(player, key)
+
+    if not callable(method):
+        return
+
+    method()
+
+
+@TypedServerCommand(['wcsx', 'create'])
+def wcsx_create_command(command_info, var:ConVar, *args:str):
+    var.set_string(','.join(args))
+
+
+@TypedServerCommand(['wcsx', 'split'])
+def wcsx_split_command(command_info, value:str, *var:ConVar):
+    for i, x in enumerate(value.split(',')):
+        var[i].set_string(x)
 
 
 @TypedServerCommand('wcs_get_skill_level')
