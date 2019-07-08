@@ -41,6 +41,7 @@ __all__ = (
     'SkillReason',
     'ModuleType',
     'RaceReason',
+    'DatabaseVersion',
 )
 
 
@@ -102,6 +103,11 @@ class NodeType(IntEnum):
     CONNECT = 3
     USE = 4
     CLOSE = 5
+
+
+class DatabaseVersion(IntEnum):
+    INITIAL = 0
+    CURRENT = INITIAL
 
 
 # ============================================================================

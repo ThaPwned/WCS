@@ -14,6 +14,7 @@ from sqlite3 import connect as sqlite_connect
 
 # WCS Imports
 #   Constants
+from ..constants import DatabaseVersion
 from ..constants import NodeType
 from ..constants.paths import CFG_PATH
 from ..constants.paths import DATA_PATH
@@ -30,6 +31,7 @@ from .thread import _repeat
 # ============================================================================
 __all__ = (
     'database_manager',
+    'settings',
     'statements',
 )
 
@@ -61,6 +63,11 @@ else:
 # ============================================================================
 _driver = _database['driver'] if _database['driver'] in ('sqlite', 'mysql') else 'sqlite'
 
+with open(STRUCTURE_PATH / f'{_driver}.json') as inputfile:
+    statements = json_load(inputfile)
+
+settings = {}
+
 
 # ============================================================================
 # >> CLASSES
@@ -89,10 +96,22 @@ class _DatabaseManager(object):
 database_manager = _DatabaseManager()
 
 
-with open(STRUCTURE_PATH / f'{_driver}.json') as inputfile:
-    statements = json_load(inputfile)
+# ============================================================================
+# >> FUNCTIONS
+# ============================================================================
+def _query_settings(result):
+    for setting, value in result.fetchall():
+        settings[setting] = value
+
+    if 'version' not in settings:
+        settings['version'] = DatabaseVersion.CURRENT
+        database_manager.execute('setting insert', arguments=('version', DatabaseVersion.CURRENT), blocking=True)
 
 
+
+# ============================================================================
+# >> INITIALIZATION
+# ============================================================================
 # TODO: Get MySQL working
 if _driver == 'mysql':
     _queue.put(_Node(NodeType.CONNECT, query=lambda: mysql_connect(host=_database['host'], port=_database['port'], user=_database['user'], passwd=_database['password'], connect_timeout=_database['timeout'], charset='utf8mb4')))
@@ -109,3 +128,5 @@ for statement in ('create players', 'create races', 'create skills', 'create sta
 
 if _driver == 'mysql':
     database_manager.execute('toggle warnings', format_args=(1, ))
+
+database_manager.execute('setting get', callback=_query_settings)
