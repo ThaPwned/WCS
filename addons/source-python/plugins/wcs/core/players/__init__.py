@@ -73,7 +73,9 @@ class BasePlayer(object, metaclass=_PlayerMeta):
         self._authorized = False
         self._connected = False
         self._fake_client = False
+        self._accountid = None
         self._steamid2 = None
+        self._steamid3 = None
         self._uniqueid = None
 
     @property
@@ -105,8 +107,16 @@ class BasePlayer(object, metaclass=_PlayerMeta):
         return self._fake_client
 
     @property
+    def accountid(self):
+        return self._accountid
+
+    @property
     def steamid2(self):
         return self._steamid2
+
+    @property
+    def steamid3(self):
+        return self._steamid3
 
     @property
     def uniqueid(self):
@@ -214,20 +224,7 @@ def on_client_put_in_server(edict, name):
 def on_tick():
     for baseplayer in _authenticate.copy():
         if engine_server.is_client_fully_authenticated(baseplayer.edict):
-            # Wait until we can retrieve a playerinfo from the baseplayer (prevents a lot of errors further on)
-            try:
-                playerinfo = playerinfo_from_edict(baseplayer.edict)
-            except ValueError:
-                pass
-            else:
-                # steamid = engine_server.get_client_steamid(baseplayer._edict)
-
-                _authenticate.discard(baseplayer)
-
-                baseplayer._uniqueid = baseplayer._steamid2 = playerinfo.steamid  # steamid.to_steamid2()
-                baseplayer._authorized = True
-
-                OnClientAuthorized.manager.notify(baseplayer)
+            _initialize(baseplayer)
 
 
 # ============================================================================
@@ -254,4 +251,26 @@ def _initialize_players():
 
                 OnClientAuthorized.manager.notify(baseplayer)
             else:
-                _authenticate.add(baseplayer)
+                if engine_server.is_client_fully_authenticated(baseplayer.edict):
+                    _initialize(baseplayer)
+                else:
+                    _authenticate.add(baseplayer)
+
+
+def _initialize(baseplayer):
+    # Wait until we can retrieve a playerinfo from the baseplayer (prevents a lot of errors further on)
+    try:
+        playerinfo = playerinfo_from_edict(baseplayer.edict)
+    except ValueError:
+        pass
+    else:
+        steamid = engine_server.get_client_steamid(baseplayer._edict)
+
+        _authenticate.discard(baseplayer)
+
+        baseplayer._accountid = steamid.account_id
+        baseplayer._uniqueid = baseplayer._steamid2 = playerinfo.steamid  # steamid.to_steamid2()
+        baseplayer._steamid3 = steamid.to_steamid3()
+        baseplayer._authorized = True
+
+        OnClientAuthorized.manager.notify(baseplayer)
