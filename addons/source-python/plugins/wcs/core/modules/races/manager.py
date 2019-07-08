@@ -147,10 +147,12 @@ class RaceSetting(_BaseSetting):
 
         if teamlimit:
             team = wcsplayer.player.team_index
-            limit = team_data[team].get(f'_internal_{self.name}_limit_allowed', [])
 
-            if team >= 2 and teamlimit <= len(limit) and wcsplayer.userid not in limit:
-                return RaceReason.TEAM_LIMIT
+            if team >= 2:
+                limit = team_data[team].get(f'_internal_{self.name}_limit_allowed', [])
+
+                if teamlimit <= len(limit) and wcsplayer.userid not in limit:
+                    return RaceReason.TEAM_LIMIT
 
         maximum = self.config.get('maximum')
 
