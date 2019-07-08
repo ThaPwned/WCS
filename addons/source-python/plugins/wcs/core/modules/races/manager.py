@@ -108,7 +108,7 @@ class RaceSetting(_BaseSetting):
         allowonly = self.config.get('allowonly')
 
         if allowonly:
-            if wcsplayer.uniqueid in allowonly:
+            if wcsplayer.baseplayer.steamid2 in allowonly or wcsplayer.baseplayer.steamid3 in allowonly:
                 reason = RaceReason.ALLOWED
             else:
                 reason = RaceReason.PRIVATE

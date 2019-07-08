@@ -1344,7 +1344,7 @@ def on_client_authorized(baseplayer):
 
             wcsplayer = Player(baseplayer.index)
 
-            wcsplayer._privileges = privileges['players'].get(baseplayer.uniqueid, {})
+            wcsplayer._privileges = privileges['players'].get(baseplayer.steamid2, {}) or privileges['players'].get(baseplayer.steamid3, {})
 
             wcsplayer._retrieve_data()
         else:
