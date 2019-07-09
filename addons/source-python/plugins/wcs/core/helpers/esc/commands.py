@@ -892,7 +892,7 @@ def wcsx_get_command(command_info, key:str, var:ConVar, userid:valid_userid):
         else:
             value = value[0]
 
-    var.set_string(value)
+    var.set_string(str(value))
 
 
 @TypedServerCommand(['wcsx', 'set'])
