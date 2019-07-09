@@ -337,7 +337,7 @@ def raceinfo_detail_menu_build(menu, client):
     menu[3].text.tokens['name'] = settings.config['author']
 
     if settings.config['allowonly']:
-        if wcsplayer.uniqueid in settings.config['allowonly']:
+        if wcsplayer._baseplayer.steamid2 in settings.config['allowonly'] or wcsplayer._baseplayer.steamid3 in settings.config['allowonly']:
             menu[4].text = menu_strings['raceinfo_detail_menu private allowed']
         elif 'VIP' in settings.config['allowonly'] and wcsplayer.privileges.get('vip_raceaccess'):
             menu[4].text = menu_strings['raceinfo_detail_menu private allowed']
