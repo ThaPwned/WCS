@@ -27,9 +27,9 @@
     "stat join": "WHEN owner = '{}' AND `key` = '{}' THEN {}",
 
     "setting get": "SELECT setting, value FROM settings",
-    "setting insert": "INSERT INTO settings (setting, value) VALUES ('%s', %s)",
     "setting update": "UPDATE settings SET value = CASE {} ELSE value END",
     "setting join": "WHEN setting = '{}' THEN {}",
+    "setting insert": "INSERT INTO settings (setting, value) VALUES (%s, %s)",
 
     "_rank update": "WITH tmp (uniqueid, name, current_race, total_level) AS (SELECT p.uniqueid, p.name, p.current_race, SUM(r.level) AS total_level FROM races r INNER JOIN players p ON p.id = r.playerid GROUP BY playerid) SELECT tt.uniqueid, tt.name, tt.current_race, tt.total_level, (SELECT count(*)+1 FROM tmp AS t WHERE t.total_level > tt.total_level) AS rank FROM tmp AS tt ORDER BY rank ASC",
     "rank update": "SELECT p.uniqueid, p.name, p.current_race, SUM(r.level) AS total_level FROM races r INNER JOIN players p ON p.id = r.playerid GROUP BY playerid ORDER BY total_level DESC",

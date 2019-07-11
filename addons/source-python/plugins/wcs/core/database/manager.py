@@ -105,8 +105,8 @@ def _query_settings(result):
 
     if 'version' not in settings:
         settings['version'] = DatabaseVersion.CURRENT
+        database_manager.execute('setting insert', arguments=('version', str(DatabaseVersion.CURRENT.value)))
 
-        database_manager.execute('setting insert', arguments=('version', DatabaseVersion.CURRENT.value), blocking=True)
 
 
 # ============================================================================
