@@ -96,6 +96,8 @@ from .converts import split_str
 from .converts import deprecated
 from .est.commands import armor_command  # Just to load it
 from .est.effects import effect101  # Just to load it
+from ..wards import DamageWard
+from ..wards import ward_manager
 #   Players
 from ...players import team_data
 from ...players.entity import Player as WCSPlayer
@@ -1240,7 +1242,7 @@ def wcs_setcooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer,
 
 @TypedServerCommand('wcs_cancelulti')
 def wcs_cancelulti_command(command_info, wcsplayer:convert_userid_to_wcsplayer):
-    wcs_set_cooldown_command(command_info, wcsplayer, time())
+    wcs_set_cooldown_command(command_info, wcsplayer, None)
 
 
 @TypedServerCommand('wcs_getviewcoords')
@@ -1618,6 +1620,17 @@ def wcs_regeneration_command(command_info, player:convert_userid_to_player, valu
     repeat.start(duration)
 
     _repeats[player.userid].append(repeat)
+
+
+@TypedServerCommand('wcs_warden')
+def wcs_warden_command(command_info, wcsplayer:convert_userid_to_wcsplayer, duration:int, damage:int, radius:float, team_target:int, team_target_name:deprecated, x:float, y:float, z:float, round:deprecated):
+    if wcsplayer is None:
+        return
+
+    ward = DamageWard(wcsplayer, Vector(x, y, z), radius, duration, damage)
+    ward.team_target = team_target
+
+    ward_manager.append(ward)
 
 
 # ============================================================================
