@@ -43,6 +43,8 @@ __all__ = (
     'OnPluginItemLoad',
     'OnPluginRaceLoad',
     'OnPluginUnload',
+    'OnTakeDamage',
+    'OnTakeDamageAlive',
 )
 
 
