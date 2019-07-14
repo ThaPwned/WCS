@@ -924,7 +924,7 @@ def on_player_rank_update(wcsplayer, old, new):
     if cfg_top_announcement_enable.get_int():
         min_rank = cfg_top_min_rank_announcement.get_int()
 
-        if not min_rank or new <= min_rank:
+        if not min_rank or new + 1 <= min_rank:
             if cfg_top_public_announcement.get_int():
                 top_public_announcement_message.send(name=wcsplayer.name, min_rank=min_rank if min_rank else '', old=old + 1, new=new + 1)
             else:
