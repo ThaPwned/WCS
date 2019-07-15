@@ -25,11 +25,13 @@ __all__ = (
 # >> CLASSES
 # ============================================================================
 class ItemEvent(AutoUnload):
-    def __init__(self, event):
+    def __init__(self, event=None):
         self.event = event
 
     def __call__(self, callback):
-        self.callback = callback
+        if self.event is None:
+            self.event = callback.__name__
+
         self.item = callback.__module__.rsplit('.', 1)[1]
 
         assert self.event not in _callbacks[self.item]
@@ -41,7 +43,10 @@ class ItemEvent(AutoUnload):
         if 'event' not in config:
             config['event'] = []
 
-        config['event'].append(self.event)
+        if self.event not in config['event']:
+            config['event'].append(self.event)
+
+        return callback
 
     def _unload_instance(self):
         del _callbacks[self.item][self.event]

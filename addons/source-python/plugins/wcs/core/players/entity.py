@@ -958,7 +958,8 @@ class _Race(object):
                             else:
                                 callback(event, self.wcsplayer)
                 elif item.settings.type is ModuleType.ESP:
-                    callback = es.addons.Blocks.get(f'wcs/modules/items/{item.name}/{name}')
+                    # Adding an underscore (_) at the end to prevent it from being registered as an event
+                    callback = es.addons.Blocks.get(f'wcs/modules/items/{item.name}/{name}_')
 
                     if callback is not None:
                         for _ in range(item.count):

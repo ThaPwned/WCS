@@ -55,7 +55,6 @@ class SkillEvent(AutoUnload):
         if self.skill is None:
             self.skill = callback.__name__
 
-        self.callback = callback
         self.race = callback.__module__.rsplit('.', 1)[1]
 
         if self.skill not in _callbacks[self.race]:
@@ -71,6 +70,8 @@ class SkillEvent(AutoUnload):
             config[self.skill]['event'] = []
 
         config[self.skill]['event'].append(self.event)
+
+        return callback
 
     def _unload_instance(self):
         del _callbacks[self.race][self.skill][self.event]
