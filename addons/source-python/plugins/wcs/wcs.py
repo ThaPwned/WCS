@@ -197,6 +197,7 @@ force_change_team_message = SayText2(chat_strings['force change team'])
 force_change_team_limit_message = SayText2(chat_strings['force change team limit'])
 no_unused_message = SayText2(chat_strings['no unused'])
 no_access_message = SayText2(chat_strings['no access'])
+rank_message = SayText2(chat_strings['rank'])
 skills_reset_message = SayText2(chat_strings['skills reset'])
 ability_team_message = SayText2(chat_strings['ability team'])
 ability_dead_message = SayText2(chat_strings['ability dead'])
@@ -1153,6 +1154,20 @@ def say_command_wcstop(command):
     return CommandReturn.BLOCK
 
 
+@TypedSayCommand('wcsrank')
+def say_command_wcsrank(command):
+    wcsplayer = Player(command.index)
+
+    if wcsplayer.ready:
+        active_race = wcsplayer.active_race
+
+        rank_message.send(name=wcsplayer.name, race=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp, rank=wcsplayer.rank, total=len(rank_manager))
+    else:
+        not_ready_message.send(command.index)
+
+    return CommandReturn.BLOCK
+
+
 @TypedSayCommand('wcshelp')
 def say_command_wcshelp(command):
     wcshelp_menu.send(command.index)
@@ -1175,9 +1190,13 @@ def say_command_wcsadmin(command):
 @TypedSayCommand('showxp')
 def say_command_showxp(command):
     wcsplayer = Player(command.index)
-    active_race = wcsplayer.active_race
 
-    xp_required_message.send(wcsplayer.index, name=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
+    if wcsplayer.ready:
+        active_race = wcsplayer.active_race
+
+        xp_required_message.send(wcsplayer.index, name=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
+    else:
+        not_ready_message.send(command.index)
 
     return CommandReturn.BLOCK
 
