@@ -796,9 +796,9 @@ def wcs_sub_give_command(command_info, player:convert_userid_to_player, entity:s
     if player is None:
         return
 
-    entity = Entity.create(entity)
-    entity.origin = player.origin
-    entity.spawn()
+    # entity = Entity.create(entity)
+    # entity.origin = player.origin
+    # entity.spawn()
 
 
 @TypedServerCommand(['wcs', 'fire'])
