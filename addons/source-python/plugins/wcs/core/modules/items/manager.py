@@ -110,9 +110,8 @@ class _ItemManager(_BaseManager):
     def load_all(self):
         config = self._get_or_create_config('items', ITEM_PATH, ITEM_PATH_ES)
 
-        for category, data in config['categories'].items():
-            if not category.startswith('_'):
-                self._category_max_items[category] = data['maxitems']
+        for category, value in config.get('maxitems', {}).items():
+            self._category_max_items[category] = value
 
         self._load_categories_and_values('items', config, ITEM_PATH, ITEM_PATH_ES)
 

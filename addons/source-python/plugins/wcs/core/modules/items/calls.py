@@ -38,7 +38,7 @@ class ItemEvent(AutoUnload):
 
         _callbacks[self.item][self.event] = callback
 
-        config = item_manager[self.item]
+        config = item_manager[self.item].config
 
         if 'event' not in config:
             config['event'] = []
