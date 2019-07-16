@@ -109,8 +109,8 @@ class _BaseManager(dict):
                     if name not in value_categories:
                         value_categories[name] = []
 
-                    # Just to add it to the menu
-                    value_categories[name].append(None)
+                        # Just to add it to the menu
+                        value_categories[name].append(None)
 
         for name, categories in value_categories.items():
             try:
