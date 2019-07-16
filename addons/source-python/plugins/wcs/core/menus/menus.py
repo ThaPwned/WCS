@@ -10,6 +10,8 @@ from copy import deepcopy
 from textwrap import wrap
 
 # Source.Python Imports
+#   Core
+from core import GAME_NAME
 #   Menus
 from menus import PagedOption
 from menus import SimpleOption
@@ -568,6 +570,7 @@ wcsadmin_github_info_confirm_menu.extend(
 # ============================================================================
 # >> MENU ENHANCEMENTS
 # ============================================================================
+welcome_menu[3].text.tokens['game'] = 'CS:S' if GAME_NAME == 'cstrike' else 'CS:GO' if GAME_NAME == 'csgo' else GAME_NAME
 welcome_menu[15].text.tokens['slot'] = BUTTON_CLOSE_SLOT
 wcsadmin_github_info_menu[2].text.tokens['version'] = info.version
 
