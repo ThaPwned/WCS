@@ -98,6 +98,8 @@ from .est.commands import armor_command  # Just to load it
 from .est.effects import effect101  # Just to load it
 from ..wards import DamageWard
 from ..wards import ward_manager
+#   Modules
+from ...modules.races.manager import race_manager
 #   Players
 from ...players import team_data
 from ...players.entity import Player as WCSPlayer
@@ -1029,8 +1031,21 @@ def wcs_color_command(command_info, player:convert_userid_to_player, red:int, gr
 
 
 @TypedServerCommand('wcs_changerace')
-def wcs_changerace_command(command_info, wcsplayer:convert_userid_to_wcsplayer, name:str):
+def wcs_changerace_command(command_info, wcsplayer:convert_userid_to_wcsplayer, *name:str):
     if wcsplayer is None:
+        return
+
+    name = ' '.join(name)
+
+    if name not in race_manager:
+        for settings in race_manager.values():
+            if settings.strings['name'].get_string('en') == name:
+                name = settings.name
+                break
+        else:
+            return
+
+    if wcsplayer.current_race == name:
         return
 
     wcsplayer.current_race = name
@@ -1242,7 +1257,7 @@ def wcs_setcooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer,
 
 @TypedServerCommand('wcs_cancelulti')
 def wcs_cancelulti_command(command_info, wcsplayer:convert_userid_to_wcsplayer):
-    wcs_set_cooldown_command(command_info, wcsplayer, None)
+    wcs_set_cooldown_command(command_info, wcsplayer, 0)
 
 
 @TypedServerCommand('wcs_getviewcoords')
