@@ -40,19 +40,16 @@ class _RankManager(list):
     def __getitem__(self, item):
         try:
             return super().__getitem__(item)
-        except TypeError:
-            try:
-                return self.index(item) + 1
-            except ValueError:
-                return len(self)
+        except IndexError:
+            return len(self)
 
     def _update(self, wcsplayer, value):
-        uniqueid = wcsplayer.uniqueid
+        accountid = wcsplayer.accountid
 
-        self._data[uniqueid]['total_level'] += value
+        self._data[accountid]['total_level'] += value
 
-        index = self.index(uniqueid)
-        curlevel = self._data[uniqueid]['total_level']
+        index = self.index(accountid)
+        curlevel = self._data[accountid]['total_level']
         swap = None
 
         # TODO: Implement negative ranking (for reset)
@@ -68,7 +65,7 @@ class _RankManager(list):
                 return
 
             self.pop(index)
-            self.insert(swap, uniqueid)
+            self.insert(swap, accountid)
 
             OnPlayerRankUpdate.manager.notify(wcsplayer, index, swap)
 
@@ -76,9 +73,12 @@ class _RankManager(list):
             return
 
         for i, option in enumerate(wcstop_menu):
-            if option.value == uniqueid:
+            if option.value == accountid:
                 wcstop_menu.insert(swap - (1 if i < swap else 0), wcstop_menu.pop(i))
                 break
+
+    def from_accountid(self, accountid):
+        return self.index(accountid) + 1
 
     @property
     def last_place(self):
@@ -91,7 +91,7 @@ rank_manager = _RankManager()
 # ============================================================================
 @OnPlayerChangeRace
 def on_player_change_race(wcsplayer, old, new):
-    rank_manager._data[wcsplayer.uniqueid]['current_race'] = new
+    rank_manager._data[wcsplayer.accountid]['current_race'] = new
 
 
 @OnPlayerLevelUp
@@ -101,17 +101,17 @@ def on_player_level_up(wcsplayer, race, from_level):
 
 @OnPlayerQuery
 def on_player_query(wcsplayer):
-    uniqueid = wcsplayer.uniqueid
+    accountid = wcsplayer.accountid
 
     for option in wcstop_menu:
-        if option.value == uniqueid:
+        if option.value == accountid:
             break
     else:
         total_level = wcsplayer.total_level
 
-        rank_manager._data[uniqueid] = {'name':wcsplayer.name, 'current_race':wcsplayer.current_race, 'total_level':total_level}
+        rank_manager._data[accountid] = {'name':wcsplayer.name, 'current_race':wcsplayer.current_race, 'total_level':total_level}
 
-        option = PagedOption(deepcopy(menu_strings['wcstop_menu line']), uniqueid, show_index=False)
+        option = PagedOption(deepcopy(menu_strings['wcstop_menu line']), accountid, show_index=False)
         option.text.tokens['name'] = wcsplayer.name
 
         if rank_manager:
@@ -119,11 +119,11 @@ def on_player_query(wcsplayer):
 
             for i, other in enumerate(reversed(rank_manager)):
                 if total_level <= rank_manager._data[other]['total_level']:
-                    rank_manager.insert(total - i + 1, uniqueid)
+                    rank_manager.insert(total - i + 1, accountid)
 
                     wcstop_menu.insert(total - i + 1, option)
 
                     break
         else:
-            rank_manager.append(uniqueid)
+            rank_manager.append(accountid)
             wcstop_menu.append(option)

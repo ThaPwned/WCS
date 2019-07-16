@@ -24,6 +24,8 @@ from .thread import _Node
 from .thread import _queue
 from .thread import _thread
 from .thread import _repeat
+#   Listeners
+from ..listeners import OnSettingsLoaded
 
 
 # ============================================================================
@@ -107,6 +109,21 @@ def _query_settings(result):
         settings['version'] = DatabaseVersion.CURRENT
         database_manager.execute('setting insert', arguments=('version', str(DatabaseVersion.CURRENT.value)))
 
+        OnSettingsLoaded.manager.notify(settings)
+
+        return
+
+    version = settings[setting] = DatabaseVersion(int(settings['version']))
+
+    if version < DatabaseVersion.CURRENT:
+        if version < DatabaseVersion.UPDATE1:
+            for statement in [x for x in statements if x.startswith(f'database upgrade {DatabaseVersion.UPDATE1.value}.')]:
+                database_manager.execute(statement)
+
+        database_manager.execute('setting update', arguments=(str(DatabaseVersion.CURRENT.value), ), format_args=('version', ))
+        settings['version'] = DatabaseVersion.CURRENT
+
+    OnSettingsLoaded.manager.notify(settings)
 
 
 # ============================================================================

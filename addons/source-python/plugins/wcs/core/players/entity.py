@@ -52,7 +52,6 @@ from memory import make_object
 #   Players
 from players.dictionary import PlayerDictionary
 from players.entity import Player as _Player
-from players.helpers import index_from_uniqueid
 from players.helpers import index_from_userid
 from players.helpers import userid_from_index
 #   Weapons
@@ -97,6 +96,7 @@ from ..modules.races.calls import _callbacks as _race_callbacks
 from ..modules.races.manager import race_manager
 #   Players
 from . import BasePlayer
+from . import index_from_accountid
 from . import team_data
 from . import set_weapon_name
 #   Ranks
@@ -181,20 +181,20 @@ class _PlayerMeta(type):
     def __new__(mcs, name, bases, odict):
         cls = super().__new__(mcs, name, bases, odict)
         cls._players = {}
-        cls._uniqueid_players = {}
+        cls._accountid_players = {}
         cls._reconnect_cache = {}
 
         return cls
 
-    def __call__(cls, index):
+    def __call__(cls, index, accountid=None):
         wcsplayer = cls._players.get(index)
 
         if wcsplayer is None:
-            if isinstance(index, str):
-                wcsplayer = cls._uniqueid_players.get(index)
+            if accountid is not None:
+                wcsplayer = cls._accountid_players.get(accountid)
 
                 if wcsplayer is None:
-                    wcsplayer = cls._uniqueid_players[index] = super().__call__(None, index)
+                    wcsplayer = cls._accountid_players[accountid] = super().__call__(None, accountid)
                     wcsplayer._retrieve_data()
 
                 return wcsplayer
@@ -259,11 +259,11 @@ class _Stats(object):
 
 
 class Player(object, metaclass=_PlayerMeta):
-    def __init__(self, index, uniqueid=None):
+    def __init__(self, index, accountid=None):
         if index is None:
             self._index = None
             self._baseplayer = None
-            self._uniqueid = uniqueid
+            self._accountid = accountid
         else:
             self._index = index
             self._baseplayer = BasePlayer(index)
@@ -293,7 +293,7 @@ class Player(object, metaclass=_PlayerMeta):
             name = None
 
         if not _thread.unloading:
-            database_manager.execute('player get', (self.uniqueid, ), callback=self._query_get_player, name=name)
+            database_manager.execute('player get' + (' bot' if isinstance(self.accountid, str) else ''), (self.accountid, ), callback=self._query_get_player, name=name)
 
     def _query_get_player(self, result):
         if _thread.unloading:
@@ -302,8 +302,8 @@ class Player(object, metaclass=_PlayerMeta):
         data = result.fetchone()
 
         if data is None:
-            database_manager.execute('player insert', (self.uniqueid, result['name'], race_manager.default_race, time()))
-            database_manager.execute('player get', (self.uniqueid, ), callback=self._query_get_player, name=result['name'])
+            database_manager.execute('player insert', (None if isinstance(self.accountid, str) else self.accountid, result['name'], race_manager.default_race, time()))
+            database_manager.execute('player get' + (' bot' if isinstance(self.accountid, str) else ''), (self.accountid, ), callback=self._query_get_player, name=result['name'])
             return
 
         self._id = data[0]
@@ -395,7 +395,7 @@ class Player(object, metaclass=_PlayerMeta):
 
         OnPlayerQuery.manager.notify(self)
 
-        # We need to make sure the uniqueid (the player) is in the server
+        # We need to make sure the player is in the server
         if online:
             team = self.player.team_index
 
@@ -414,10 +414,10 @@ class Player(object, metaclass=_PlayerMeta):
         # This has to be done here, as it'll cause errors if it's done in OnClientDisconnect
         self.data.clear()
 
-        _save_queue.discard(self.uniqueid)
+        _save_queue.discard(self.accountid)
 
         try:
-            self._index = index_from_uniqueid(self.uniqueid)
+            self._index = index_from_accountid(self.accountid)
         except ValueError:
             OnPlayerDestroy.manager.notify(self)
         else:
@@ -425,7 +425,7 @@ class Player(object, metaclass=_PlayerMeta):
 
             Player._players[self.index] = self
 
-            Player._reconnect_cache[self.uniqueid] = self
+            Player._reconnect_cache[self.accountid] = self
 
             on_client_authorized(self._baseplayer)
 
@@ -664,11 +664,11 @@ class Player(object, metaclass=_PlayerMeta):
             return False
 
     @property
-    def uniqueid(self):
+    def accountid(self):
         try:
-            return self._baseplayer.uniqueid
+            return self._baseplayer.accountid
         except AttributeError:
-            return self._uniqueid
+            return self._accountid
 
     @property
     def id(self):
@@ -799,7 +799,7 @@ class Player(object, metaclass=_PlayerMeta):
 
     @property
     def rank(self):
-        return rank_manager[self.uniqueid]
+        return rank_manager.from_accountid(self.accountid)
 
     @property
     def notify(self):
@@ -816,11 +816,11 @@ class Player(object, metaclass=_PlayerMeta):
         return cls(index_from_userid(userid))
 
     @classmethod
-    def from_uniqueid(cls, uniqueid):
+    def from_accountid(cls, accountid):
         try:
-            index = index_from_uniqueid(uniqueid)
+            index = index_from_accountid(accountid)
         except ValueError:
-            return cls(uniqueid)
+            return cls(None, accountid)
         else:
             return cls(index)
 
@@ -1334,13 +1334,13 @@ class _Item(object):
 # ============================================================================
 @OnClientAuthorized
 def on_client_authorized(baseplayer):
-    wcsplayer = Player._uniqueid_players.pop(baseplayer.uniqueid, None)
+    wcsplayer = Player._accountid_players.pop(baseplayer.accountid, None)
 
     if wcsplayer is None:
-        wcsplayer = Player._reconnect_cache.pop(baseplayer.uniqueid, None)
+        wcsplayer = Player._reconnect_cache.pop(baseplayer.accountid, None)
 
         if wcsplayer is None:
-            if baseplayer.uniqueid in _save_queue:
+            if baseplayer.accountid in _save_queue:
                 return
 
             wcsplayer = Player(baseplayer.index)
@@ -1357,14 +1357,14 @@ def on_client_authorized(baseplayer):
         wcsplayer._baseplayer = baseplayer
 
         # Not really needed...
-        del wcsplayer._uniqueid
+        del wcsplayer._accountid
 
 
 @OnClientDisconnect
 def on_client_disconnect(baseplayer):
     wcsplayer = Player._players.pop(baseplayer.index, None)
 
-    if baseplayer.uniqueid in _save_queue or wcsplayer is None:
+    if baseplayer.accountid in _save_queue or wcsplayer is None:
         return
 
     OnPlayerDelete.manager.notify(wcsplayer)
@@ -1376,7 +1376,7 @@ def on_client_disconnect(baseplayer):
         wcsplayer._lastconnect = time()
         wcsplayer.save()
 
-    _save_queue.add(baseplayer.uniqueid)
+    _save_queue.add(baseplayer.accountid)
 
     database_manager.callback(wcsplayer._query_save)
 

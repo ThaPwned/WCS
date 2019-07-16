@@ -1,14 +1,15 @@
 {
-    "create players": "CREATE TABLE IF NOT EXISTS players (id INTEGER PRIMARY KEY AUTOINCREMENT, uniqueid TEXT UNIQUE, name TEXT, current_race TEXT, lastconnect REAL)",
+    "create players": "CREATE TABLE IF NOT EXISTS players (id INTEGER PRIMARY KEY AUTOINCREMENT, accountid INTEGER UNIQUE, name TEXT, current_race TEXT, lastconnect REAL)",
     "create races": "CREATE TABLE IF NOT EXISTS races (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, playerid INTEGER, xp INTEGER DEFAULT 0, level INTEGER DEFAULT 0, unused INTEGER DEFAULT 0)",
     "create skills": "CREATE TABLE IF NOT EXISTS skills (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, race TEXT, playerid INTEGER, level INTEGER DEFAULT 0)",
     "create stats races": "CREATE TABLE IF NOT EXISTS stats_races (id INTEGER PRIMARY KEY AUTOINCREMENT, playerid INTEGER, owner TEXT, key TEXT, value REAL)",
     "create stats items": "CREATE TABLE IF NOT EXISTS stats_items (id INTEGER PRIMARY KEY AUTOINCREMENT, playerid INTEGER, owner TEXT, key TEXT, value REAL)",
     "create settings": "CREATE TABLE IF NOT EXISTS settings (setting TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL)",
 
-    "player offline": "SELECT uniqueid, name FROM players ORDER BY name ASC",
-    "player get": "SELECT id, name, current_race, lastconnect FROM players WHERE uniqueid = ?",
-    "player insert": "INSERT INTO players (uniqueid, name, current_race, lastconnect) VALUES (?, ?, ?, ?)",
+    "player offline": "SELECT IFNULL(accountid, name), name FROM players ORDER BY name ASC",
+    "player get": "SELECT id, name, current_race, lastconnect FROM players WHERE accountid = ?",
+    "player get bot": "SELECT id, name, current_race, lastconnect FROM players WHERE accountid IS NULL AND name = ?",
+    "player insert": "INSERT INTO players (accountid, name, current_race, lastconnect) VALUES (?, ?, ?, ?)",
     "player update": "UPDATE players SET name = ?, current_race = ?, lastconnect = ? WHERE id = ?",
 
     "race get": "SELECT name, xp, level, unused FROM races WHERE playerid = ?",
@@ -28,9 +29,14 @@
 
     "setting get": "SELECT setting, value FROM settings",
     "setting insert": "INSERT INTO settings (setting, value) VALUES (?, ?)",
-    "setting update": "UPDATE settings SET value = CASE {} ELSE value END",
-    "setting join": "WHEN setting = '{}' THEN {}",
+    "setting update": "UPDATE settings SET value = ? WHERE setting = '{}'",
 
-    "_rank update": "WITH tmp (uniqueid, name, current_race, total_level) AS (SELECT p.uniqueid, p.name, p.current_race, SUM(r.level) AS total_level FROM races r INNER JOIN players p ON p.id = r.playerid GROUP BY playerid) SELECT tt.uniqueid, tt.name, tt.current_race, tt.total_level, (SELECT count(*)+1 FROM tmp AS t WHERE t.total_level > tt.total_level) AS rank FROM tmp AS tt ORDER BY rank ASC",
-    "rank update": "SELECT p.uniqueid, p.name, p.current_race, SUM(r.level) AS total_level FROM races r INNER JOIN players p ON p.id = r.playerid GROUP BY playerid ORDER BY total_level DESC"
+    "rank update": "SELECT IFNULL(p.accountid, p.name), p.name, p.current_race, IFNULL(SUM(r.level), 1) AS total_level FROM players p LEFT JOIN races r on r.playerid = p.id GROUP BY p.id ORDER BY total_level DESC",
+
+    "database upgrade 1.0": "CREATE TABLE players_copy (id INTEGER PRIMARY KEY AUTOINCREMENT, accountid INTEGER UNIQUE, name TEXT, current_race TEXT, lastconnect REAL)",
+    "database upgrade 1.1": "INSERT INTO players_copy SELECT id, NULL, name, current_race, lastconnect FROM players WHERE uniqueid LIKE 'BOT_%'",
+    "database upgrade 1.2": "INSERT INTO players_copy SELECT id, CAST(SUBSTR(uniqueid, 9, 1) AS INTEGER) + CAST(SUBSTR(uniqueid, 11) * 2 AS INTEGER), name, current_race, lastconnect FROM players WHERE uniqueid LIKE 'STEAM_%'",
+    "database upgrade 1.3": "INSERT INTO players_copy SELECT id, SUBSTR(uniqueid, 6, LENGTH(uniqueid) - 6) AS INTEGER, name, current_race, lastconnect FROM players WHERE uniqueid LIKE '[_:_:%]'",
+    "database upgrade 1.4": "DROP TABLE players",
+    "database upgrade 1.5": "ALTER TABLE players_copy RENAME TO players"
 }

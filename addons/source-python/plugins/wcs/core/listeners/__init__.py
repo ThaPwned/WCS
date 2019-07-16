@@ -43,6 +43,7 @@ __all__ = (
     'OnPluginItemLoad',
     'OnPluginRaceLoad',
     'OnPluginUnload',
+    'OnSettingsLoaded',
     'OnTakeDamage',
     'OnTakeDamageAlive',
 )
@@ -168,6 +169,10 @@ class OnPluginRaceLoad(ListenerManagerDecorator):
 
 
 class OnPluginUnload(ListenerManagerDecorator):
+    manager = ListenerManager()
+
+
+class OnSettingsLoaded(ListenerManagerDecorator):
     manager = ListenerManager()
 
 

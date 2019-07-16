@@ -48,7 +48,6 @@ from mathlib import Vector
 #   Menus
 from menus import Text
 #   Players
-from players.helpers import index_from_uniqueid
 from players.helpers import index_from_userid
 #   Weapons
 from weapons.manager import weapon_manager
@@ -119,6 +118,7 @@ from .core.listeners import OnPlayerQuery
 from .core.listeners import OnPlayerRankUpdate
 from .core.listeners import OnPlayerReady
 from .core.listeners import OnPluginUnload
+from .core.listeners import OnSettingsLoaded
 from .core.listeners import OnTakeDamageAlive
 #   Menus
 from .core.menus import shopmenu_menu
@@ -144,6 +144,7 @@ from .core.modules.items.manager import item_manager
 from .core.modules.races.manager import race_manager
 #   Players
 from .core.players import _initialize_players
+from .core.players import index_from_accountid
 from .core.players import team_data
 from .core.players.entity import Player
 from .core.players.filters import PlayerReadyIter
@@ -254,9 +255,6 @@ def load():
     if cfg_bot_ability_chance.get_float():
         emulate_manager.start()
 
-    database_manager.execute('player offline', callback=_query_refresh_offline)
-    database_manager.execute('rank update', callback=_query_refresh_ranks)
-
 
 def unload():
     _thread.unloading = True
@@ -320,24 +318,27 @@ def _query_refresh_offline(result):
 
             stop = True
 
-    for uniqueid, name in result.fetchall():
-        playerinfo_menu.append(PagedOption(name, uniqueid))
-        wcsadmin_players_menu.append(PagedOption(name, uniqueid))
+    for accountid, name in result.fetchall():
+        playerinfo_menu.append(PagedOption(name, accountid))
+        wcsadmin_players_menu.append(PagedOption(name, accountid))
 
 
 def _query_refresh_ranks(result):
-    for uniqueid, name, current_race, total_level in result.fetchall():
+    for accountid, name, current_race, total_level in result.fetchall():
         if current_race not in race_manager:
             current_race = race_manager.default_race
 
-        rank_manager._data[uniqueid] = {'name':name, 'current_race':current_race, 'total_level':total_level}
+        if accountid is None:
+            accountid = name
 
-        option = PagedOption(deepcopy(menu_strings['wcstop_menu line']), uniqueid, show_index=False)
+        rank_manager._data[accountid] = {'name':name, 'current_race':current_race, 'total_level':total_level}
+
+        option = PagedOption(deepcopy(menu_strings['wcstop_menu line']), accountid, show_index=False)
         option.text.tokens['name'] = name
 
         wcstop_menu.append(option)
 
-        rank_manager.append(uniqueid)
+        rank_manager.append(accountid)
 
 
 def _give_xp_if_set(userid, config, bot_config, message):
@@ -747,7 +748,7 @@ def player_jump(event):
 @OnLevelInit
 def on_level_init(map_name):
     # Remove all offline players from the cache (better place for this?)
-    Player._uniqueid_players.clear()
+    Player._accountid_players.clear()
 
     for name in race_manager._refresh_config:
         settings = race_manager[name]
@@ -934,9 +935,9 @@ def on_player_rank_update(wcsplayer, old, new):
 
         if new < old:
             if cfg_top_stolen_notify.get_int():
-                for i, uniqueid in enumerate(rank_manager[new + 1:old + 1], 1):
+                for i, accountid in enumerate(rank_manager[new + 1:old + 1], 1):
                     try:
-                        index = index_from_uniqueid(uniqueid)
+                        index = index_from_accountid(accountid)
                     except ValueError:
                         pass
                     else:
@@ -1002,6 +1003,12 @@ def on_player_ready(wcsplayer):
                 delay = Delay(5, _send_message_and_remove, (welcome_menu, wcsplayer))
                 delay.args += (delay, )
                 _delays[wcsplayer].add(delay)
+
+
+@OnSettingsLoaded
+def on_settings_loaded(settings):
+    database_manager.execute('player offline', callback=_query_refresh_offline)
+    database_manager.execute('rank update', callback=_query_refresh_ranks)
 
 
 @OnTakeDamageAlive

@@ -10,6 +10,8 @@ from entities.helpers import edict_from_index
 from entities.helpers import index_from_edict
 #   Entities
 from entities.entity import Entity
+#   Filters
+from filters.players import PlayerIter
 #   Listeners
 from listeners import OnClientConnect as _OnClientConnect
 from listeners import OnClientDisconnect as _OnClientDisconnect
@@ -31,6 +33,7 @@ __all__ = (
     'BasePlayer',
     'set_weapon_name',
     'team_data',
+    'index_from_accountid',
 )
 
 
@@ -149,6 +152,21 @@ def set_weapon_name(name, prefix='wcs'):
     return _global_weapon_entity.index
 
 
+def index_from_accountid(accountid):
+    if isinstance(accountid, str):
+        for player in PlayerIter('bot'):
+            if player.name == accountid:
+                return player.index
+
+        raise ValueError(accountid)
+
+    for player in PlayerIter('human'):
+        if player.raw_steamid.account_id == accountid:
+            return player.index
+
+    raise ValueError(accountid)
+
+
 # ============================================================================
 # >> LISTENERS
 # ============================================================================
@@ -180,6 +198,7 @@ def _on_client_connect(allow_connect_ptr, edict, name, address, reject_msg_ptr, 
 
     if not baseplayer._authorized:
         if baseplayer._fake_client:
+            baseplayer._accountid = name
             baseplayer._steamid2 = 'BOT'
             baseplayer._uniqueid = f'BOT_{name}'
             baseplayer._authorized = True
@@ -213,6 +232,7 @@ def on_client_put_in_server(edict, name):
 
         _on_client_connect(None, edict, name, None, None, None)
 
+        baseplayer._accountid = name
         baseplayer._steamid2 = 'BOT'
         baseplayer._uniqueid = f'BOT_{name}'
         baseplayer._authorized = True
@@ -245,6 +265,7 @@ def _initialize_players():
             baseplayer._fake_client = playerinfo_from_edict(edict).is_fake_client()
 
             if baseplayer._fake_client:
+                baseplayer._accountid = baseplayer._name
                 baseplayer._steamid2 = 'BOT'
                 baseplayer._uniqueid = f'BOT_{baseplayer.name}'
                 baseplayer._authorized = True

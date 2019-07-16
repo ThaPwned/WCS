@@ -460,13 +460,13 @@ def playerinfo_menu_build(menu, client):
             stop = True
 
     for i, (_, wcsplayer) in enumerate(PlayerReadyIter(), 1):
-        menu.insert(i, PagedOption(wcsplayer.name, wcsplayer.uniqueid))
+        menu.insert(i, PagedOption(wcsplayer.name, wcsplayer.accountid))
 
 
 @playerinfo_detail_menu.register_build_callback
 def playerinfo_detail_menu_build(menu, client):
     wcsplayer = Player(client)
-    wcstarget = Player.from_uniqueid(wcsplayer.data['_internal_playerinfo'])
+    wcstarget = Player.from_accountid(wcsplayer.data['_internal_playerinfo'])
 
     menu[7].selectable = menu[7].highlight = wcstarget.ready
     menu[8].selectable = menu[8].highlight = wcstarget.online
@@ -501,7 +501,7 @@ def playerinfo_detail_skills_menu_build(menu, client):
     menu.clear()
 
     wcsplayer = Player(client)
-    wcstarget = Player.from_uniqueid(wcsplayer.data['_internal_playerinfo'])
+    wcstarget = Player.from_accountid(wcsplayer.data['_internal_playerinfo'])
 
     if wcstarget.ready:
         menu.title.tokens['name'] = wcstarget.name
@@ -521,7 +521,7 @@ def playerinfo_detail_skills_menu_build(menu, client):
 
 @playerinfo_detail_stats_menu.register_build_callback
 def playerinfo_detail_stats_menu_build(menu, client):
-    wcsplayer = Player.from_uniqueid(Player(client).data['_internal_playerinfo'])
+    wcsplayer = Player.from_accountid(Player(client).data['_internal_playerinfo'])
 
     if wcsplayer.ready and wcsplayer.online:
         player = wcsplayer.player
@@ -544,18 +544,18 @@ def playerinfo_detail_stats_menu_build(menu, client):
 @wcstop_menu.register_build_callback
 def wcstop_menu_build(menu, client):
     for option in _get_current_options(menu, client):
-        option.text.tokens['rank'] = rank_manager[option.value]
+        option.text.tokens['rank'] = rank_manager.from_accountid(option.value)
         option.text.tokens['level'] = rank_manager._data[option.value]['total_level']
 
 
 @wcstop_detail_menu.register_build_callback
 def wcstop_detail_menu_build(menu, client):
     wcsplayer = Player(client)
-    uniqueid = wcsplayer.data['_internal_wcstop']
-    data = rank_manager._data[uniqueid]
+    accountid = wcsplayer.data['_internal_wcstop']
+    data = rank_manager._data[accountid]
 
     name = data['name']
-    rank = rank_manager[uniqueid]
+    rank = rank_manager.from_accountid(accountid)
     total_level = data['total_level']
     current_race = data['current_race']
 
@@ -605,22 +605,22 @@ def wcsadmin_players_menu_build(menu, client):
             stop = True
 
     for i, (_, wcsplayer) in enumerate(PlayerReadyIter(), 2):
-        menu.insert(i, PagedOption(wcsplayer.name, wcsplayer.uniqueid))
+        menu.insert(i, PagedOption(wcsplayer.name, wcsplayer.accountid))
 
 
 @wcsadmin_players_sub_menu.register_build_callback
 def wcsadmin_players_sub_menu_build(menu, client):
     wcsplayer = Player(client)
-    uniqueid = wcsplayer.data['_internal_wcsadmin_player']
+    accountid = wcsplayer.data['_internal_wcsadmin_player']
 
-    if uniqueid is None:
+    if accountid is None:
         menu[0].text.tokens['name'] = menu_strings['wcsadmin_players_menu all']
         menu[2].selectable = menu[2].highlight = True
         menu[3].selectable = menu[3].highlight = True
 
         menu[4] = Text(' ')
     else:
-        wcstarget = Player.from_uniqueid(uniqueid)
+        wcstarget = Player.from_accountid(accountid)
 
         if wcstarget.ready:
             menu[0].text.tokens['name'] = wcstarget.name
@@ -637,12 +637,12 @@ def wcsadmin_players_sub_menu_build(menu, client):
 @wcsadmin_players_sub_xp_menu.register_build_callback
 def wcsadmin_players_sub_xp_menu_build(menu, client):
     wcsplayer = Player(client)
-    uniqueid = wcsplayer.data['_internal_wcsadmin_player']
+    accountid = wcsplayer.data['_internal_wcsadmin_player']
 
-    if uniqueid is None:
+    if accountid is None:
         menu[0].text.tokens['name'] = menu_strings['wcsadmin_players_menu all']
     else:
-        wcstarget = Player.from_uniqueid(uniqueid)
+        wcstarget = Player.from_accountid(accountid)
 
         menu[0].text.tokens['name'] = wcstarget.name
 
@@ -650,12 +650,12 @@ def wcsadmin_players_sub_xp_menu_build(menu, client):
 @wcsadmin_players_sub_levels_menu.register_build_callback
 def wcsadmin_players_sub_levels_menu_build(menu, client):
     wcsplayer = Player(client)
-    uniqueid = wcsplayer.data['_internal_wcsadmin_player']
+    accountid = wcsplayer.data['_internal_wcsadmin_player']
 
-    if uniqueid is None:
+    if accountid is None:
         menu[0].text.tokens['name'] = menu_strings['wcsadmin_players_menu all']
     else:
-        wcstarget = Player.from_uniqueid(uniqueid)
+        wcstarget = Player.from_accountid(accountid)
 
         menu[0].text.tokens['name'] = wcstarget.name
 

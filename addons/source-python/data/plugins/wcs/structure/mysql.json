@@ -1,14 +1,15 @@
 {
-    "create players": "CREATE TABLE IF NOT EXISTS players (`id` INT PRIMARY KEY AUTO_INCREMENT, `uniqueid` VARCHAR(191) UNIQUE, `name` VARCHAR(191), `current_race` VARCHAR(191), `lastconnect` FLOAT)",
+    "create players": "CREATE TABLE IF NOT EXISTS players (`id` INT PRIMARY KEY AUTO_INCREMENT, `accountid` INT UNIQUE, `name` VARCHAR(191), `current_race` VARCHAR(191), `lastconnect` FLOAT)",
     "create races": "CREATE TABLE IF NOT EXISTS races (`id` INT PRIMARY KEY AUTO_INCREMENT, `name` VARCHAR(191), `playerid` INT, `xp` INT DEFAULT 0, `level` INT DEFAULT 0, `unused` INT DEFAULT 0)",
     "create skills": "CREATE TABLE IF NOT EXISTS skills (`id` INT PRIMARY KEY AUTO_INCREMENT, `name` VARCHAR(191), `race` VARCHAR(191), `playerid` INT, `level` INT DEFAULT 0)",
     "create stats races": "CREATE TABLE IF NOT EXISTS stats_races (`id` INT PRIMARY KEY AUTO_INCREMENT, `playerid` INT, `owner` VARCHAR(191), `key` VARCHAR(191), `value` FLOAT)",
     "create stats items": "CREATE TABLE IF NOT EXISTS stats_items (`id` INT PRIMARY KEY AUTO_INCREMENT, `playerid` INT, `owner` VARCHAR(191), `key` VARCHAR(191), `value` FLOAT)",
     "create settings": "CREATE TABLE IF NOT EXISTS settings (`setting` VARCHAR(191) PRIMARY KEY NOT NULL, `value` VARCHAR(191) NOT NULL)",
 
-    "player offline": "SELECT uniqueid, name FROM players ORDER BY name ASC",
-    "player get": "SELECT id, name, current_race, lastconnect FROM players WHERE uniqueid = %s",
-    "player insert": "INSERT INTO players (uniqueid, name, current_race, lastconnect) VALUES (%s, %s, %s, %s)",
+    "player offline": "SELECT IFNULL(accountid, name), name FROM players ORDER BY name ASC",
+    "player get": "SELECT id, name, current_race, lastconnect FROM players WHERE accountid = %s",
+    "player get bot": "SELECT id, name, current_race, lastconnect FROM players WHERE accountid IS NULL AND name = %s",
+    "player insert": "INSERT INTO players (accountid, name, current_race, lastconnect) VALUES (%s, %s, %s, %s)",
     "player update": "UPDATE players SET name = %s, current_race = %s, lastconnect = %s WHERE id = %s",
 
     "race get": "SELECT name, xp, level, unused FROM races WHERE playerid = %s",
@@ -27,14 +28,17 @@
     "stat join": "WHEN owner = '{}' AND `key` = '{}' THEN {}",
 
     "setting get": "SELECT setting, value FROM settings",
-    "setting update": "UPDATE settings SET value = CASE {} ELSE value END",
-    "setting join": "WHEN setting = '{}' THEN {}",
     "setting insert": "INSERT INTO settings (setting, value) VALUES (%s, %s)",
+    "setting update": "UPDATE settings SET value = %s WHERE setting = '{}'",
 
-    "_rank update": "WITH tmp (uniqueid, name, current_race, total_level) AS (SELECT p.uniqueid, p.name, p.current_race, SUM(r.level) AS total_level FROM races r INNER JOIN players p ON p.id = r.playerid GROUP BY playerid) SELECT tt.uniqueid, tt.name, tt.current_race, tt.total_level, (SELECT count(*)+1 FROM tmp AS t WHERE t.total_level > tt.total_level) AS rank FROM tmp AS tt ORDER BY rank ASC",
-    "rank update": "SELECT p.uniqueid, p.name, p.current_race, SUM(r.level) AS total_level FROM races r INNER JOIN players p ON p.id = r.playerid GROUP BY playerid ORDER BY total_level DESC",
+    "rank update": "SELECT IFNULL(p.accountid, p.name), p.name, p.current_race, IFNULL(SUM(r.level), 1) AS total_level FROM players p LEFT JOIN races r on r.playerid = p.id GROUP BY p.id ORDER BY total_level DESC",
 
     "create database": "CREATE DATABASE IF NOT EXISTS {} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci",
     "use database": "USE {}",
-    "toggle warnings": "SET sql_notes = {}"
+    "toggle warnings": "SET sql_notes = {}",
+
+    "database upgrade 1.0": "UPDATE players SET uniqueid = NULL WHERE uniqueid LIKE 'BOT_%%'",
+    "database upgrade 1.1": "UPDATE players SET uniqueid = CAST(SUBSTR(uniqueid, 9, 1) AS UNSIGNED) + CAST(SUBSTR(uniqueid, 11) * 2 AS UNSIGNED) WHERE uniqueid LIKE 'STEAM_%%'",
+    "database upgrade 1.2": "UPDATE players SET uniqueid = SUBSTR(uniqueid, 6, LENGTH(uniqueid) - 6) WHERE uniqueid LIKE '[_:_:%%]'",
+    "database upgrade 1.3": "ALTER TABLE players CHANGE uniqueid accountid INTEGER NULL"
 }

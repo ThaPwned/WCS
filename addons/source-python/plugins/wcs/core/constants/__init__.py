@@ -107,7 +107,8 @@ class NodeType(IntEnum):
 
 class DatabaseVersion(IntEnum):
     INITIAL = 0
-    CURRENT = INITIAL
+    UPDATE1 = 1
+    CURRENT = UPDATE1
 
 
 # ============================================================================

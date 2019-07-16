@@ -111,7 +111,10 @@ class _Node(object):
             self._result = None
 
     def __lt__(self, other):
-        return other.priority < self.priority or other._entry > self._entry
+        if self.priority == other.priority:
+            return self._entry < other._entry
+
+        return self.priority > other.priority
 
 
 class _Thread(Thread):
@@ -183,6 +186,10 @@ class _Thread(Thread):
                         result._data = self.cur.fetchall()
 
                         _output.put((node.callback, result))
+
+                        if node._blocking:
+                            node._result = result
+                            node._executed.set()
                     elif node._blocking:
                         result._data = self.cur.fetchall()
 

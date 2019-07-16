@@ -401,9 +401,9 @@ def wcsadmin_players_sub_menu_select(menu, client, option):
 def wcsadmin_players_sub_xp_menu_select(menu, client, option):
     if isinstance(option.value, int):
         wcsplayer = Player(client)
-        uniqueid = wcsplayer.data['_internal_wcsadmin_player']
+        accountid = wcsplayer.data['_internal_wcsadmin_player']
 
-        if uniqueid is None:
+        if accountid is None:
             for _, wcstarget in PlayerReadyIter():
                 active_race = wcstarget.active_race
                 old_level = active_race.level
@@ -420,7 +420,7 @@ def wcsadmin_players_sub_xp_menu_select(menu, client, option):
 
             admin_gain_xp_all_message.send(wcsplayer.index, value=option.value)
         else:
-            wcstarget = Player.from_uniqueid(uniqueid)
+            wcstarget = Player.from_accountid(accountid)
             active_race = wcstarget.active_race
             old_level = active_race.level
 
@@ -448,9 +448,9 @@ def wcsadmin_players_sub_xp_menu_select(menu, client, option):
 def wcsadmin_players_sub_levels_menu_select(menu, client, option):
     if isinstance(option.value, int):
         wcsplayer = Player(client)
-        uniqueid = wcsplayer.data['_internal_wcsadmin_player']
+        accountid = wcsplayer.data['_internal_wcsadmin_player']
 
-        if uniqueid is None:
+        if accountid is None:
             for _, wcstarget in PlayerReadyIter():
                 wcstarget.level += option.value
 
@@ -461,7 +461,7 @@ def wcsadmin_players_sub_levels_menu_select(menu, client, option):
 
             admin_gain_levels_all_message.send(wcsplayer.index, value=option.value)
         else:
-            wcstarget = Player.from_uniqueid(uniqueid)
+            wcstarget = Player.from_accountid(accountid)
 
             wcstarget.level += option.value
 
@@ -822,9 +822,9 @@ def _give_experience(wcsplayer, value):
 
     value = int(value)
 
-    uniqueid = wcsplayer.data.get('_internal_wcsadmin_player')
+    accountid = wcsplayer.data.get('_internal_wcsadmin_player')
 
-    if uniqueid is None:
+    if accountid is None:
         for _, wcstarget in PlayerReadyIter():
             active_race = wcstarget.active_race
             old_level = active_race.level
@@ -841,7 +841,7 @@ def _give_experience(wcsplayer, value):
 
         admin_gain_xp_all_message.send(wcsplayer.index, value=value)
     else:
-        wcstarget = Player.from_uniqueid(uniqueid)
+        wcstarget = Player.from_accountid(accountid)
 
         if wcstarget.ready:
             active_race = wcstarget.active_race
@@ -867,9 +867,9 @@ def _give_levels(wcsplayer, value):
 
     value = int(value)
 
-    uniqueid = wcsplayer.data.get('_internal_wcsadmin_player')
+    accountid = wcsplayer.data.get('_internal_wcsadmin_player')
 
-    if uniqueid is None:
+    if accountid is None:
         for _, wcstarget in PlayerReadyIter():
             wcstarget.level += value
 
@@ -880,7 +880,7 @@ def _give_levels(wcsplayer, value):
 
         admin_gain_levels_all_message.send(wcsplayer.index, value=value)
     else:
-        wcstarget = Player.from_uniqueid(uniqueid)
+        wcstarget = Player.from_accountid(accountid)
 
         if wcstarget.ready:
             wcstarget.level += value
