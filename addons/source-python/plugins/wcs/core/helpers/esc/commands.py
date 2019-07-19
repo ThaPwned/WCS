@@ -1579,7 +1579,7 @@ def wcs_fade_command(command_info, player:convert_userid_to_player, red:int, gre
 
     color = Color(red, green, blue, alpha)
 
-    Fade(time, time, color, FadeFlags.PURGE).send(player.index)
+    Fade(int(time), int(time), color, FadeFlags.PURGE).send(player.index)
 
 
 @TypedServerCommand('wcs_shake')
