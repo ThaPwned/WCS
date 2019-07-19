@@ -51,6 +51,7 @@ from . import shopinfo_detail_menu
 from . import showskills_menu
 from . import spendskills_menu
 from . import changerace_menu
+from . import changerace_search_menu
 from . import raceinfo_detail_menu
 from . import raceinfo_skills_menu
 from . import raceinfo_skills_detail_menu
@@ -261,6 +262,69 @@ def spendskills_menu_build(menu, client):
 @changerace_menu.register_build_callback
 def changerace_menu_build(menu, client):
     wcsplayer = Player(client)
+
+    for option in _get_current_options(menu, client):
+        if isinstance(option.value, str):
+            settings = race_manager[option.value]
+            reason = settings.usable_by(wcsplayer)
+
+            if reason is RaceReason.ALLOWED:
+                option.text = deepcopy(menu_strings['changerace_menu line'])
+                race = wcsplayer._races.get(option.value)
+
+                if race is None:
+                    option.text.tokens['level'] = 0
+                else:
+                    option.text.tokens['level'] = race.level
+
+                option.selectable = option.highlight = not wcsplayer.current_race == option.value
+            elif reason is RaceReason.REQUIRED_LEVEL:
+                option.text = deepcopy(menu_strings['changerace_menu required level'])
+                option.text.tokens['level'] = settings.config['required']
+                option.selectable = option.highlight = False
+            elif reason is RaceReason.MAXIMUM_LEVEL:
+                option.text = deepcopy(menu_strings['changerace_menu maximum level'])
+                option.text.tokens['level'] = settings.config['maximum']
+                option.selectable = option.highlight = False
+            elif reason is RaceReason.TEAM_LIMIT:
+                option.text = deepcopy(menu_strings['changerace_menu team limit'])
+                option.text.tokens['count'] = len(team_data[wcsplayer.player.team][f'_internal_{option.value}_limit_allowed'])
+                option.selectable = option.highlight = False
+            elif reason is RaceReason.TEAM:
+                option.text = deepcopy(menu_strings['changerace_menu team'])
+                option.text.tokens['team'] = ['T', 'CT'][wcsplayer.player.team - 2]
+                option.selectable = option.highlight = False
+            elif reason is RaceReason.PRIVATE or reason is RaceReason.VIP or reason is RaceReason.ADMIN:
+                option.text = deepcopy(menu_strings['changerace_menu private'])
+                option.selectable = option.highlight = False
+            elif reason is RaceReason.MAP:
+                option.text = deepcopy(menu_strings['changerace_menu map'])
+                option.text.tokens['map'] = global_vars.map_name
+                option.selectable = option.highlight = False
+            elif isinstance(reason, IntEnum):
+                data = {'reason':reason, 'string':None}
+
+                OnIsRaceUsableText.manager.notify(wcsplayer, settings, data)
+
+                if not isinstance(data['string'], TranslationStrings):
+                    raise ValueError(f'Invalid string: {data["string"]}')
+
+                option.text = data['string']
+                option.selectable = option.highlight = False
+            else:
+                raise ValueError(f'Invalid reason: {reason}')
+
+            option.text.tokens['name'] = settings.strings['name']
+
+
+@changerace_search_menu.register_build_callback
+def changerace_search_menu_build(menu, client):
+    menu.clear()
+
+    wcsplayer = Player(client)
+
+    for name in wcsplayer.data['_internal_changerace_search']:
+        menu.append(PagedOption(deepcopy(menu_strings['changerace_menu line']), name))
 
     for option in _get_current_options(menu, client):
         if isinstance(option.value, str):

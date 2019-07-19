@@ -40,6 +40,7 @@ from . import shopinfo_detail_menu
 from . import resetskills_menu
 from . import spendskills_menu
 from . import changerace_menu
+from . import changerace_search_menu
 from . import raceinfo_menu
 from . import raceinfo_detail_menu
 from . import raceinfo_skills_menu
@@ -242,6 +243,7 @@ def spendskills_menu_select(menu, client, option):
 
 
 @changerace_menu.register_select_callback
+@changerace_search_menu.register_select_callback
 def changerace_menu_select(menu, client, option):
     wcsplayer = Player(client)
 
