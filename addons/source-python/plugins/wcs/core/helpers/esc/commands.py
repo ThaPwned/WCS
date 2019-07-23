@@ -24,6 +24,8 @@ from colors import Color
 #   Commands
 from commands.typed import InvalidArgumentValue
 from commands.typed import TypedServerCommand
+#   Core
+from core import GAME_NAME
 #   CVars
 from cvars import ConVar
 #   Engines
@@ -128,6 +130,51 @@ else:
     _languages = {}
 
 _repeats = defaultdict(list)
+
+_models = {2:[], 3:[]}
+
+if GAME_NAME == 'cstrike':
+    _models[2].extend(
+        [
+            't_arctic',
+            't_guerilla',
+            't_leet',
+            't_phoenix'
+        ]
+    )
+    _models[3].extend(
+        [
+            'ct_gign',
+            'ct_gsg9',
+            'ct_sas',
+            'ct_urban'
+        ]
+    )
+elif GAME_NAME == 'csgo':
+    _models[2].extend(
+        [
+            'tm_leet_varianta',
+            'tm_leet_variantb',
+            'tm_leet_variantc',
+            'tm_leet_variantd',
+            'tm_phoenix_varianta',
+            'tm_phoenix_variantb',
+            'tm_phoenix_variantc',
+            'tm_phoenix_variantd'
+        ]
+    )
+    _models[3].extend(
+        [
+            'ctm_gign_varianta',
+            'ctm_gign_variantb',
+            'ctm_gign_variantc',
+            'ctm_gign_variantd',
+            'ctm_gsg9_varianta',
+            'ctm_gsg9_variantb',
+            'ctm_gsg9_variantc',
+            'ctm_gsg9_variantd'
+        ]
+    )
 
 
 # ============================================================================
@@ -428,9 +475,28 @@ def wcs_setfx_ulti_immunity_command(command_info, wcsplayer:convert_userid_to_wc
         Delay(time, validate_userid_after_delay, (wcs_setfx_ulti_immunity_command, wcsplayer.userid, '+', value), {'validator':convert_userid_to_wcsplayer})
 
 
+@TypedServerCommand(['wcs_setfx', 'disguiser'])
+def wcs_setfx_disguiser_command(command_info, player:convert_userid_to_player, operator:valid_operators('='), value:int, time:float=0):
+    if player is None:
+        return
+
+    if value:
+        models = _models.get(5 - player.team)
+    else:
+        models = _models.get(player.team)
+
+    if not models:
+        return
+
+    player.model = Model('models/player/' + choice(models) + '.mdl')
+
+    if time:
+        Delay(time, validate_userid_after_delay, (wcs_setfx_disguiser_command, player.userid, '=', not value), {'validator':convert_userid_to_player})
+
+
 @TypedServerCommand(['wcs_setfx', 'disguise'])
-def wcs_setfx_disguise_command(command_info, wcsplayer:convert_userid_to_player, operator:valid_operators(), value:int, time:float=0):
-    pass  # TODO
+def wcs_setfx_disguise_command(command_info, player:convert_userid_to_player, operator:valid_operators('='), value:int, time:float=0):
+    wcs_setfx_disguiser_command(command_info, player, operator, value, time)
 
 
 @TypedServerCommand(['wcs_setfx', 'longjump'])
