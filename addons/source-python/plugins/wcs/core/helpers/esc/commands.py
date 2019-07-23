@@ -100,6 +100,8 @@ from .est.commands import armor_command  # Just to load it
 from .est.effects import effect101  # Just to load it
 from ..wards import DamageWard
 from ..wards import ward_manager
+#   Listeners
+from ...listeners import OnPlayerChangeRace
 #   Modules
 from ...modules.races.manager import race_manager
 #   Players
@@ -1775,3 +1777,11 @@ def player_blind(event):
 
         player.flash_duration = 0
         player.flash_alpha = 0
+
+
+# ============================================================================
+# >> LISTENERS
+# ============================================================================
+@OnPlayerChangeRace
+def on_player_change_race(wcsplayer, old, new):
+    _restrictions.player_restrictions[wcsplayer.userid].clear()
