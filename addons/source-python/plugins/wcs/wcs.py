@@ -47,6 +47,8 @@ from mathlib import QAngle
 from mathlib import Vector
 #   Menus
 from menus import Text
+#   Messages
+from messages import HintText
 #   Players
 from players.helpers import get_client_language
 from players.helpers import index_from_userid
@@ -64,6 +66,7 @@ from .core.config import cfg_welcome_gui_text
 from .core.config import cfg_level_up_effect
 from .core.config import cfg_rank_gain_effect
 from .core.config import cfg_spawn_text
+from .core.config import cfg_hinttext_cooldown
 from .core.config import cfg_changerace_next_round
 from .core.config import cfg_resetskills_next_round
 from .core.config import cfg_disable_text_on_level
@@ -220,6 +223,9 @@ admin_gain_levels_receiver_message = SayText2(chat_strings['admin gain levels re
 admin_gain_levels_sender_message = SayText2(chat_strings['admin gain levels sender'])
 admin_gain_levels_self_message = SayText2(chat_strings['admin gain levels self'])
 github_mod_update_message = SayText2(chat_strings['github mod update'])
+
+hinttext_cooldown_message = HintText(menu_strings['hinttext_cooldown'])
+hinttext_cooldown_ready_message = HintText(menu_strings['hinttext_cooldown ready'])
 
 _delays = defaultdict(set)
 _melee_weapons = [weapon.basename for weapon in WeaponClassIter('melee')]
@@ -1414,3 +1420,27 @@ def save_data_repeat():
 
     database_manager.execute('player offline', callback=_query_refresh_offline)
 save_data_repeat.start(60 * 1)
+
+
+@Repeat
+def hinttext_repeat():
+    now = time()
+
+    for _, wcsplayer in PlayerReadyIter():
+        for skill in wcsplayer.active_race.skills.values():
+            if 'player_ultimate' in skill.config['event']:
+                if skill.cooldown_seconds:
+                    if skill.cooldown > now:
+                        hinttext_cooldown_message.send(wcsplayer.index, name=wcsplayer.active_race.settings.strings[skill.name], seconds=skill.cooldown - now)
+
+                        wcsplayer.data['_internal_hinttext_cooldown_shown'] = False
+                    elif not wcsplayer.data.get('_internal_hinttext_cooldown_shown', False):
+                        wcsplayer.data['_internal_hinttext_cooldown_shown'] = True
+
+                        hinttext_cooldown_ready_message.send(wcsplayer.index, name=wcsplayer.active_race.settings.strings[skill.name])
+
+                break
+
+
+if cfg_hinttext_cooldown.get_int():
+    hinttext_repeat.start(0.1)

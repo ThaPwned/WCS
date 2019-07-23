@@ -26,6 +26,7 @@ __all__ = (
     'cfg_kill_xp',
     'cfg_knife_xp',
     'cfg_spawn_text',
+    'cfg_hinttext_cooldown',
     'cfg_changerace_next_round',
     'cfg_resetskills_next_round',
     'cfg_top_announcement_enable',
@@ -69,6 +70,7 @@ with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as co
     cfg_level_up_effect = config.cvar('level_up_effect', '1', config_strings['level_up_effect'])
     cfg_rank_gain_effect = config.cvar('rank_gain_effect', '1', config_strings['rank_gain_effect'])
     cfg_spawn_text = config.cvar('spawn_text', '1', config_strings['spawn_text'])
+    cfg_hinttext_cooldown = config.cvar('hinttext_cooldown', '0', config_strings['hinttext_cooldown'])
     cfg_changerace_next_round = config.cvar('changerace_next_round', '0', config_strings['changerace_next_round'])
     cfg_resetskills_next_round = config.cvar('resetskills_next_round', '0', config_strings['resetskills_next_round'])
     cfg_disable_text_on_level = config.cvar('disable_text_on_level', '20', config_strings['disable_text_on_level'])
