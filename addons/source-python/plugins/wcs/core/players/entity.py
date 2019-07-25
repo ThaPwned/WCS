@@ -1263,7 +1263,10 @@ class _Skill(object):
 
     @property
     def cooldown_seconds(self):
-        return self.config['cooldown'][self.level - 1]
+        if 'cooldown' in self.config:
+            return self.config['cooldown'][self.level - 1]
+
+        return 0
 
 
 class _Item(object):
