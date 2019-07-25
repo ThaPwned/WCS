@@ -49,6 +49,8 @@ from listeners.tick import Repeat
 from listeners.tick import RepeatStatus
 #   Memory
 from memory import make_object
+#   Menus
+from menus import SimpleMenu
 #   Players
 from players.dictionary import PlayerDictionary
 from players.entity import Player as _Player
@@ -623,7 +625,11 @@ class Player(object, metaclass=_PlayerMeta):
         except:
             except_hooks.print_exception()
         else:
-            if not accepted:
+            if isinstance(accepted, SimpleMenu):
+                accepted.send(self.index)
+
+                self.data['_internal_input_menu'] = None
+            elif not accepted:
                 input_invalid_message.send(self.index, value=value)
         finally:
             self._request_end()

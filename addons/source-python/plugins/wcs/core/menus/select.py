@@ -17,6 +17,7 @@ from menus import Text
 from menus.radio import BUTTON_BACK
 from menus.radio import MAX_ITEM_COUNT
 #   Players
+from players.helpers import get_client_language
 from players.helpers import userid_from_index
 
 # WCS Imports
@@ -57,6 +58,7 @@ from . import wcsadmin_players_menu
 from . import wcsadmin_players_sub_menu
 from . import wcsadmin_players_sub_xp_menu
 from . import wcsadmin_players_sub_levels_menu
+from . import wcsadmin_players_sub_changerace_menu
 from . import wcsadmin_management_menu
 from . import wcsadmin_management_races_menu
 from . import wcsadmin_management_items_menu
@@ -98,6 +100,7 @@ __all__ = ()
 # ============================================================================
 # >> GLOBAL VARIABLES
 # ============================================================================
+xp_required_message = SayText2(chat_strings['xp required'])
 gain_level_message = SayText2(chat_strings['gain level'])
 skills_reset_message = SayText2(chat_strings['skills reset'])
 changerace_message = SayText2(chat_strings['changerace'])
@@ -114,6 +117,9 @@ admin_gain_levels_all_message = SayText2(chat_strings['admin gain levels all'])
 admin_gain_levels_receiver_message = SayText2(chat_strings['admin gain levels receiver'])
 admin_gain_levels_sender_message = SayText2(chat_strings['admin gain levels sender'])
 admin_gain_levels_self_message = SayText2(chat_strings['admin gain levels self'])
+admin_changerace_receiver_message = SayText2(chat_strings['admin changerace receiver'])
+admin_changerace_sender_message = SayText2(chat_strings['admin changerace sender'])
+admin_changerace_self_message = SayText2(chat_strings['admin changerace self'])
 github_installing_message = SayText2(chat_strings['github installing'])
 github_installing_message = SayText2(chat_strings['github installing'])
 github_updating_message = SayText2(chat_strings['github updating'])
@@ -410,6 +416,9 @@ def wcsadmin_players_menu_select(menu, client, option):
 
 @wcsadmin_players_sub_menu.register_select_callback
 def wcsadmin_players_sub_menu_select(menu, client, option):
+    if option.choice_index == 3:
+        return Player(client).request_input(_change_race, return_menu=menu)
+
     return option.value
 
 
@@ -494,6 +503,35 @@ def wcsadmin_players_sub_levels_menu_select(menu, client, option):
         return wcsplayer.request_input(_give_levels, return_menu=menu)
 
     return option.value
+
+
+@wcsadmin_players_sub_changerace_menu.register_select_callback
+def wcsadmin_players_sub_changerace_menu_select(menu, client, option):
+    wcsplayer = Player(client)
+    accountid = wcsplayer.data['_internal_wcsadmin_player']
+    wcstarget = Player.from_accountid(accountid)
+
+    if wcstarget.online:
+        wcstarget.current_race = option.value
+
+        player = wcsplayer.player
+
+        if not player.dead:
+            player.godmode = False
+
+            player.client_command('kill', True)
+
+        if wcstarget is wcsplayer:
+            admin_changerace_self_message.send(client, value=race_manager[option.value].strings['name'])
+        else:
+            admin_changerace_receiver_message.send(wcstarget.index, value=race_manager[option.value].strings['name'])
+            admin_changerace_sender_message.send(client, name=wcstarget.name, value=race_manager[option.value].strings['name'])
+
+        active_race = wcstarget.active_race
+
+        xp_required_message.send(wcsplayer.index, name=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
+
+    return menu.parent_menu
 
 
 @wcsadmin_management_menu.register_select_callback
@@ -830,6 +868,35 @@ def _request_add_new_value(wcsplayer, value):
     _update_config(RACE_PATH, wcsplayer.data['_internal_wcsadmin_editor_value'], wcsplayer.data['_internal_wcsadmin_editor_key'], value)
 
     return True
+
+
+def _change_race(wcsplayer, value):
+    found = []
+    lower_search = value.lower()
+    language = get_client_language(wcsplayer.index)
+
+    for name, settings in race_manager.items():
+        if lower_search == settings.strings['name'].get_string(language).lower():
+            if name not in found:
+                found.append(name)
+
+    for name, settings in race_manager.items():
+        if lower_search in settings.strings['name'].get_string(language).lower():
+            if name not in found:
+                found.append(name)
+
+    for partial in [x.lower() for x in value.split()]:
+        for name, settings in race_manager.items():
+            if partial in settings.strings['name'].get_string(language).lower():
+                if name not in found:
+                    found.append(name)
+
+    if found:
+        wcsplayer.data['_internal_wcsadmin_changerace'] = found
+
+        return wcsadmin_players_sub_changerace_menu
+    else:
+        return False
 
 
 def _give_experience(wcsplayer, value):

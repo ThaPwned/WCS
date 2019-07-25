@@ -133,6 +133,7 @@ from .core.menus import spendskills_menu
 from .core.menus import changerace_menu
 from .core.menus import changerace_search_menu
 from .core.menus import raceinfo_menu
+from .core.menus import raceinfo_search_menu
 from .core.menus import playerinfo_menu
 from .core.menus import wcstop_menu
 from .core.menus import wcshelp_menu

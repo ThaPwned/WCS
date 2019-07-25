@@ -69,6 +69,7 @@ from . import wcsadmin_players_menu
 from . import wcsadmin_players_sub_menu
 from . import wcsadmin_players_sub_xp_menu
 from . import wcsadmin_players_sub_levels_menu
+from . import wcsadmin_players_sub_changerace_menu
 from . import wcsadmin_management_races_menu
 from . import wcsadmin_management_items_menu
 from . import wcsadmin_management_races_add_menu
@@ -704,9 +705,9 @@ def wcsadmin_players_sub_menu_build(menu, client):
 
         menu[2].selectable = menu[2].highlight = wcstarget.ready
         menu[3].selectable = menu[3].highlight = wcstarget.ready
-        menu[4].selectable = menu[4].highlight = wcstarget.ready
 
-        menu[4] = SimpleOption(3, menu_strings['wcsadmin_players_sub_menu line 3'], selectable=False, highlight=False)
+        menu[4] = SimpleOption(3, menu_strings['wcsadmin_players_sub_menu line 3'])
+        menu[4].selectable = menu[4].highlight = wcstarget.ready and wcstarget.online
 
 
 @wcsadmin_players_sub_xp_menu.register_build_callback
@@ -733,6 +734,24 @@ def wcsadmin_players_sub_levels_menu_build(menu, client):
         wcstarget = Player.from_accountid(accountid)
 
         menu[0].text.tokens['name'] = wcstarget.name
+
+
+@wcsadmin_players_sub_changerace_menu.register_build_callback
+def wcsadmin_players_sub_changerace_menu_build(menu, client):
+    menu.clear()
+
+    wcsplayer = Player(client)
+    accountid = wcsplayer.data['_internal_wcsadmin_player']
+    wcstarget = Player.from_accountid(accountid)
+
+    menu.title.tokens['name'] = wcstarget.name
+
+    for name in wcsplayer.data['_internal_wcsadmin_changerace']:
+        option = PagedOption(race_manager[name].strings['name'], name)
+
+        option.highlight = option.selectable = not wcstarget.current_race == name
+
+        menu.append(option)
 
 
 @wcsadmin_management_races_menu.register_build_callback

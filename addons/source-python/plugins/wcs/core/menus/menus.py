@@ -64,6 +64,7 @@ from . import wcsadmin_players_menu
 from . import wcsadmin_players_sub_menu
 from . import wcsadmin_players_sub_xp_menu
 from . import wcsadmin_players_sub_levels_menu
+from . import wcsadmin_players_sub_changerace_menu
 from . import wcsadmin_management_menu
 from . import wcsadmin_management_races_menu
 from . import wcsadmin_management_items_menu
@@ -117,6 +118,7 @@ playerinfo_menu.title = menu_strings['playerinfo_menu title']
 playerinfo_detail_skills_menu.title = menu_strings['playerinfo_detail_skills_menu title']
 wcstop_menu.title = menu_strings['wcstop_menu title']
 wcsadmin_players_menu.title = menu_strings['wcsadmin_players_menu title']
+wcsadmin_players_sub_changerace_menu.title = menu_strings['wcsadmin_players_sub_changerace_menu title']
 wcsadmin_management_races_menu.title = menu_strings['wcsadmin_management_races_menu title']
 wcsadmin_management_items_menu.title = menu_strings['wcsadmin_management_items_menu title']
 wcsadmin_management_races_add_menu.title = menu_strings['wcsadmin_management_races_add_menu title']
@@ -363,7 +365,7 @@ wcsadmin_players_sub_menu.extend(
         Text(' '),
         SimpleOption(1, menu_strings['wcsadmin_players_sub_menu line 1'], wcsadmin_players_sub_xp_menu),
         SimpleOption(2, menu_strings['wcsadmin_players_sub_menu line 2'], wcsadmin_players_sub_levels_menu),
-        SimpleOption(3, menu_strings['wcsadmin_players_sub_menu line 3'], selectable=False, highlight=False),
+        SimpleOption(3, menu_strings['wcsadmin_players_sub_menu line 3']),
         Text(' '),
         Text(' '),
         Text(' '),
