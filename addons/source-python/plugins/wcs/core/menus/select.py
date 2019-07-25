@@ -42,6 +42,7 @@ from . import spendskills_menu
 from . import changerace_menu
 from . import changerace_search_menu
 from . import raceinfo_menu
+from . import raceinfo_search_menu
 from . import raceinfo_detail_menu
 from . import raceinfo_skills_menu
 from . import raceinfo_skills_detail_menu
@@ -282,6 +283,19 @@ def raceinfo_menu_select(menu, client, option):
         return option.value
 
     wcsplayer.data['_internal_raceinfo'] = option.value
+
+    return raceinfo_detail_menu
+
+
+@raceinfo_search_menu.register_select_callback
+def raceinfo_search_menu_select(menu, client, option):
+    wcsplayer = Player(client)
+
+    wcsplayer.data['_internal_raceinfo'] = option.value
+
+    categories = race_manager[option.value].config['categories']
+
+    wcsplayer.data['_internal_raceinfo_category'] = categories[0] if categories else None
 
     return raceinfo_detail_menu
 

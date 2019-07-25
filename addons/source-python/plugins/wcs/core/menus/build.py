@@ -52,6 +52,7 @@ from . import showskills_menu
 from . import spendskills_menu
 from . import changerace_menu
 from . import changerace_search_menu
+from . import raceinfo_search_menu
 from . import raceinfo_detail_menu
 from . import raceinfo_skills_menu
 from . import raceinfo_skills_detail_menu
@@ -378,6 +379,16 @@ def changerace_search_menu_build(menu, client):
                 raise ValueError(f'Invalid reason: {reason}')
 
             option.text.tokens['name'] = settings.strings['name']
+
+
+@raceinfo_search_menu.register_build_callback
+def raceinfo_search_menu_build(menu, client):
+    menu.clear()
+
+    wcsplayer = Player(client)
+
+    for name in wcsplayer.data['_internal_raceinfo_search']:
+        menu.append(PagedOption(race_manager[name].strings['name'], name))
 
 
 @raceinfo_detail_menu.register_build_callback

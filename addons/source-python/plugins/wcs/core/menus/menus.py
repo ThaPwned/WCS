@@ -45,6 +45,7 @@ from . import spendskills_menu
 from . import changerace_menu
 from . import changerace_search_menu
 from . import raceinfo_menu
+from . import raceinfo_search_menu
 from . import raceinfo_detail_menu
 from . import raceinfo_skills_menu
 from . import raceinfo_skills_detail_menu
@@ -110,6 +111,7 @@ spendskills_menu.description = menu_strings['spendskills_menu description']
 changerace_menu.title = menu_strings['changerace_menu title']
 changerace_search_menu.title = menu_strings['changerace_menu title']
 raceinfo_menu.title = menu_strings['raceinfo_menu title']
+raceinfo_search_menu.title = menu_strings['raceinfo_menu title']
 raceinfo_skills_menu.title = menu_strings['raceinfo_skills_menu title']
 playerinfo_menu.title = menu_strings['playerinfo_menu title']
 playerinfo_detail_skills_menu.title = menu_strings['playerinfo_detail_skills_menu title']

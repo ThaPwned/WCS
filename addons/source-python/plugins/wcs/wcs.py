@@ -186,7 +186,7 @@ help_text_message = SayText2(chat_strings['help text'])
 welcome_text_message = SayText2(chat_strings['welcome text'])
 changerace_message = SayText2(chat_strings['changerace'])
 changerace_warning_message = SayText2(chat_strings['changerace warning'])
-changerace_no_found_message = SayText2(chat_strings['changerace no found'])
+no_race_found_message = SayText2(chat_strings['no race found'])
 gain_xp_killed_message = SayText2(chat_strings['gain xp killed'])
 gain_xp_killed_higher_level_message = SayText2(chat_strings['gain xp killed higher level'])
 gain_xp_headshot_message = SayText2(chat_strings['gain xp headshot'])
@@ -1168,7 +1168,7 @@ def say_command_changerace(command, *search:str):
 
                 changerace_search_menu.send(command.index)
             else:
-                changerace_no_found_message.send(command.index, search=' '.join(search))
+                no_race_found_message.send(command.index, search=' '.join(search))
         else:
             if not cfg_changerace_next_round.get_int():
                 changerace_warning_message.send(command.index)
@@ -1181,8 +1181,36 @@ def say_command_changerace(command, *search:str):
 
 
 @TypedSayCommand('raceinfo')
-def say_command_raceinfo(command):
-    raceinfo_menu.send(command.index)
+def say_command_raceinfo(command, *search:str):
+    if search:
+        found = []
+        joined_search = ' '.join([x.lower() for x in search])
+        language = get_client_language(command.index)
+
+        for name, settings in race_manager.items():
+            if joined_search == settings.strings['name'].get_string(language).lower():
+                if name not in found:
+                    found.append(name)
+
+        for name, settings in race_manager.items():
+            if joined_search in settings.strings['name'].get_string(language).lower():
+                if name not in found:
+                    found.append(name)
+
+        for partial in [x.lower() for x in search]:
+            for name, settings in race_manager.items():
+                if partial in settings.strings['name'].get_string(language).lower():
+                    if name not in found:
+                        found.append(name)
+
+        if found:
+            Player(command.index).data['_internal_raceinfo_search'] = found
+
+            raceinfo_search_menu.send(command.index)
+        else:
+            no_race_found_message.send(command.index, search=' '.join(search))
+    else:
+        raceinfo_menu.send(command.index)
 
     return CommandReturn.BLOCK
 
