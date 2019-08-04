@@ -9,6 +9,7 @@ from .converts import convert_userid_identifier_to_players
 from .overwrites import ESTCommand
 from ..converts import clamp
 from ..converts import convert_to_vector
+from ..converts import convert_to_qangle
 from ..converts import optional
 from ..converts import valid_userid
 from ...effects import effect101
@@ -125,13 +126,13 @@ def effect111_command(command_info, filter_:convert_userid_identifier_to_players
 
 
 @ESTCommand('Effect_12')
-def effect112_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect112(*args).create(filter_, delay=delay)
+def effect112_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model, origin:convert_to_vector, angle:convert_to_qangle, size:convert_to_vector, velocity:convert_to_vector, randomization:int, count:int, time:float, flags:int):
+    effect112(model, origin, angle, size, velocity, randomization, count, time, flags).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_13')
-def effect113_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect113(*args).create(filter_, delay=delay)
+def effect113_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, decal:str, origin:convert_to_vector, index:int):
+    effect113(decal, origin, index).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_14')
@@ -145,13 +146,13 @@ def effect115_command(command_info, filter_:convert_userid_identifier_to_players
 
 
 @ESTCommand('Effect_16')
-def effect116_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect116(*args).create(filter_, delay=delay)
+def effect116_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, decal:str, position:convert_to_vector, start:convert_to_vector, index:int, hitbox:int):
+    effect116(decal, position, start, index, hitbox).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_17')
-def effect117_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect117(*args).create(filter_, delay=delay)
+def effect117_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, position:convert_to_vector, direction:convert_to_vector, size:float, speed:clamp(0)):
+    effect117(position, direction, size, speed).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_18')
@@ -160,28 +161,28 @@ def effect118_command(command_info, filter_:convert_userid_identifier_to_players
 
 
 @ESTCommand('Effect_19')
-def effect119_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect119(*args).create(filter_, delay=delay)
+def effect119_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, position:convert_to_vector, direction:convert_to_vector, explosive:int):
+    effect119(position, direction, explosive).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_20')
-def effect120_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect120(*args).create(filter_, delay=delay)
+def effect120_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, position:convert_to_vector, scale:float, frame_rate:int, flags:int, radius:int, magnitude:int, normal:convert_to_vector=None, material:str=None):
+    effect120(model, position, scale, frame_rate, flags, radius, magnitude, normal, material).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_21')
-def effect121_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect121(*args).create(filter_, delay=delay)
+def effect121_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, index:int, density:int, current:int):
+    effect121(model, index, density, current).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_22')
-def effect122_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect122(*args).create(filter_, delay=delay)
+def effect122_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, position:convert_to_vector, direction:convert_to_vector, type_:int):
+    effect122(position, direction, type_).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_23')
-def effect123_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect123(*args).create(filter_, delay=delay)
+def effect123_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, position:convert_to_vector, life_time:float, size:float, brightness:int):
+    effect123(model, position, life_time, size, brightness).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_24')
@@ -190,58 +191,58 @@ def effect124_command(command_info, filter_:convert_userid_identifier_to_players
 
 
 @ESTCommand('Effect_25')
-def effect125_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect125(*args).create(filter_, delay=delay)
+def effect125_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, position:convert_to_vector, direction:convert_to_vector):
+    effect125(position, direction).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_26')
-def effect126_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect126(*args).create(filter_, delay=delay)
+def effect126_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, position:convert_to_vector, angle:convert_to_qangle, scale:float, type_:int):
+    effect126(position, angle, scale, type_).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_27')
-def effect127_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect127(*args).create(filter_, delay=delay)
+def effect127_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, skin:int, position:convert_to_vector, angle:convert_to_qangle, velocity:convert_to_vector, flags:int, effects:int):
+    effect127(model, skin, position, angle, velocity, flags, effects).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_28')
-def effect128_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect128(*args).create(filter_, delay=delay)
+def effect128_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, position:convert_to_vector, player_index:int, entity_index:int):
+    effect128(position, player_index, entity_index).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_29')
-def effect129_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect129(*args).create(filter_, delay=delay)
+def effect129_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, decal:str, position:convert_to_vector, angle:convert_to_qangle, distance:float):
+    effect129(decal, position, angle, distance).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_30')
-def effect130_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect130(*args).create(filter_, delay=delay)
+def effect130_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, start:convert_to_vector, end:convert_to_vector):
+    effect130(start, end).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_31')
-def effect131_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect131(*args).create(filter_, delay=delay)
+def effect131_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, position:convert_to_vector, scale:float, frame_rate:int):
+    effect131(model, position, scale, frame_rate).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_32')
-def effect132_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect132(*args).create(filter_, delay=delay)
+def effect132_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, position:convert_to_vector, magnitude:int, trail_length:int, direction:convert_to_vector):
+    effect132(position, magnitude, trail_length, direction).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_33')
-def effect133_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect133(*args).create(filter_, delay=delay)
+def effect133_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, position:convert_to_vector, size:float, brightness:int):
+    effect133(model, position, size, brightness).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_34')
-def effect134_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect134(*args).create(filter_, delay=delay)
+def effect134_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, position:convert_to_vector, direction:convert_to_vector, speed:int, noise:float, count:int):
+    effect134(model, position, direction, speed, noise, count).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_35')
-def effect135_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, *args):
-    effect135(*args).create(filter_, delay=delay)
+def effect135_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, decal:str, position:convert_to_vector):
+    effect135(decal, position).create(filter_, delay=delay)
 
 
 @ESTCommand(['est_Effect', '1'])

@@ -18,8 +18,10 @@ from commands.typed import TypedServerCommand
 #   Effects
 from effects.base import TempEntity
 #   Engines
+from engines.precache import Decal
 from engines.precache import Model
 #   Mathlib
+from mathlib import QAngle
 from mathlib import Vector
 #   Players
 from players.helpers import index_from_userid
@@ -459,20 +461,58 @@ def effect111(model, origin, direction, red, green, blue, alpha, amount):
     return te
 
 
-@register()
-def effect112(*args):
+@register('Break Model')
+def effect112(model, origin, angle, size, velocity, randomization, count, time, flags):
     """
     est_effect_12 <player filter> <delay> <model> <origin x y z> <angle p y r> <Size x y z> <velocity x y z> <randomization> <count> <time> <flags>
+
     """
-    raise NotImplementedError()
+    if not isinstance(model, Model):
+        model = Model(model)
+
+    if not isinstance(origin, Vector):
+        origin = Vector(*origin)
+
+    if not isinstance(angle, QAngle):
+        angle = QAngle(*angle)
+
+    if not isinstance(size, Vector):
+        size = Vector(*size)
+
+    if not isinstance(velocity, Vector):
+        velocity = Vector(*velocity)
+
+    te = TempEntity('Break Model')
+    te.model = model
+    te.origin = origin
+    te.rotation = angle
+    te.size = size
+    te.velocity = velocity
+    te.randomization = randomization
+    te.count = count
+    te.life_time = time
+    te.flags = flags
+
+    return te
 
 
-@register()
-def effect113(*args):
+@register('BSP Decal')
+def effect113(decal, origin, index):
     """
     est_effect_13 <player filter> <delay> <decal> <origin x y z> <target entity index>
     """
-    raise NotImplementedError()
+    if not isinstance(decal, Decal):
+        decal = Decal(decal)
+
+    if not isinstance(origin, Vector):
+        origin = Vector(*origin)
+
+    te = TempEntity('BSP Decal')
+    te.decal = decal
+    te.origin = origin
+    te.entity_index = index
+
+    return te
 
 
 @register('Bubbles')
@@ -527,20 +567,48 @@ def effect115(model, mins, maxs, height, count, speed):
     return te
 
 
-@register()
-def effect116(*args):
+@register('Entity Decal')
+def effect116(decal, position, start, index, hitbox):
     """
     est_effect_16 <player filter> <delay> <model> <position x y z> <start x y z> <entity index> <hitbox>
     """
-    raise NotImplementedError()
+    if not isinstance(decal, Decal):
+        decal = Decal(decal)
+
+    if not isinstance(position, Vector):
+        position = Vector(*position)
+
+    if not isinstance(start, Vector):
+        start = Vector(*start)
+
+    te = TempEntity('Entity Decal')
+    te.decal = decal
+    te.origin = position
+    te.start = start
+    te.entity_index = index
+    te.hitbox = hitbox
+
+    return te
 
 
-@register()
-def effect117(*args):
+@register('Dust')
+def effect117(position, direction, size, speed):
     """
     est_effect_17 <player filter> <delay> <position x y z> <direction x y z> <size> <speed>
     """
-    raise NotImplementedError()
+    if not isinstance(position, Vector):
+        position = Vector(*position)
+
+    if not isinstance(direction, Vector):
+        direction = Vector(*direction)
+
+    te = TempEntity('Dust')
+    te.origin = position
+    te.direction = direction
+    te.size = size
+    te.speed = speed
+
+    return te
 
 
 @register('Dynamic Light')
@@ -564,44 +632,108 @@ def effect118(origin, red, green, blue, exponent, radius, life_time, decay):
     return te
 
 
-@register()
-def effect119(*args):
+@register('Energy Splash')
+def effect119(position, direction, explosive):
     """
     est_effect_19 <player filter> <delay> <position x y z> <direction x y z> <explosive>
     """
-    raise NotImplementedError()
+    if not isinstance(position, Vector):
+        position = Vector(*position)
+
+    if not isinstance(direction, Vector):
+        direction = Vector(*direction)
+
+    te = TempEntity('Energy Splash')
+    te.position = position
+    te.direction = direction
+    te.explosive = explosive
+
+    return te
 
 
-@register()
-def effect120(*args):
+@register('Explosion')
+def effect120(model, position, scale, frame_rate, flags, radius, magnitude, normal=None, material=None):
     """
     est_effect_20 <player filter> <delay> <model> <position x y z> <scale> <framerate> <flags> <radius> <magnitude> [normal x y z] [material type]
     """
-    raise NotImplementedError()
+    if not isinstance(position, Vector):
+        position = Vector(*position)
+
+    te = TempEntity('Explosion')
+    te.position = position
+    te.scale = scale
+    te.frame_rate = frame_rate
+    te.flags = flags
+    te.radius = radius
+    te.magnitude = magnitude
+
+    if normal is not None:
+        if not isinstance(normal, Vector):
+            normal = Vector(*normal)
+
+        te.normal = normal
+
+    if material is not None:
+        te.material_type = material
+
+    return te
 
 
-@register()
-def effect121(*args):
+@register('Fizz')
+def effect121(model, index, density, current):
     """
     est_effect_21 <player filter> <delay> <model> <entity> <density> <current>
     """
-    raise NotImplementedError()
+    if not isinstance(model, Model):
+        model = Model(model)
+
+    te = TempEntity('Fizz')
+    te.model = model
+    te.entity_index = index
+    te.density = density
+    te.current = current
+
+    return te
 
 
-@register()
-def effect122(*args):
+@register('GaussExplosion')
+def effect122(position, direction, type_):
     """
     est_effect_22 <player filter> <delay> <position x y z> <direction x y z> <type>
     """
-    raise NotImplementedError()
+    if not isinstance(position, Vector):
+        position = Vector(*position)
+
+    if not isinstance(direction, Vector):
+        direction = Vector(*direction)
+
+    te = TempEntity('GaussExplosion')
+    te.position = position
+    te.direction = direction
+    te.type = type_
+
+    return te
 
 
-@register()
-def effect123(*args):
+@register('GlowSprite')
+def effect123(model, position, life_time, size, brightness):
     """
     est_effect_23 <player filter> <delay> <model> <position x y z> <life> <size> <brightness>
     """
-    raise NotImplementedError()
+    if not isinstance(model, Model):
+        model = Model(model)
+
+    if not isinstance(position, Vector):
+        position = Vector(*position)
+
+    te = TempEntity('GaussExplosion')
+    te.model = model
+    te.position = position
+    te.life_time = life_time
+    te.scale = size
+    te.brightness = brightness
+
+    return te
 
 
 @register('Large Funnel')
@@ -623,92 +755,231 @@ def effect124(model, origin, reversed_):
     return te
 
 
-@register()
-def effect125(*args):
+@register('Metal Sparks')
+def effect125(position, direction):
     """
     est_effect_25 <player filter> <delay> <position x y z> <direction x y z>
     """
-    raise NotImplementedError()
+    if not isinstance(position, Vector):
+        position = Vector(*position)
+
+    if not isinstance(direction, Vector):
+        direction = Vector(*direction)
+
+    te = TempEntity('Metal Sparks')
+    te.position = position
+    te.direction = direction
+
+    return te
 
 
-@register()
-def effect126(*args):
+@register('MuzzleFlash')
+def effect126(position, angle, scale, type_):
     """
     est_effect_26 <player filter> <delay> <position x y z> <angle p y r> <scale> <type>
     """
-    raise NotImplementedError()
+    if not isinstance(position, Vector):
+        position = Vector(*position)
+
+    if not isinstance(angle, QAngle):
+        angle = QAngle(*angle)
+
+    te = TempEntity('Metal Sparks')
+    te.origin = position
+    te.angles = angle
+    te.scale = scale
+    te.type = type_
+
+    return te
 
 
-@register()
-def effect127(*args):
+@register('physicsprop')
+def effect127(model, skin, position, angle, velocity, flags, effects):
     """
-    est_effect_27 <player filter> <delay> <model> <subtype> <position x y z> <angle p y r> <velocity x y z> <flags> <unknown>
+    est_effect_27 <player filter> <delay> <model> <subtype/skin> <position x y z> <angle p y r> <velocity x y z> <flags> <effects>
     """
-    raise NotImplementedError()
+    if not isinstance(model, Model):
+        model = Model(model)
+
+    if not isinstance(position, Vector):
+        position = Vector(*position)
+
+    if not isinstance(angle, QAngle):
+        angle = QAngle(*angle)
+
+    if not isinstance(velocity, Vector):
+        velocity = Vector(*velocity)
+
+    te = TempEntity('physicsprop')
+    te.model = model
+    te.skin = skin
+    te.origin = position
+    te.angles = angle
+    te.velocity = velocity
+    te.flags = flags
+    te.effects = effects
+
+    return te
 
 
-@register()
-def effect128(*args):
+@register('Player Decal')
+def effect128(position, player_index, entity_index):
     """
     est_effect_28 <player filter> <delay> <position x y z> <playerindex> <entity>
     """
-    raise NotImplementedError()
+    if not isinstance(position, Vector):
+        position = Vector(*position)
+
+    te = TempEntity('Player Decal')
+    te.origin = position
+    te.player_index = player_index
+    te.entity_index = entity_index
+
+    return te
 
 
-@register()
-def effect129(*args):
+@register('Projected Decal')
+def effect129(decal, position, angle, distance):
     """
     est_effect_29 <player filter> <delay> <decal> <position x y z> <angle p y r> <distance>
     """
-    raise NotImplementedError()
+    if not isinstance(decal, Decal):
+        decal = Decal(*decal)
+
+    if not isinstance(position, Vector):
+        position = Vector(*position)
+
+    if not isinstance(angle, QAngle):
+        angle = QAngle(*angle)
+
+    te = TempEntity('Player Decal')
+    te.decal = decal
+    te.origin = position
+    te.rotation = angle
+    te.distance = distance
+
+    return te
 
 
-@register()
-def effect130(*args):
+@register('Show Line')
+def effect130(start, end):
     """
     est_effect_30 <player filter> <delay> <start x y z> <end x y z>
     """
-    raise NotImplementedError()
+    if not isinstance(start, Vector):
+        start = Vector(*start)
+
+    if not isinstance(end, Vector):
+        end = Vector(*end)
+
+    te = TempEntity('Show Line')
+    te.start = start
+    te.end = end
+
+    return te
 
 
-@register()
-def effect131(*args):
+@register('Smoke')
+def effect131(model, position, scale, frame_rate):
     """
     est_effect_31 <player filter> <delay> <model> <position x y z> <scale> <framerate>
     """
-    raise NotImplementedError()
+    if not isinstance(model, Model):
+        model = Model(model)
+
+    if not isinstance(position, Vector):
+        position = Vector(*position)
+
+    te = TempEntity('Smoke')
+    te.model = model
+    te.position = position
+    te.scale = scale
+    te.frame_rate = frame_rate
+
+    return te
 
 
-@register()
-def effect132(*args):
+@register('Sparks')
+def effect132(position, magnitude, trail_length, direction):
     """
     est_effect_32 <player filter> <delay> <position x y z> <magnitude> <trail length> <direction x y z>
     """
-    raise NotImplementedError()
+    if not isinstance(position, Vector):
+        position = Vector(*position)
+
+    if not isinstance(direction, Vector):
+        direction = Vector(*direction)
+
+    te = TempEntity('Smoke')
+    te.position = position
+    te.magnitude = magnitude
+    te.trail_length = trail_length
+    te.direction = direction
+
+    return te
 
 
-@register()
-def effect133(*args):
+@register('Sprite')
+def effect133(model, position, size, brightness):
     """
     est_effect_33 <player filter> <delay> <model> <position x y z> <size> <brightness>
     """
-    raise NotImplementedError()
+    if not isinstance(model, Model):
+        model = Model(model)
+
+    if not isinstance(position, Vector):
+        position = Vector(*position)
+
+    te = TempEntity('Sprite')
+    te.model = model
+    te.position = position
+    te.size = size
+    te.brightness = brightness
+
+    return te
 
 
-@register()
-def effect134(*args):
+@register('Sprite Spray')
+def effect134(model, position, direction, speed, noise, count):
     """
     est_effect_34 <player filter> <delay> <model> <position x y z> <direction x y z> <speed> <noise> <count>
     """
-    raise NotImplementedError()
+    if not isinstance(model, Model):
+        model = Model(model)
+
+    if not isinstance(position, Vector):
+        position = Vector(*position)
+
+    if not isinstance(direction, Vector):
+        direction = Vector(*direction)
+
+    te = TempEntity('Sprite Spray')
+    te.model = model
+    te.position = position
+    te.direction = direction
+    te.speed = speed
+    te.noise = noise
+    te.count = count
+
+    return te
 
 
-@register()
-def effect135(*args):
+@register('World Decal')
+def effect135(decal, position):
     """
     est_effect_35 <player filter> <delay> <Decal> <Position x y z>
     """
-    raise NotImplementedError()
+    if not isinstance(decal, Decal):
+        decal = Decal(decal)
+
+    if not isinstance(position, Vector):
+        position = Vector(*position)
+
+    te = TempEntity('World Decal')
+    te.decal = decal
+    te.position = position
+
+    return te
 
 
 @register('Armor Ricochet')

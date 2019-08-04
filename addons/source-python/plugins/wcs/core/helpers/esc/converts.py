@@ -7,6 +7,7 @@
 #   Filters
 from filters.players import PlayerIter
 #   Mathlib
+from mathlib import QAngle
 from mathlib import Vector
 #   Players
 from players.entity import Player
@@ -132,6 +133,10 @@ def clamp(min_value=None, max_value=None, is_int=True):
 
 def convert_to_vector(vector):
     return Vector(*[float(x) for x in vector.split(',')])
+
+
+def convert_to_qangle(angle):
+    return QAngle(*[float(x) for x in angle.split(',')])
 
 
 def optional(type_):
