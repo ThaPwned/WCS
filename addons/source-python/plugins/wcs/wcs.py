@@ -1065,6 +1065,7 @@ def on_take_damage_alive(wcsvictim, wcsattacker, info):
 # ============================================================================
 # >> COMMANDS
 # ============================================================================
+@TypedClientCommand('wcs')
 @TypedSayCommand('wcs')
 def say_command_wcs(command):
     main_menu.send(command.index)
@@ -1072,6 +1073,7 @@ def say_command_wcs(command):
     return CommandReturn.BLOCK
 
 
+@TypedClientCommand('shopmenu')
 @TypedSayCommand('shopmenu')
 def say_command_shopmenu(command):
     wcsplayer = Player(command.index)
@@ -1084,6 +1086,7 @@ def say_command_shopmenu(command):
     return CommandReturn.BLOCK
 
 
+@TypedClientCommand('shopinfo')
 @TypedSayCommand('shopinfo')
 def say_command_shopinfo(command):
     shopinfo_menu.send(command.index)
@@ -1091,6 +1094,7 @@ def say_command_shopinfo(command):
     return CommandReturn.BLOCK
 
 
+@TypedClientCommand('showskills')
 @TypedSayCommand('showskills')
 def say_command_showskills(command):
     wcsplayer = Player(command.index)
@@ -1103,6 +1107,7 @@ def say_command_showskills(command):
     return CommandReturn.BLOCK
 
 
+@TypedClientCommand('resetskills')
 @TypedSayCommand('resetskills')
 def say_command_resetskills(command):
     wcsplayer = Player(command.index)
@@ -1115,6 +1120,7 @@ def say_command_resetskills(command):
     return CommandReturn.BLOCK
 
 
+@TypedClientCommand('spendskills')
 @TypedSayCommand('spendskills')
 def say_command_spendskills(command):
     wcsplayer = Player(command.index)
@@ -1135,6 +1141,7 @@ def say_command_spendskills(command):
     return CommandReturn.BLOCK
 
 
+@TypedClientCommand('changerace')
 @TypedSayCommand('changerace')
 def say_command_changerace(command, *search:str):
     wcsplayer = Player(command.index)
@@ -1181,6 +1188,7 @@ def say_command_changerace(command, *search:str):
     return CommandReturn.BLOCK
 
 
+@TypedClientCommand('raceinfo')
 @TypedSayCommand('raceinfo')
 def say_command_raceinfo(command, *search:str):
     if search:
@@ -1216,6 +1224,7 @@ def say_command_raceinfo(command, *search:str):
     return CommandReturn.BLOCK
 
 
+@TypedClientCommand('playerinfo')
 @TypedSayCommand('playerinfo')
 def say_command_playerinfo(command):
     playerinfo_menu.send(command.index)
@@ -1223,6 +1232,7 @@ def say_command_playerinfo(command):
     return CommandReturn.BLOCK
 
 
+@TypedClientCommand('wcstop')
 @TypedSayCommand('wcstop')
 def say_command_wcstop(command):
     wcstop_menu.send(command.index)
@@ -1230,6 +1240,7 @@ def say_command_wcstop(command):
     return CommandReturn.BLOCK
 
 
+@TypedClientCommand('wcsrank')
 @TypedSayCommand('wcsrank')
 def say_command_wcsrank(command):
     wcsplayer = Player(command.index)
@@ -1244,6 +1255,7 @@ def say_command_wcsrank(command):
     return CommandReturn.BLOCK
 
 
+@TypedClientCommand('wcshelp')
 @TypedSayCommand('wcshelp')
 def say_command_wcshelp(command):
     wcshelp_menu.send(command.index)
@@ -1251,6 +1263,7 @@ def say_command_wcshelp(command):
     return CommandReturn.BLOCK
 
 
+@TypedClientCommand('wcsadmin')
 @TypedSayCommand('wcsadmin')
 def say_command_wcsadmin(command):
     wcsplayer = Player(command.index)
@@ -1263,6 +1276,7 @@ def say_command_wcsadmin(command):
     return CommandReturn.BLOCK
 
 
+@TypedClientCommand('showxp')
 @TypedSayCommand('showxp')
 def say_command_showxp(command):
     wcsplayer = Player(command.index)
