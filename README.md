@@ -85,13 +85,13 @@ Items from 0.77 and prior will also need the `es_WCSshop_cat_db.txt` file (shoul
 If you encounter any of the following exceptions this may save you a bit of time figuring out what's wrong. If you encounter issues not listed below, feel free to make an issue [here](https://github.com/ThaPwned/WCS/issues) or post it on the [thread](https://forums.sourcepython.com/viewtopic.php?f=7&t=1925).
 
 
-#### json.decoder.JSONDecodeError: Expecting value: line 2 column 17 (char 18)
-It can mean you're missing a double quote (`"`) or some value in one of your JSON files on line 2 at character position 18. Example:
+#### json.decoder.JSONDecodeError:  Invalid control character at: line 2 column 20 (char 21)
+It can mean you're missing a double quote (`"`) or some value in one of your JSON files on line 2 at character position 21. Example:
 ```json
 {
     "username": "a,
     "password": null,
-    "access_token": "",
+    "access_token": null,
     "repositories": []
 }
 ```
@@ -102,7 +102,7 @@ It means you're missing a delimiter (in this case, it's a comma (`,`)) in one of
 {
     "username": null
     "password": null,
-    "access_token": "",
+    "access_token": null,
     "repositories": []
 }
 ```
@@ -113,18 +113,18 @@ It means you're missing a delimiter (in this case, it's a colon (`:`)) in one of
 {
     "username" null,
     "password": null,
-    "access_token": "",
+    "access_token": null,
     "repositories": []
 }
 ```
 
-#### json.decoder.JSONDecodeError: Expecting ',' delimiter: line 5 column 28 (char 137)
-It means you're missing a delimiter (in this case, it's a comma (`,`)) in one of your JSON files on line 5 at character position 137. Example:
+#### json.decoder.JSONDecodeError: Expecting ',' delimiter: line 5 column 28 (char 99)
+It means you're missing a delimiter (in this case, it's a comma (`,`)) in one of your JSON files on line 5 at character position 99. Example:
 ```json
 {
     "username": null,
     "password": null,
-    "access_token": "",
+    "access_token": null,
     "repositories": ["one" "two"]
 }
 ```
