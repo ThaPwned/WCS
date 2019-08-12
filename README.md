@@ -91,7 +91,7 @@ It can mean you're missing a double quote (`"`) or some value in one of your JSO
 {
     "username": "a,
     "password": null,
-    "access_token": "50f91e474e84ec371c273b199fe7e15801efff21",
+    "access_token": "",
     "repositories": []
 }
 ```
@@ -102,7 +102,7 @@ It means you're missing a delimiter (in this case, it's a comma (`,`)) in one of
 {
     "username": null
     "password": null,
-    "access_token": "50f91e474e84ec371c273b199fe7e15801efff21",
+    "access_token": "",
     "repositories": []
 }
 ```
@@ -113,7 +113,7 @@ It means you're missing a delimiter (in this case, it's a colon (`:`)) in one of
 {
     "username" null,
     "password": null,
-    "access_token": "50f91e474e84ec371c273b199fe7e15801efff21",
+    "access_token": "",
     "repositories": []
 }
 ```
@@ -124,7 +124,7 @@ It means you're missing a delimiter (in this case, it's a comma (`,`)) in one of
 {
     "username": null,
     "password": null,
-    "access_token": "50f91e474e84ec371c273b199fe7e15801efff21",
+    "access_token": "",
     "repositories": ["one" "two"]
 }
 ```
