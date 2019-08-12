@@ -81,6 +81,54 @@ As they were added in a new category, you also have to edit `resource/source-pyt
 Note: If you're using races or items from 0.78 or 0.77 and prior, it's a good idea to also get the `strings.ini` (from 0.78) or `es_WCSlanguage_db.txt` (from 0.77 and prior) as well (should be placed in the `cfg/source-python/wcs/` folder), as you can run into the possibility of the messages not being translated properly.
 Items from 0.77 and prior will also need the `es_WCSshop_cat_db.txt` file (should be placed in the `cfg/source-python/wcs/` folder), as you won't be able to use categories otherwise.
 
+## Troubleshooting
+If you encounter any of the following exceptions this may save you a bit of time figuring out what's wrong. If you encounter issues not listed below, feel free to make an issue [here](https://github.com/ThaPwned/WCS/issues) or post it on the [thread](https://forums.sourcepython.com/viewtopic.php?f=7&t=1925).
+
+
+#### json.decoder.JSONDecodeError: Expecting value: line 2 column 17 (char 18)
+It can mean you're missing a double quote (`"`) or some value in one of your JSON files on line 2 at character position 18. Example:
+```json
+{
+    "username": "a,
+    "password": null,
+    "access_token": "50f91e474e84ec371c273b199fe7e15801efff21",
+    "repositories": []
+}
+```
+
+#### json.decoder.JSONDecodeError: Expecting ',' delimiter: line 3 column 5 (char 27)
+It means you're missing a delimiter (in this case, it's a comma (`,`)) in one of your JSON files on line 3 at character position 27 (for this, check the prior line as well and see if there's a missing delimiter). Example:
+```json
+{
+    "username": null
+    "password": null,
+    "access_token": "50f91e474e84ec371c273b199fe7e15801efff21",
+    "repositories": []
+}
+```
+
+#### json.decoder.JSONDecodeError: Expecting ':' delimiter: line 2 column 16 (char 17)
+It means you're missing a delimiter (in this case, it's a colon (`:`)) in one of your JSON files on line 2 at character position 17. Example:
+```json
+{
+    "username" null,
+    "password": null,
+    "access_token": "50f91e474e84ec371c273b199fe7e15801efff21",
+    "repositories": []
+}
+```
+
+#### json.decoder.JSONDecodeError: Expecting ',' delimiter: line 5 column 28 (char 137)
+It means you're missing a delimiter (in this case, it's a comma (`,`)) in one of your JSON files on line 5 at character position 137. Example:
+```json
+{
+    "username": null,
+    "password": null,
+    "access_token": "50f91e474e84ec371c273b199fe7e15801efff21",
+    "repositories": ["one" "two"]
+}
+```
+
 ## Github Management
 Warcraft: Source allows you to install certain races and items (which can be found on the [content repository](https://github.com/ThaPwned/WCS-Contents)) directly on the server with a simple click. To enable this, you have to install [PyGithub](https://github.com/PyGithub/PyGithub) and all of its dependencies. Once you've installed PyGithub properly, you can start using the functionality. However, as there's a limit ([60 for unauthenticated and 5000 for authenticated](https://developer.github.com/v3/#rate-limiting)) to the amount of requests, that gets reset once an hour, it is therefore recommended to use it while being authenticated. To do so, you'll have to edit `cfg/source-python/wcs/github.json`. By default, it'll look like this:
 ```json
