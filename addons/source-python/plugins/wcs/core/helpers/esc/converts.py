@@ -49,6 +49,15 @@ def convert_userid_to_player(userid):
     if userid is None:
         return None
 
+    return Player.from_userid(userid)
+
+
+def convert_userid_to_alive_player(userid):
+    userid = valid_userid(userid)
+
+    if userid is None:
+        return None
+
     player = Player.from_userid(userid)
 
     if player.dead:
@@ -146,6 +155,8 @@ def optional(type_):
 
         return type_(value)
 
+    convert.__name__ = type_.__name__
+
     return convert
 
 
@@ -157,8 +168,25 @@ def split_str(separators=[',', ';']):
 
         return [value]
 
+    splitter.__name__ = 'str (separated by ' + ' or '.join(separators) + ')'
+
     return splitter
 
 
 def deprecated(value):
     return None
+
+
+# ============================================================================
+# >> FUNCTION DOCUMENTATION
+# ============================================================================
+valid_userid.__name__ = 'userid'
+valid_userid_and_team.__name__ = 'userid or team (T or CT)'
+convert_userid_to_player.__name__ = 'userid'
+convert_userid_to_alive_player.__name__ = 'userid'
+convert_userid_to_wcsplayer.__name__ = 'userid'
+convert_identifier_to_players.__name__ = 'player filter'
+convert_userid_identifier_to_players.__name__ = 'userid or player filter'
+real_value.__name__ = 'any'
+convert_to_vector.__name__ = 'vector (x,y,z)'
+convert_to_qangle.__name__ = 'angle (p,y,r)'
