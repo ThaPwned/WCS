@@ -1227,12 +1227,18 @@ def wcs_getinfo_command(command_info, wcsplayer:convert_userid_to_wcsplayer, var
         return
 
     if key == 'race':
-        if attribute == 'realname':
+        if attribute == 'shortname':
             var.set_string(wcsplayer.active_race.name)
         elif attribute == 'name':
             var.set_string(wcsplayer.active_race.settings.strings['name'])
+        elif attribute == 'level':
+            var.set_int(wcsplayer.active_race.level)
+        elif attribute == 'xp':
+            var.set_int(wcsplayer.active_race.xp)
+        elif attribute == 'unused':
+            var.set_int(wcsplayer.active_race.unused)
     elif key == 'player':
-        if attribute == 'realcurrace':
+        if attribute == 'shortcurrace':
             var.set_string(wcsplayer.active_race.name)
         elif attribute == 'currace':
             var.set_string(wcsplayer.active_race.settings.strings['name'])
