@@ -91,7 +91,7 @@ from .converts import convert_userid_to_player
 from .converts import convert_userid_to_wcsplayer
 from .converts import convert_identifier_to_players
 from .converts import convert_userid_identifier_to_players
-from .converts import real_value
+from .converts import any_value
 from .converts import valid_operators
 from .converts import convert_to_vector
 from .converts import split_str
@@ -677,7 +677,7 @@ def wcsgroup_get_command(command_info, key:str, var:ConVar, userid:valid_userid_
 
 
 @TypedServerCommand(['wcsgroup', 'set'])
-def wcsgroup_set_command(command_info, key:str, userid:valid_userid_and_team, value:real_value):
+def wcsgroup_set_command(command_info, key:str, userid:valid_userid_and_team, value:any_value):
     if userid is None:
         return
 
@@ -1004,7 +1004,7 @@ def wcsx_set_command(command_info, key:str, userid:valid_userid, *value:str):
 
 
 @TypedServerCommand(['wcsx', 'math'])
-def wcsx_math_command(command_info, key:str, userid:valid_userid, operator:valid_operators(), value:real_value):
+def wcsx_math_command(command_info, key:str, userid:valid_userid, operator:valid_operators(), value:any_value):
     if userid is None:
         return
 

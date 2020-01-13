@@ -94,7 +94,7 @@ def convert_userid_identifier_to_players(filter_):
         yield from convert_identifier_to_players(filter_)
 
 
-def real_value(value):
+def any_value(value):
     try:
         return int(value)
     except ValueError:
@@ -187,6 +187,6 @@ convert_userid_to_alive_player.__name__ = 'userid'
 convert_userid_to_wcsplayer.__name__ = 'userid'
 convert_identifier_to_players.__name__ = 'player filter'
 convert_userid_identifier_to_players.__name__ = 'userid or player filter'
-real_value.__name__ = 'any'
+any_value.__name__ = 'any'
 convert_to_vector.__name__ = 'vector (x,y,z)'
 convert_to_qangle.__name__ = 'angle (p,y,r)'
