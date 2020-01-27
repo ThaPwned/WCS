@@ -955,14 +955,15 @@ def wcsx_get_command(command_info, key:str, var:ConVar, userid:valid_userid):
     if callable(value):
         value = value()
 
-    if hasattr(value, '__iter__'):
-        if hasattr(value[0], '__iter__'):
-            if len(value[0]) == 1:
-                value = value[0][0]
+    if not key == 'weapon':
+        if hasattr(value, '__iter__'):
+            if hasattr(value[0], '__iter__'):
+                if len(value[0]) == 1:
+                    value = value[0][0]
+                else:
+                    value = ','.join([str(x) for x in value[0]])
             else:
-                value = ','.join([str(x) for x in value[0]])
-        else:
-            value = value[0]
+                value = value[0]
 
     var.set_string(str(value))
 
