@@ -134,6 +134,7 @@ from .core.menus import changerace_menu
 from .core.menus import changerace_search_menu
 from .core.menus import raceinfo_menu
 from .core.menus import raceinfo_search_menu
+from .core.menus import raceinfo_detail_menu
 from .core.menus import playerinfo_menu
 from .core.menus import wcstop_menu
 from .core.menus import wcshelp_menu
@@ -1220,6 +1221,24 @@ def say_command_raceinfo(command, *search:str):
             no_race_found_message.send(command.index, search=' '.join(search))
     else:
         raceinfo_menu.send(command.index)
+
+    return CommandReturn.BLOCK
+
+
+@TypedClientCommand('myraceinfo')
+@TypedSayCommand('myraceinfo')
+def say_command_myraceinfo(command):
+    wcsplayer = Player(command.index)
+
+    if wcsplayer.ready:
+        categories = race_manager[wcsplayer.current_race].config['categories']
+
+        wcsplayer.data['_internal_raceinfo'] = wcsplayer.current_race
+        wcsplayer.data['_internal_raceinfo_category'] = categories[0] if categories else None
+
+        raceinfo_detail_menu.send(command.index)
+    else:
+        not_ready_message.send(command.index)
 
     return CommandReturn.BLOCK
 
