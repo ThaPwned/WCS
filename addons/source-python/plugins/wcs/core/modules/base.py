@@ -281,7 +281,7 @@ class _BaseSetting(object):
             menu.build_callback = menu_choice_build
             menu.select_callback = menu_choice_select
 
-            menu_choice.append(PagedOption(categories_strings[category], menu))
+            menu_choice.append(PagedOption(categories_strings.get(category, category), menu))
 
             menu = container._info_category_menus[category] = PagedPageCountMenu()
             menu.name = category
@@ -290,7 +290,7 @@ class _BaseSetting(object):
             menu.select_callback = menu_info_select
             menu.close_callback = menu_info_close
 
-            menu_info.append(PagedOption(categories_strings[category], menu))
+            menu_info.append(PagedOption(categories_strings.get(category, category), menu))
 
         container._category_menus[category].append(PagedOption(self.strings['name'], self.name))
         container._info_category_menus[category].append(PagedOption(self.strings['name'], self.name))
