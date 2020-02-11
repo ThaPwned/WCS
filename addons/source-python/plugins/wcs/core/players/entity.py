@@ -943,14 +943,22 @@ class _Race(object):
 
                         if commands:
                             for cmd in commands.split(';'):
-                                execute_server_command(*split(cmd))
+                                try:
+                                    execute_server_command(*split(cmd))
+                                except ValueError:
+                                    except_hooks.print_exception()
+                                    break
 
                         for key in ('cmd', 'sfx'):
                             commands = skill.config['cmds'][key]
 
                             if commands:
                                 for cmd in commands.split(';'):
-                                    execute_server_command(*split(cmd))
+                                    try:
+                                        execute_server_command(*split(cmd))
+                                    except ValueError:
+                                        except_hooks.print_exception()
+                                        break
 
         for item in self.wcsplayer.items.values():
             if name in item.settings.config['event']:
@@ -988,7 +996,11 @@ class _Race(object):
                     if commands is not None and commands:
                         for _ in range(item.count):
                             for cmd in commands.split(';'):
-                                execute_server_command(*split(cmd))
+                                try:
+                                    execute_server_command(*split(cmd))
+                                except ValueError:
+                                    except_hooks.print_exception()
+                                    break
 
     def execute(self, name, event=None, define=False):
         if self.settings.type is ModuleType.SP:
@@ -1026,7 +1038,11 @@ class _Race(object):
                     cvar_wcs_userid.set_int(self.wcsplayer.userid)
 
                 for cmd in commands.split(';'):
-                    execute_server_command(*split(cmd))
+                    try:
+                        execute_server_command(*split(cmd))
+                    except ValueError:
+                        except_hooks.print_exception()
+                        break
 
     @property
     def required_xp(self):
@@ -1202,14 +1218,22 @@ class _Skill(object):
 
                 if commands:
                     for cmd in commands.split(';'):
-                        execute_server_command(*split(cmd))
+                        try:
+                            execute_server_command(*split(cmd))
+                        except ValueError:
+                            except_hooks.print_exception()
+                            break
 
                 for key in ('cmd', 'sfx'):
                     commands = self.config['cmds'][key]
 
                     if commands:
                         for cmd in commands.split(';'):
-                            execute_server_command(*split(cmd))
+                            try:
+                                execute_server_command(*split(cmd))
+                            except ValueError:
+                                except_hooks.print_exception()
+                                break
 
     def is_executable(self):
         data = {'reason':None}
@@ -1315,7 +1339,11 @@ class _Item(object):
                     cvar_wcs_userid.set_int(self.wcsplayer.userid)
 
                 for cmd in commands.split(';'):
-                    execute_server_command(*split(cmd))
+                    try:
+                        execute_server_command(*split(cmd))
+                    except ValueError:
+                        except_hooks.print_exception()
+                        break
 
     @property
     def count(self):
