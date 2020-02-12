@@ -207,6 +207,7 @@ force_change_team_limit_message = SayText2(chat_strings['force change team limit
 no_unused_message = SayText2(chat_strings['no unused'])
 no_access_message = SayText2(chat_strings['no access'])
 rank_message = SayText2(chat_strings['rank'])
+show_xp_message = SayText2(chat_strings['show xp'])
 skills_reset_message = SayText2(chat_strings['skills reset'])
 ability_team_message = SayText2(chat_strings['ability team'])
 ability_dead_message = SayText2(chat_strings['ability dead'])
@@ -1303,7 +1304,7 @@ def say_command_showxp(command):
     if wcsplayer.ready:
         active_race = wcsplayer.active_race
 
-        xp_required_message.send(wcsplayer.index, name=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
+        show_xp_message.send(wcsplayer.index, name=active_race.settings.strings['name'], level=active_race.level, total_level=wcsplayer.total_level, xp=active_race.xp, required=active_race.required_xp)
     else:
         not_ready_message.send(command.index)
 
