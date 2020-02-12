@@ -1650,13 +1650,15 @@ def wcs_create_prop_command(command_info, player:convert_userid_to_player, path:
 
 
 @TypedServerCommand('wcs_fade')
-def wcs_fade_command(command_info, player:convert_userid_to_player, red:int, green:int, blue:int, alpha:int, time:float):
+def wcs_fade_command(command_info, player:convert_userid_to_player, red:int, green:int, blue:int, alpha:int, time:float, mode:int=None):
     if player is None:
         return
 
     color = Color(red, green, blue, alpha)
 
-    Fade(int(time), int(time), color, FadeFlags.PURGE).send(player.index)
+    mode = FadeFlags.values.get(mode, FadeFlags.IN)
+
+    Fade(int(time), int(time), color, mode).send(player.index)
 
 
 @TypedServerCommand('wcs_shake')
