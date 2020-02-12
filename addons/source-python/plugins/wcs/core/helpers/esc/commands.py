@@ -1243,6 +1243,8 @@ def wcs_getinfo_command(command_info, wcsplayer:convert_userid_to_wcsplayer, var
             var.set_string(wcsplayer.active_race.name)
         elif attribute == 'currace':
             var.set_string(wcsplayer.active_race.settings.strings['name'])
+        elif attribute == 'totallevel':
+            var.set_int(wcsplayer.total_level)
 
 
 @TypedServerCommand('wcs_restrict')
