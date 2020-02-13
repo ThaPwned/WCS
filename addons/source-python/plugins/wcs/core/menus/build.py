@@ -19,6 +19,8 @@ from time import strftime
 # Source.Python Imports
 #   Engines
 from engines.server import global_vars
+#   Hooks
+from hooks.exceptions import except_hooks
 #   Menus
 from menus import PagedOption
 from menus import SimpleOption
@@ -403,10 +405,14 @@ def raceinfo_detail_menu_build(menu, client):
     if name not in all_races:
         all_races = race_manager._category_to_values[None]
 
-    index = all_races.index(name)
+    try:
+        index = all_races.index(name)
+    except IndexError:
+        index = None
+        except_hooks.print_exception()
 
     menu[0].text.tokens['name'] = settings.strings['name']
-    menu[0].text.tokens['place'] = index + 1
+    menu[0].text.tokens['place'] = -1 if index is None else index + 1
     menu[0].text.tokens['total'] = len(all_races)
     menu[1].text.tokens['required'] = settings.config['required']
     menu[2].text.tokens['maximum'] = settings.config['maximum']
@@ -426,8 +432,8 @@ def raceinfo_detail_menu_build(menu, client):
 
     menu[5].text.tokens['count'] = len(settings.config['skills'])
 
-    menu[7].selectable = menu[7].highlight = index != 0
-    menu[8].selectable = menu[8].highlight = index != len(all_races) - 1
+    menu[7].selectable = menu[7].highlight = False if index is None else index != 0
+    menu[8].selectable = menu[8].highlight = False if index is None else index != len(all_races) - 1
 
 
 @raceinfo_skills_menu.register_build_callback
