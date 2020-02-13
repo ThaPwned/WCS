@@ -1299,6 +1299,10 @@ def wcs_get_cooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer
         var.set_int(-1)
         return
 
+    if not wcsplayer.ready:
+        var.set_int(-1)
+        return
+
     active_race = wcsplayer.active_race
 
     for skill in active_race.skills.values():
@@ -1317,6 +1321,9 @@ def wcs_getcooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer,
 @TypedServerCommand('wcs_set_cooldown')
 def wcs_set_cooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:float):
     if wcsplayer is None:
+        return
+
+    if not wcsplayer.ready:
         return
 
     active_race = wcsplayer.active_race
