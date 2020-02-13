@@ -166,8 +166,8 @@ def effect119_command(command_info, filter_:convert_userid_identifier_to_players
 
 
 @ESTCommand('Effect_20')
-def effect120_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, position:convert_to_vector, scale:float, frame_rate:int, flags:int, radius:int, magnitude:int, normal:convert_to_vector=None, material:str=None):
-    effect120(model, position, scale, frame_rate, flags, radius, magnitude, normal, material).create(filter_, delay=delay)
+def effect120_command(command_info, filter_:convert_userid_identifier_to_players, delay:float, model:str, position:convert_to_vector, scale:float, frame_rate:int, flags:int, radius:int, magnitude:int, normalx:float=None, normaly:float=None, normalz:float=None, material:str=None):
+    effect120(model, position, scale, frame_rate, flags, radius, magnitude, None if (normalx is None or normaly is None or normalz is None) else (normalx, normaly, normalz), material).create(filter_, delay=delay)
 
 
 @ESTCommand('Effect_21')

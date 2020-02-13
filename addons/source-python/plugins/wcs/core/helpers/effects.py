@@ -674,6 +674,11 @@ def effect120(model, position, scale, frame_rate, flags, radius, magnitude, norm
         te.normal = normal
 
     if material is not None:
+        if isinstance(material, str):
+            # /game/server/func_break.h
+            # typedef enum { matGlass = 0, matWood, matMetal, matFlesh, matCinderBlock, matCeilingTile, matComputer, matUnbreakableGlass, matRocks, matWeb, matNone, matLastMaterial } Materials;
+            material = {'glass':0, 'wood':1, 'metal':2, 'flesh':3, 'cinderblock':4, 'ceilingtile':5, 'computer':6, 'unbreakableglass':7, 'rocks':8, 'web':9}.get(material.lower(), 0)
+
         te.material_type = material
 
     return te
