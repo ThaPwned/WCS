@@ -216,6 +216,8 @@ def resetskills_menu_select(menu, client, option):
             player = wcsplayer.player
 
             if not player.dead:
+                player.godmode = False
+
                 player.client_command('kill', True)
 
             skills_reset_message.send(client, unused=wcsplayer.unused)
