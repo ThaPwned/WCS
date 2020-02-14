@@ -743,7 +743,7 @@ def player_jump(event):
     if wcsplayer.ready:
         value = wcsplayer.data.get('longjump')
 
-        if value is not None and value > 1:
+        if value is not None and value > 0:
             player = wcsplayer.player
 
             velocity = Vector(*player.get_property_vector('m_vecVelocity'))
