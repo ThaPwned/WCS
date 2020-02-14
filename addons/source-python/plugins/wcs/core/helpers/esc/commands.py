@@ -74,6 +74,7 @@ from weapons.restrictions import WeaponRestrictionHandler
 
 # EventScripts Imports
 #   Playerlib
+from playerlib import Player as _PLPlayer
 from playerlib import getPlayer
 
 # WCS Imports
@@ -953,9 +954,13 @@ def wcsx_get_command(command_info, key:str, var:ConVar, userid:valid_userid):
     value = getattr(player, key)
 
     if callable(value):
-        value = value()
+        if isinstance(value, _PLPlayer.ReturnValue):
+            var.set_string(str(value))
+            return
+        else:
+            value = value()
 
-    if not key == 'weapon':
+    if key not in ('weapon', 'primary', 'secondary'):
         if hasattr(value, '__iter__'):
             if hasattr(value[0], '__iter__'):
                 if len(value[0]) == 1:
