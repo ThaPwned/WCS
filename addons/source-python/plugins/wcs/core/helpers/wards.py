@@ -82,6 +82,9 @@ class BaseWard(object):
     def on_spawned(self):
         pass
 
+    def on_disappear(self):
+        pass
+
     def on_tick(self):
         pass
 
@@ -111,26 +114,45 @@ class DamageWard(BaseWard):
         self.damage = damage
         self.team_target = 5 - self.team
 
+        self.speed = {}
+
     def on_spawned(self):
         # TODO: Find models for csgo (only tested in css)
         effect11('sprites/purpleglow1.vmt', self.origin[0], self.origin[1], self.origin[2] + 120, self.duration, 2, 50).create()
         effect3('sprites/lgtning.vmt', self.origin[0], self.origin[1], self.origin[2] + 120, self.origin[0], self.origin[1], self.origin[2], self.duration, 20, 20, 255 if self.team == 2 else 10, 0, 255 if self.team == 3 else 10, 150).create()
-        effect10('sprites/lgtning.vmt', self.origin[0], self.origin[1], self.origin[2], self.radius * 2 - 1, self.radius * 2, self.duration, 12, 100, 1, 255, 150, 70, 100, 3).create()
+        effect10('sprites/lgtning.vmt', self.origin[0], self.origin[1], self.origin[2] + 4, self.radius * 2 - 1, self.radius * 2, self.duration, 12, 100, 1, 255, 150, 70, 100, 3).create()
+
+    def on_disappear(self):
+        for wcsplayer in self.speed:
+            self.on_exit(wcsplayer)
 
     def on_tick(self):
         # TODO: Find models for csgo (only tested in css)
-        effect10('sprites/lgtning.vmt', self.origin[0], self.origin[1], self.origin[2], 20, self.radius * 2, 1, 20, 100, 1, 255, 150, 70, 100, 10).create()
+        effect10('sprites/lgtning.vmt', self.origin[0], self.origin[1], self.origin[2] + 4, 20, self.radius * 2, 1, 20, 100, 1, 255, 150, 70, 100, 10).create()
 
     def on_enter(self, wcsplayer):
         self.on_update(wcsplayer)
+
+        player = wcsplayer.player
+        modified = player.speed * 0.3
+
+        self.speed[wcsplayer] = modified
+
+        player.speed -= modified
 
     def on_update(self, wcsplayer):
         vector = Vector(*wcsplayer.player.origin)
 
         # TODO: Find models for csgo (only tested in css)
-        effect3('sprites/lgtning.vmt', self.origin[0], self.origin[1], self.origin[2], vector[0], vector[1], vector[2], 1, 10, 20, 255, 150, 70, 255).create()
+        effect3('sprites/lgtning.vmt', self.origin[0], self.origin[1], self.origin[2] + 4, vector[0], vector[1], vector[2], 1, 10, 20, 255, 150, 70, 255).create()
 
         wcsplayer.take_damage(self.damage, self.owner.index, weapon='ward')
+
+    def on_exit(self, wcsplayer):
+        modified = self.speed.pop(wcsplayer, None)
+
+        if modified is not None:
+            wcsplayer.player.speed += modified
 
 
 class _WardManager(AutoUnload, list):
@@ -163,6 +185,11 @@ class _WardManager(AutoUnload, list):
                 except:
                     except_hooks.print_exception()
 
+                    try:
+                        ward.on_disappear()
+                    except:
+                        except_hooks.print_exception()
+
                     self.remove(ward)
 
                     continue
@@ -172,6 +199,11 @@ class _WardManager(AutoUnload, list):
                     ward.duration -= 1
 
                     if not ward.duration:
+                        try:
+                            ward.on_disappear()
+                        except:
+                            except_hooks.print_exception()
+
                         self.remove(ward)
 
             entities = ward.entities
