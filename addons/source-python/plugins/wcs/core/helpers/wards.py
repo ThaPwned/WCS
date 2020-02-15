@@ -123,7 +123,7 @@ class DamageWard(BaseWard):
         effect10('sprites/lgtning.vmt', self.origin[0], self.origin[1], self.origin[2] + 4, self.radius * 2 - 1, self.radius * 2, self.duration, 12, 100, 1, 255, 150, 70, 100, 3).create()
 
     def on_disappear(self):
-        for wcsplayer in self.speed:
+        for wcsplayer in list(self.speed.keys()):
             self.on_exit(wcsplayer)
 
     def on_tick(self):
