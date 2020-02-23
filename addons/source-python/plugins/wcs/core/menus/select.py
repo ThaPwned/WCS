@@ -274,6 +274,8 @@ def changerace_menu_select(menu, client, option):
             player = wcsplayer.player
 
             if not player.dead:
+                wcsplayer.data['_internal_block_changerace_execution'] = True
+
                 player.godmode = False
 
                 player.client_command('kill', True)

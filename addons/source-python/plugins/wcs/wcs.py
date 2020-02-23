@@ -615,7 +615,9 @@ def player_death(event):
     wcsvictim = Player.from_userid(userid)
 
     if wcsvictim.ready:
-        wcsvictim.notify(event)
+        if not wcsvictim.data.pop('_internal_block_changerace_execution', False):
+            wcsvictim.notify(event)
+
         wcsvictim.execute('deathcmd', event)
 
     if attacker:
