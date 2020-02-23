@@ -21,6 +21,8 @@ from time import time
 # Source.Python Imports
 #   Commands
 from commands import CommandReturn
+from commands.client import ClientCommand
+from commands.say import SayCommand
 from commands.typed import TypedSayCommand
 from commands.typed import TypedClientCommand
 #   Colors
@@ -1067,10 +1069,10 @@ def on_take_damage_alive(wcsvictim, wcsattacker, info):
 # ============================================================================
 # >> COMMANDS
 # ============================================================================
-@TypedClientCommand('wcs')
-@TypedSayCommand('wcs')
-def say_command_wcs(command):
-    main_menu.send(command.index)
+@ClientCommand(['wcs', 'wcsmenu'])
+@SayCommand(['wcs', 'wcsmenu'])
+def say_command_wcs(command, index, team=None):
+    main_menu.send(index)
 
     return CommandReturn.BLOCK
 
