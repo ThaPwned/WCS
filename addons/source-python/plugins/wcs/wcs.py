@@ -28,6 +28,7 @@ from commands.typed import TypedClientCommand
 #   Colors
 from colors import Color
 #   Core
+from core import SOURCE_ENGINE_BRANCH
 from core import OutputReturn
 #   Entities
 from entities.constants import MoveType
@@ -77,6 +78,7 @@ from .core.config import cfg_top_public_announcement
 from .core.config import cfg_top_min_rank_announcement
 from .core.config import cfg_top_stolen_notify
 from .core.config import cfg_bot_random_race
+from .core.config import cfg_unlock_race_notification
 from .core.config import cfg_assist_xp
 from .core.config import cfg_round_survival_xp
 from .core.config import cfg_round_win_xp
@@ -211,6 +213,8 @@ no_access_message = SayText2(chat_strings['no access'])
 rank_message = SayText2(chat_strings['rank'])
 show_xp_message = SayText2(chat_strings['show xp'])
 skills_reset_message = SayText2(chat_strings['skills reset'])
+unlock_race_notification_message = SayText2(chat_strings['unlock race notification'])
+unlock_race_many_notification_message = SayText2(chat_strings['unlock race many notification'])
 ability_team_message = SayText2(chat_strings['ability team'])
 ability_dead_message = SayText2(chat_strings['ability dead'])
 ability_deactivated_message = SayText2(chat_strings['ability deactivated'])
@@ -925,6 +929,25 @@ def on_player_level_up(wcsplayer, race, old_level):
 
                 entity.call_input('TurnOn')
                 entity.call_input('FireUser1', '1')
+
+        if cfg_unlock_race_notification.get_int():
+            new_total_level = wcsplayer.total_level
+            old_total_level = new_total_level - (race.level - old_level)
+
+            unlocked_races = [settings for settings in race_manager.values() if old_total_level < settings.config.get('required', 0) <= new_total_level]
+
+            if unlocked_races:
+                player = wcsplayer.player
+
+                if SOURCE_ENGINE_BRANCH == 'csgo':
+                    player.play_sound('ui/panorama/case_unlock_01.wav')
+                    player.delay(1.6, player.play_sound, ('ui/panorama/item_showcase_knife_01.wav', ))
+                    player.delay(2.1, player.play_sound, ('ui/panorama/case_awarded_4_legendary_01.wav', ))
+
+                if len(unlocked_races) > 1:
+                    player.delay(2.3, unlock_race_many_notification_message.send, (wcsplayer.index, ), {'count':len(unlocked_races)})
+                else:
+                    player.delay(2.3, unlock_race_notification_message.send, (wcsplayer.index, ), {'name':unlocked_races[0].strings['name']})
 
 
 @OnPlayerQuery
