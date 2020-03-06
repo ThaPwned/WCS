@@ -30,6 +30,7 @@ __all__ = (
     'COLOR_DEFAULT',
     'COLOR_GREEN',
     'COLOR_LIGHTGREEN',
+    'COMMANDS',
     'GITHUB_ACCESS_TOKEN',
     'GITHUB_PASSWORD',
     'GITHUB_USERNAME',
@@ -159,3 +160,25 @@ else:
     COLOR_GREEN = '\4'
     COLOR_LIGHTGREEN = '\3'
     COLOR_DARKGREEN = '\5'
+
+if not (CFG_PATH / 'commands.json').isfile():
+    with open(CFG_PATH / 'commands.json', 'w') as outputfile:
+        dump({
+            'wcs':['wcs', 'wcsmenu'],
+            'shopmenu':['shopmenu'],
+            'shopinfo':['shopinfo'],
+            'showskills':['showskills'],
+            'resetskills':['resetskills'],
+            'spendskills':['spendskills'],
+            'changerace':['changerace'],
+            'raceinfo':['raceinfo'],
+            'myraceinfo':['myraceinfo'],
+            'playerinfo':['playerinfo'],
+            'wcstop':['wcstop'],
+            'wcsrank':['wcsrank'],
+            'wcshelp':['wcshelp'],
+            'wcsadmin':['wcsadmin'],
+            'showxp':['showxp']}, outputfile, indent=4)
+
+with open(CFG_PATH / 'commands.json') as inputfile:
+    COMMANDS = load(inputfile)

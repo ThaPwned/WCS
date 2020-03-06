@@ -23,7 +23,6 @@ from time import time
 from commands import CommandReturn
 from commands.client import ClientCommand
 from commands.say import SayCommand
-from commands.typed import TypedSayCommand
 from commands.typed import TypedClientCommand
 #   Colors
 from colors import Color
@@ -95,6 +94,7 @@ from .core.config import cfg_bot_bomb_explode_xp
 from .core.config import cfg_bot_hostage_rescue_xp
 from .core.config import cfg_bot_ability_chance
 #   Constants
+from .core.constants import COMMANDS
 from .core.constants import IS_ESC_SUPPORT_ENABLED
 from .core.constants import ModuleType
 from .core.constants import RaceReason
@@ -1094,92 +1094,94 @@ def on_take_damage_alive(wcsvictim, wcsattacker, info):
 # ============================================================================
 # >> COMMANDS
 # ============================================================================
-@ClientCommand(['wcs', 'wcsmenu'])
-@SayCommand(['wcs', 'wcsmenu'])
+@ClientCommand(COMMANDS['wcs'])
+@SayCommand(COMMANDS['wcs'])
 def say_command_wcs(command, index, team=None):
     main_menu.send(index)
 
     return CommandReturn.BLOCK
 
 
-@TypedClientCommand('shopmenu')
-@TypedSayCommand('shopmenu')
-def say_command_shopmenu(command):
-    wcsplayer = Player(command.index)
+@ClientCommand(COMMANDS['shopmenu'])
+@SayCommand(COMMANDS['shopmenu'])
+def say_command_shopmenu(command, index, team=None):
+    wcsplayer = Player(index)
 
     if wcsplayer.ready:
-        shopmenu_menu.send(command.index)
+        shopmenu_menu.send(index)
     else:
-        not_ready_message.send(command.index)
+        not_ready_message.send(index)
 
     return CommandReturn.BLOCK
 
 
-@TypedClientCommand('shopinfo')
-@TypedSayCommand('shopinfo')
-def say_command_shopinfo(command):
-    shopinfo_menu.send(command.index)
+@ClientCommand(COMMANDS['shopinfo'])
+@SayCommand(COMMANDS['shopinfo'])
+def say_command_shopinfo(command, index, team=None):
+    shopinfo_menu.send(index)
 
     return CommandReturn.BLOCK
 
 
-@TypedClientCommand('showskills')
-@TypedSayCommand('showskills')
-def say_command_showskills(command):
-    wcsplayer = Player(command.index)
+@ClientCommand(COMMANDS['showskills'])
+@SayCommand(COMMANDS['showskills'])
+def say_command_showskills(command, index, team=None):
+    wcsplayer = Player(index)
 
     if wcsplayer.ready:
-        showskills_menu.send(command.index)
+        showskills_menu.send(index)
     else:
-        not_ready_message.send(command.index)
+        not_ready_message.send(index)
 
     return CommandReturn.BLOCK
 
 
-@TypedClientCommand('resetskills')
-@TypedSayCommand('resetskills')
-def say_command_resetskills(command):
-    wcsplayer = Player(command.index)
+@ClientCommand(COMMANDS['resetskills'])
+@SayCommand(COMMANDS['resetskills'])
+def say_command_resetskills(command, index, team=None):
+    wcsplayer = Player(index)
 
     if wcsplayer.ready:
-        resetskills_menu.send(command.index)
+        resetskills_menu.send(index)
     else:
-        not_ready_message.send(command.index)
+        not_ready_message.send(index)
 
     return CommandReturn.BLOCK
 
 
-@TypedClientCommand('spendskills')
-@TypedSayCommand('spendskills')
-def say_command_spendskills(command):
-    wcsplayer = Player(command.index)
+@ClientCommand(COMMANDS['spendskills'])
+@SayCommand(COMMANDS['spendskills'])
+def say_command_spendskills(command, index, team=None):
+    wcsplayer = Player(index)
 
     if wcsplayer.ready:
         active_race = wcsplayer.active_race
 
         if active_race.unused > 0:
             if any([skill.level < skill.config['maximum'] for skill in active_race.skills.values()]):
-                spendskills_menu.send(command.index)
+                spendskills_menu.send(index)
             else:
-                maximum_level_message.send(command.index)
+                maximum_level_message.send(index)
         else:
-            no_unused_message.send(command.index)
+            no_unused_message.send(index)
     else:
-        not_ready_message.send(command.index)
+        not_ready_message.send(index)
 
     return CommandReturn.BLOCK
 
 
-@TypedClientCommand('changerace')
-@TypedSayCommand('changerace')
-def say_command_changerace(command, *search:str):
-    wcsplayer = Player(command.index)
+@ClientCommand(COMMANDS['changerace'])
+@SayCommand(COMMANDS['changerace'])
+def say_command_changerace(command, index, team=None):
+    wcsplayer = Player(index)
 
     if wcsplayer.ready:
+        search = command.arg_string.split()
+
         if search:
             found = []
             joined_search = ' '.join([x.lower() for x in search])
-            language = get_client_language(command.index)
+            language = get_client_language(index)
 
             for name, settings in race_manager.items():
                 if joined_search == settings.strings['name'].get_string(language).lower():
@@ -1199,31 +1201,33 @@ def say_command_changerace(command, *search:str):
 
             if found:
                 if not cfg_changerace_next_round.get_int():
-                    changerace_warning_message.send(command.index)
+                    changerace_warning_message.send(index)
 
                 wcsplayer.data['_internal_changerace_search'] = found
 
-                changerace_search_menu.send(command.index)
+                changerace_search_menu.send(index)
             else:
-                no_race_found_message.send(command.index, search=' '.join(search))
+                no_race_found_message.send(index, search=' '.join(search))
         else:
             if not cfg_changerace_next_round.get_int():
-                changerace_warning_message.send(command.index)
+                changerace_warning_message.send(index)
 
-            changerace_menu.send(command.index)
+            changerace_menu.send(index)
     else:
-        not_ready_message.send(command.index)
+        not_ready_message.send(index)
 
     return CommandReturn.BLOCK
 
 
-@TypedClientCommand('raceinfo')
-@TypedSayCommand('raceinfo')
-def say_command_raceinfo(command, *search:str):
+@ClientCommand(COMMANDS['raceinfo'])
+@SayCommand(COMMANDS['raceinfo'])
+def say_command_raceinfo(command, index, team=None):
+    search = command.arg_string.split()
+
     if search:
         found = []
         joined_search = ' '.join([x.lower() for x in search])
-        language = get_client_language(command.index)
+        language = get_client_language(index)
 
         for name, settings in race_manager.items():
             if joined_search == settings.strings['name'].get_string(language).lower():
@@ -1242,21 +1246,21 @@ def say_command_raceinfo(command, *search:str):
                         found.append(name)
 
         if found:
-            Player(command.index).data['_internal_raceinfo_search'] = found
+            Player(index).data['_internal_raceinfo_search'] = found
 
-            raceinfo_search_menu.send(command.index)
+            raceinfo_search_menu.send(index)
         else:
-            no_race_found_message.send(command.index, search=' '.join(search))
+            no_race_found_message.send(index, search=' '.join(search))
     else:
-        raceinfo_menu.send(command.index)
+        raceinfo_menu.send(index)
 
     return CommandReturn.BLOCK
 
 
-@TypedClientCommand('myraceinfo')
-@TypedSayCommand('myraceinfo')
-def say_command_myraceinfo(command):
-    wcsplayer = Player(command.index)
+@ClientCommand(COMMANDS['myraceinfo'])
+@SayCommand(COMMANDS['myraceinfo'])
+def say_command_myraceinfo(command, index, team=None):
+    wcsplayer = Player(index)
 
     if wcsplayer.ready:
         categories = race_manager[wcsplayer.current_race].config['categories']
@@ -1264,76 +1268,76 @@ def say_command_myraceinfo(command):
         wcsplayer.data['_internal_raceinfo'] = wcsplayer.current_race
         wcsplayer.data['_internal_raceinfo_category'] = categories[0] if categories else None
 
-        raceinfo_detail_menu.send(command.index)
+        raceinfo_detail_menu.send(index)
     else:
-        not_ready_message.send(command.index)
+        not_ready_message.send(index)
 
     return CommandReturn.BLOCK
 
 
-@TypedClientCommand('playerinfo')
-@TypedSayCommand('playerinfo')
-def say_command_playerinfo(command):
-    playerinfo_menu.send(command.index)
+@ClientCommand(COMMANDS['playerinfo'])
+@SayCommand(COMMANDS['playerinfo'])
+def say_command_playerinfo(command, index, team=None):
+    playerinfo_menu.send(index)
 
     return CommandReturn.BLOCK
 
 
-@TypedClientCommand('wcstop')
-@TypedSayCommand('wcstop')
-def say_command_wcstop(command):
-    wcstop_menu.send(command.index)
+@ClientCommand(COMMANDS['wcstop'])
+@SayCommand(COMMANDS['wcstop'])
+def say_command_wcstop(command, index, team=None):
+    wcstop_menu.send(index)
 
     return CommandReturn.BLOCK
 
 
-@TypedClientCommand('wcsrank')
-@TypedSayCommand('wcsrank')
-def say_command_wcsrank(command):
-    wcsplayer = Player(command.index)
+@ClientCommand(COMMANDS['wcsrank'])
+@SayCommand(COMMANDS['wcsrank'])
+def say_command_wcsrank(command, index, team=None):
+    wcsplayer = Player(index)
 
     if wcsplayer.ready:
         active_race = wcsplayer.active_race
 
         rank_message.send(name=wcsplayer.name, race=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp, rank=wcsplayer.rank, total=len(rank_manager))
     else:
-        not_ready_message.send(command.index)
+        not_ready_message.send(index)
 
     return CommandReturn.BLOCK
 
 
-@TypedClientCommand('wcshelp')
-@TypedSayCommand('wcshelp')
-def say_command_wcshelp(command):
-    wcshelp_menu.send(command.index)
+@ClientCommand(COMMANDS['wcshelp'])
+@SayCommand(COMMANDS['wcshelp'])
+def say_command_wcshelp(command, index, team=None):
+    wcshelp_menu.send(index)
 
     return CommandReturn.BLOCK
 
 
-@TypedClientCommand('wcsadmin')
-@TypedSayCommand('wcsadmin')
-def say_command_wcsadmin(command):
-    wcsplayer = Player(command.index)
+@ClientCommand(COMMANDS['wcsadmin'])
+@SayCommand(COMMANDS['wcsadmin'])
+def say_command_wcsadmin(command, index, team=None):
+    wcsplayer = Player(index)
 
     if wcsplayer.privileges.get('wcsadmin', False):
-        wcsadmin_menu.send(command.index)
+        wcsadmin_menu.send(index)
     else:
-        no_access_message.send(command.index)
+        no_access_message.send(index)
 
     return CommandReturn.BLOCK
 
 
-@TypedClientCommand('showxp')
-@TypedSayCommand('showxp')
-def say_command_showxp(command):
-    wcsplayer = Player(command.index)
+@ClientCommand(COMMANDS['showxp'])
+@SayCommand(COMMANDS['showxp'])
+def say_command_showxp(command, index, team=None):
+    wcsplayer = Player(index)
 
     if wcsplayer.ready:
         active_race = wcsplayer.active_race
 
         show_xp_message.send(wcsplayer.index, name=active_race.settings.strings['name'], level=active_race.level, total_level=wcsplayer.total_level, xp=active_race.xp, required=active_race.required_xp)
     else:
-        not_ready_message.send(command.index)
+        not_ready_message.send(index)
 
     return CommandReturn.BLOCK
 
