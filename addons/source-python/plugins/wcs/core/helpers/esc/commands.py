@@ -133,6 +133,7 @@ else:
     _languages = {}
 
 _repeats = defaultdict(list)
+_delays = defaultdict(list)
 
 _models = {2:[], 3:[]}
 
@@ -183,8 +184,10 @@ elif GAME_NAME == 'csgo':
 # ============================================================================
 # >> HELPER FUNCTIONS
 # ============================================================================
-def validate_userid_after_delay(callback, userid, *args, validator=convert_userid_to_player):
-    callback(None, validator(userid), *args)
+def validate_userid_after_delay(callback, userid, operator, value, delay, validator=convert_userid_to_player):
+    _delays[userid].remove(delay)
+
+    callback(None, validator(userid), operator, value)
 
 
 def _format_message(userid, name, args):
@@ -284,7 +287,9 @@ def wcs_setfx_freeze_command(command_info, player:convert_userid_to_player, oper
         player.move_type = MoveType.WALK
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_freeze_command, player.userid, '=', not value))
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_freeze_command, player.userid, '=', not value))
+        delay.args += (delay, )
+        _delays[player.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', 'jetpack'])
@@ -298,7 +303,9 @@ def wcs_setfx_jetpack_command(command_info, player:convert_userid_to_player, ope
         player.move_type = MoveType.WALK
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_jetpack_command, player.userid, '=', not value))
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_jetpack_command, player.userid, '=', not value))
+        delay.args += (delay, )
+        _delays[player.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', 'god'])
@@ -309,7 +316,9 @@ def wcs_setfx_god_command(command_info, player:convert_userid_to_player, operato
     player.godmode = value
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_god_command, player.userid, '=', not value))
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_god_command, player.userid, '=', not value))
+        delay.args += (delay, )
+        _delays[player.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', 'noblock'])
@@ -320,7 +329,9 @@ def wcs_setfx_noblock_command(command_info, player:convert_userid_to_player, ope
     player.noblock = value
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_noblock_command, player.userid, '=', not value))
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_noblock_command, player.userid, '=', not value))
+        delay.args += (delay, )
+        _delays[player.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', 'burn'])
@@ -347,7 +358,9 @@ def wcs_setfx_speed_command(command_info, player:convert_userid_to_player, opera
         player.speed -= value
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_speed_command, player.userid, '+', value))
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_speed_command, player.userid, '+', value))
+        delay.args += (delay, )
+        _delays[player.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', 'invis'])
@@ -368,7 +381,9 @@ def wcs_setfx_invis_command(command_info, player:convert_userid_to_player, opera
         player.color = color.with_alpha(max(color.a - value, 0))
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_invis_command, player.userid, '+', value))
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_invis_command, player.userid, '+', value))
+        delay.args += (delay, )
+        _delays[player.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', 'invisp'])
@@ -393,7 +408,9 @@ def wcs_setfx_health_command(command_info, player:convert_userid_to_player, oper
         player.health -= value
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_health_command, player.userid, '+', value))
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_health_command, player.userid, '+', value))
+        delay.args += (delay, )
+        _delays[player.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', 'armor'])
@@ -412,7 +429,9 @@ def wcs_setfx_armor_command(command_info, player:convert_userid_to_player, opera
         player.armor = max(player.armor - value, 0)
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_armor_command, player.userid, '+', value))
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_armor_command, player.userid, '+', value))
+        delay.args += (delay, )
+        _delays[player.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', 'cash'])
@@ -431,7 +450,9 @@ def wcs_setfx_cash_command(command_info, player:convert_userid_to_player, operat
         player.cash = max(player.cash - value, 0)
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_cash_command, player.userid, '+', value))
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_cash_command, player.userid, '+', value))
+        delay.args += (delay, )
+        _delays[player.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', 'gravity'])
@@ -450,7 +471,9 @@ def wcs_setfx_gravity_command(command_info, player:convert_userid_to_player, ope
         player.gravity = max(player.gravity - value, 0)
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_gravity_command, player.userid, '+', value))
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_gravity_command, player.userid, '+', value))
+        delay.args += (delay, )
+        _delays[player.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', 'ulti_immunity'])
@@ -475,7 +498,9 @@ def wcs_setfx_ulti_immunity_command(command_info, wcsplayer:convert_userid_to_wc
         wcsplayer.data['ulti_immunity'] = max(old_value - value, 0)
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_ulti_immunity_command, wcsplayer.userid, '+', value), {'validator':convert_userid_to_wcsplayer})
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_ulti_immunity_command, wcsplayer.userid, '+', value), {'validator':convert_userid_to_wcsplayer})
+        delay.args += (delay, )
+        _delays[wcsplayer.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', 'disguiser'])
@@ -494,7 +519,9 @@ def wcs_setfx_disguiser_command(command_info, player:convert_userid_to_player, o
     player.model = Model('models/player/' + choice(models) + '.mdl')
 
     if time:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_disguiser_command, player.userid, '=', not value), {'validator':convert_userid_to_player})
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_disguiser_command, player.userid, '=', not value), {'validator':convert_userid_to_player})
+        delay.args += (delay, )
+        _delays[player.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', 'disguise'])
@@ -524,7 +551,9 @@ def wcs_setfx_longjump_command(command_info, wcsplayer:convert_userid_to_wcsplay
         wcsplayer.data['longjump'] = max(old_value - value, 0)
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_longjump_command, wcsplayer.userid, '+', value), {'validator':convert_userid_to_wcsplayer})
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_longjump_command, wcsplayer.userid, '+', value), {'validator':convert_userid_to_wcsplayer})
+        delay.args += (delay, )
+        _delays[wcsplayer.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', '1stclip'])
@@ -553,7 +582,9 @@ def wcs_setfx_1stclip_command(command_info, player:convert_userid_to_player, ope
         weapon.clip = max(old_value - value, 0)
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_1stclip_command, player.userid, '+', value), {'validator':convert_userid_to_player})
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_1stclip_command, player.userid, '+', value), {'validator':convert_userid_to_player})
+        delay.args += (delay, )
+        _delays[player.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', '2ndclip'])
@@ -582,7 +613,9 @@ def wcs_setfx_2ndclip_command(command_info, player:convert_userid_to_player, ope
         weapon.clip = max(old_value - value, 0)
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_2ndclip_command, player.userid, '+', value), {'validator':convert_userid_to_player})
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_2ndclip_command, player.userid, '+', value), {'validator':convert_userid_to_player})
+        delay.args += (delay, )
+        _delays[player.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', '1stammo'])
@@ -611,7 +644,9 @@ def wcs_setfx_1stammo_command(command_info, player:convert_userid_to_player, ope
         weapon.ammo = max(old_value - value, 0)
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_1stammo_command, player.userid, '+', value), {'validator':convert_userid_to_player})
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_1stammo_command, player.userid, '+', value), {'validator':convert_userid_to_player})
+        delay.args += (delay, )
+        _delays[player.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', '2ndammo'])
@@ -640,7 +675,9 @@ def wcs_setfx_2ndammo_command(command_info, player:convert_userid_to_player, ope
         weapon.ammo = max(old_value - value, 0)
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_2ndammo_command, player.userid, '+', value), {'validator':convert_userid_to_player})
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_2ndammo_command, player.userid, '+', value), {'validator':convert_userid_to_player})
+        delay.args += (delay, )
+        _delays[player.userid].append(delay)
 
 
 @TypedServerCommand(['wcs_setfx', 'flicker'])
@@ -653,7 +690,9 @@ def wcs_setfx_flicker_command(command_info, player:convert_userid_to_player, ope
     player.set_key_value_int('renderfx', 13 if value else 0)
 
     if time > 0:
-        Delay(time, validate_userid_after_delay, (wcs_setfx_flicker_command, player.userid, '=', not value), {'validator':convert_userid_to_player})
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_flicker_command, player.userid, '=', not value), {'validator':convert_userid_to_player})
+        delay.args += (delay, )
+        _delays[player.userid].append(delay)
 
 
 @TypedServerCommand('wcs_removefx')
@@ -1781,6 +1820,12 @@ def player_death(event):
         if repeat.status == RepeatStatus.RUNNING:
             repeat.stop()
 
+    delays = _delays.pop(event['userid'], [])
+
+    for delay in delays:
+        if delay.running:
+            delay.cancel()
+
 
 @Event('player_spawn')
 def player_spawn(event):
@@ -1789,6 +1834,12 @@ def player_spawn(event):
     for repeat in repeats:
         if repeat.status == RepeatStatus.RUNNING:
             repeat.stop()
+
+    delays = _delays.pop(event['userid'], [])
+
+    for delay in delays:
+        if delay.running:
+            delay.cancel()
 
 
 @Event('player_blind')
