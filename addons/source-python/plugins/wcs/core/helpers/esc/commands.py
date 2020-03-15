@@ -38,6 +38,7 @@ from engines.trace import GameTrace
 from engines.trace import Ray
 from engines.trace import TraceFilterSimple
 #   Entities
+from entities.constants import DamageTypes
 from entities.constants import MoveType
 from entities.constants import TakeDamage
 from entities.entity import Entity
@@ -109,9 +110,11 @@ from ..wards import ward_manager
 #   Listeners
 from ...listeners import OnPlayerChangeRace
 from ...listeners import OnPlayerDelete
+from ...listeners import OnTakeDamageAlive
 #   Modules
 from ...modules.races.manager import race_manager
 #   Players
+from ...players import set_weapon_name
 from ...players import team_data
 from ...players.entity import Player as WCSPlayer
 
@@ -2035,3 +2038,17 @@ def on_player_delete(wcsplayer):
     for delay in delays:
         if delay.running:
             delay.cancel()
+
+
+@OnTakeDamageAlive
+def on_take_damage_alive(wcsvictim, wcsattacker, info):
+    if info.type & DamageTypes.BURN:
+        fire_owner = wcsvictim.data.get('fire_owner')
+
+        if fire_owner is not None:
+            try:
+                info.attacker = index_from_userid(fire_owner)
+            except ValueError:
+                del wcsvictim.data['fire_owner']
+            else:
+                info.inflictor = set_weapon_name('fire')
