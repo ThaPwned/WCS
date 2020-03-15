@@ -31,6 +31,7 @@ from cvars import ConVar
 #   Engines
 from engines.precache import Model
 from engines.server import execute_server_command
+from engines.server import global_vars
 from engines.trace import ContentMasks
 from engines.trace import engine_trace
 from engines.trace import GameTrace
@@ -50,10 +51,12 @@ from filters.weapons import WeaponClassIter
 from _keyvalues import KeyValues
 # NOTE: Have to prefix it with a _ otherwise it'd import KeyValues from ES Emulator if it's loaded
 #   Listeners
+from listeners import OnPlayerRunCommand
 from listeners.tick import Delay
 from listeners.tick import Repeat
 from listeners.tick import RepeatStatus
 #   Mathlib
+from mathlib import NULL_VECTOR
 from mathlib import QAngle
 from mathlib import Vector
 #   Messages
@@ -64,11 +67,13 @@ from messages import KeyHintText
 from messages import SayText2
 from messages import Shake
 #   Players
+from players.dictionary import PlayerDictionary
 from players.entity import Player
 from players.helpers import index_from_userid
 #   Translations
 from translations.strings import LangStrings
 #   Weapons
+from weapons.dictionary import WeaponDictionary
 from weapons.manager import weapon_manager
 from weapons.restrictions import WeaponRestrictionHandler
 
@@ -103,6 +108,7 @@ from ..wards import DamageWard
 from ..wards import ward_manager
 #   Listeners
 from ...listeners import OnPlayerChangeRace
+from ...listeners import OnPlayerDelete
 #   Modules
 from ...modules.races.manager import race_manager
 #   Players
@@ -134,6 +140,27 @@ else:
 
 _repeats = defaultdict(list)
 _delays = defaultdict(list)
+_attackspeed = {}
+_norecoil = set()
+_player_instances = PlayerDictionary()
+_weapon_instances = WeaponDictionary()
+_recoil_cvars_default = {}
+_recoil_cvars_modified = {
+    'weapon_accuracy_nospread': 1,
+    'weapon_air_spread_scale': 0,
+    'weapon_recoil_cooldown': 0,
+    'weapon_recoil_decay1_exp': 99999,
+    'weapon_recoil_decay2_exp': 99999,
+    'weapon_recoil_decay2_lin': 99999,
+    'weapon_recoil_decay_coefficient': 0,
+    'weapon_recoil_scale': 0,
+    'weapon_recoil_scale_motion_controller': 0,
+    'weapon_recoil_suppression_factor': 0,
+    'weapon_recoil_suppression_shots': 500,
+    'weapon_recoil_variance': 0,
+    'weapon_recoil_vel_decay': 0,
+    'weapon_recoil_view_punch_extra': 0
+}
 
 _models = {2:[], 3:[]}
 
@@ -153,6 +180,13 @@ if GAME_NAME == 'cstrike':
             'ct_sas',
             'ct_urban'
         ]
+    )
+
+    _recoil_cvars_modified.clear()
+
+    weapon_fire_post_properties = (
+        'localdata.m_Local.m_vecPunchAngle',
+        'localdata.m_Local.m_vecPunchAngleVel'
     )
 elif GAME_NAME == 'csgo':
     _models[2].extend(
@@ -178,6 +212,15 @@ elif GAME_NAME == 'csgo':
             'ctm_gsg9_variantc',
             'ctm_gsg9_variantd'
         ]
+    )
+
+    for cvar in _recoil_cvars_modified:
+        _recoil_cvars_default[cvar] = ConVar(cvar).default
+
+    _weapon_fire_post_properties = (
+        'localdata.m_Local.m_aimPunchAngle',
+        'localdata.m_Local.m_aimPunchAngleVel',
+        'localdata.m_Local.m_viewPunchAngle'
     )
 
 
@@ -693,6 +736,63 @@ def wcs_setfx_flicker_command(command_info, player:convert_userid_to_player, ope
         delay = Delay(time, validate_userid_after_delay, (wcs_setfx_flicker_command, player.userid, '=', not value), {'validator':convert_userid_to_player})
         delay.args += (delay, )
         _delays[player.userid].append(delay)
+
+
+@TypedServerCommand(['wcs_setfx', 'attackspeed'])
+def wcs_setfx_attackspeed_command(command_info, player:convert_userid_to_player, operator:valid_operators(), value:float, time:float=0):
+    if player is None:
+        return
+
+    userid = player.userid
+
+    if operator == '=':
+        old_value = _attackspeed.get(userid, 1)
+        _attackspeed[userid] = value
+        value = old_value - value
+    elif operator == '+':
+        _attackspeed[userid] = _attackspeed.get(userid, 1) + value
+        value *= -1
+    else:
+        old_value = _attackspeed.get(userid, 1)
+
+        _attackspeed[userid] = max(old_value - value, 0)
+
+    if _attackspeed[userid] in (0, 1):
+        del _attackspeed[userid]
+
+    cur_time = global_vars.current_time
+
+    for index in player.weapon_indexes():
+        _weapon_instances[index].set_network_property_float('LocalActiveWeaponData.m_flNextPrimaryAttack', cur_time)
+
+    if time > 0:
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_attackspeed_command, userid, '+', value), {'validator':convert_userid_to_player})
+        delay.args += (delay, )
+        _delays[userid].append(delay)
+
+
+@TypedServerCommand(['wcs_setfx', 'norecoil'])
+def wcs_setfx_norecoil_command(command_info, player:convert_userid_to_player, operator:valid_operators('='), value:int, time:float=0):
+    if player is None:
+        return
+
+    userid = player.userid
+
+    if value:
+        _norecoil.add(userid)
+
+        for cvar in _recoil_cvars_modified:
+            player.send_convar_value(cvar, _recoil_cvars_modified[cvar])
+    else:
+        _norecoil.discard(userid)
+
+        for cvar in _recoil_cvars_modified:
+            player.send_convar_value(cvar, _recoil_cvars_default[cvar])
+
+    if time > 0:
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_norecoil_command, userid, '=', not value), {'validator':convert_userid_to_player})
+        delay.args += (delay, )
+        _delays[userid].append(delay)
 
 
 @TypedServerCommand('wcs_removefx')
@@ -1812,6 +1912,20 @@ def pre_player_hurt(event):
                     wcsplayer.player.health += int(event['dmg_health'])
 
 
+@PreEvent('weapon_fire')
+def weapon_fire_pre(event):
+    userid = event['userid']
+
+    if userid not in _norecoil:
+        return
+
+    player = _player_instances.from_userid(userid)
+    weapon = _weapon_instances.from_inthandle(player.active_weapon_handle)
+
+    player.set_network_property_uchar('cslocaldata.m_iShotsFired', 0)
+    weapon.set_network_property_float('m_fAccuracyPenalty', 0.0)
+
+
 @Event('player_death')
 def player_death(event):
     repeats = _repeats.pop(event['userid'], [])
@@ -1853,9 +1967,71 @@ def player_blind(event):
         player.flash_alpha = 0
 
 
+@Event('weapon_fire')
+def weapon_fire(event):
+    userid = event['userid']
+
+    if _attackspeed.get(userid) is None and userid not in _norecoil:
+        return
+
+    player = _player_instances.from_userid(userid)
+    weapon = _weapon_instances.from_inthandle(player.active_weapon_handle)
+    player.delay(0, weapon_fire_post, (player, userid, weapon))
+
+
+def weapon_fire_post(player, userid, weapon):
+    if userid in _norecoil:
+        for prop in _weapon_fire_post_properties:
+            player.set_network_property_vector(prop, NULL_VECTOR)
+
+    fire_rate = _attackspeed.get(userid)
+
+    if fire_rate is None:
+        return
+
+    cur_time = global_vars.current_time
+
+    next_attack = weapon.get_datamap_property_float('m_flNextPrimaryAttack')
+    next_attack = (next_attack - cur_time) * 1.0 / fire_rate + cur_time
+
+    weapon.set_datamap_property_float('m_flNextPrimaryAttack', next_attack)
+    player.set_datamap_property_float('m_flNextAttack', cur_time)
+
+
 # ============================================================================
 # >> LISTENERS
 # ============================================================================
+@OnPlayerRunCommand
+def on_player_run_command(player, user_cmd):
+    if player.get_datamap_property_bool('pl.deadflag'):
+        return
+
+    if player.userid not in _norecoil:
+        return
+
+    user_cmd.random_seed = 0
+
+
 @OnPlayerChangeRace
 def on_player_change_race(wcsplayer, old, new):
     _restrictions.player_restrictions[wcsplayer.userid].clear()
+
+
+@OnPlayerDelete
+def on_player_delete(wcsplayer):
+    userid = wcsplayer.userid
+
+    _attackspeed.pop(userid, None)
+    _norecoil.discard(userid)
+
+    repeats = _repeats.pop(userid, [])
+
+    for repeat in repeats:
+        if repeat.status == RepeatStatus.RUNNING:
+            repeat.stop()
+
+    delays = _delays.pop(userid, [])
+
+    for delay in delays:
+        if delay.running:
+            delay.cancel()
