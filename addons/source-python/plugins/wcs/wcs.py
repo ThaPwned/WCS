@@ -29,6 +29,8 @@ from colors import Color
 #   Core
 from core import SOURCE_ENGINE_BRANCH
 from core import OutputReturn
+#   Engines
+from engines.server import global_vars
 #   Entities
 from entities.constants import MoveType
 from entities.constants import RenderMode
@@ -360,6 +362,9 @@ def _query_refresh_ranks(result):
 
 
 def _give_xp_if_set(userid, config, bot_config, message):
+    if not 0 < userid <= global_vars.max_clients:
+        return
+
     wcsplayer = Player.from_userid(userid)
 
     if not wcsplayer.ready:
