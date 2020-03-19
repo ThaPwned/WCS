@@ -1491,6 +1491,73 @@ def wcs_cancelulti_command(command_info, wcsplayer:convert_userid_to_wcsplayer):
     wcs_set_cooldown_command(command_info, wcsplayer, 0)
 
 
+@TypedServerCommand('wcs_get_ability_cooldown')
+def wcs_get_ability_cooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer, var:ConVar, ability:int=None):
+    if wcsplayer is None:
+        var.set_int(-1)
+        return
+
+    if not wcsplayer.ready:
+        var.set_int(-1)
+        return
+
+    active_race = wcsplayer.active_race
+
+    if ability is None:
+        for skill in active_race.skills.values():
+            if 'player_ability' in skill.config['event']:
+                var.set_float(max(skill.cooldown - time(), 0))
+                break
+        else:
+            var.set_int(-1)
+    else:
+        i = 1
+
+        for skill_name in active_race.settings.config['skills']:
+            skill = active_race.skills[skill_name]
+
+            if 'player_ability_on' in skill.config['event']:
+                if ability == i:
+                    var.set_float(max(skill.cooldown - time(), 0))
+                    break
+
+                i += 1
+
+
+@TypedServerCommand('wcs_set_ability_cooldown')
+def wcs_set_ability_cooldown_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:float, ability:int=None):
+    if wcsplayer is None:
+        return
+
+    if not wcsplayer.ready:
+        return
+
+    active_race = wcsplayer.active_race
+
+    if ability is None:
+        for skill in active_race.skills.values():
+            if 'player_ability' in skill.config['event']:
+                skill.reset_cooldown(value)
+                break
+    else:
+        i = 1
+
+        for skill_name in active_race.settings.config['skills']:
+            skill = active_race.skills[skill_name]
+
+            if 'player_ability_on' in skill.config['event']:
+                if ability == i:
+                    skill.reset_cooldown(value)
+                    break
+
+                i += 1
+
+
+@TypedServerCommand('wcs_cancel_ability')
+def wcs_cancel_ability_command(command_info, wcsplayer:convert_userid_to_wcsplayer, ability:int=None):
+    wcs_set_ability_cooldown_command(command_info, wcsplayer, 0, ability)
+
+
 @TypedServerCommand('wcs_getviewcoords')
 def wcs_getviewcoords_command(command_info, player:convert_userid_to_player, x:ConVar, y:ConVar, z:ConVar):
     if player is None:
