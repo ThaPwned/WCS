@@ -62,6 +62,7 @@ from weapons.manager import weapon_manager
 # WCS Imports
 #   Config
 from .core.config import cfg_bonus_xp
+from .core.config import cfg_bonus_xp_level_cap
 from .core.config import cfg_kill_xp
 from .core.config import cfg_knife_xp
 from .core.config import cfg_headshot_xp
@@ -661,7 +662,9 @@ def player_death(event):
                                 bonus_xp = cfg_bonus_xp.get_int()
 
                                 if bonus_xp:
-                                    gained = difference * bonus_xp
+                                    cap = cfg_bonus_xp_level_cap.get_int()
+
+                                    gained = (min(cap, difference) if cap > 0 else difference) * bonus_xp
                                     value += gained
 
                                     if not wcsattacker.fake_client:

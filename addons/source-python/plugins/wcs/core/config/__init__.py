@@ -19,6 +19,7 @@ from ..translations import config_strings
 # ============================================================================
 __all__ = (
     'cfg_bonus_xp',
+    'cfg_bonus_xp_level_cap',
     'cfg_default_race',
     'cfg_disable_text_on_level',
     'cfg_headshot_xp',
@@ -62,6 +63,7 @@ __all__ = (
 with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as config:
     cfg_interval = config.cvar('interval', '80', config_strings['interval'])
     cfg_bonus_xp = config.cvar('bonus_xp', '4', config_strings['bonus_xp'])
+    cfg_bonus_xp_level_cap = config.cvar('bonus_xp_level_cap', '0', config_strings['bonus_xp_level_cap'])
     cfg_kill_xp = config.cvar('kill_xp', '20', config_strings['kill_xp'])
     cfg_knife_xp = config.cvar('knife_xp', '40', config_strings['knife_xp'])
     cfg_headshot_xp = config.cvar('headshot_xp', '15', config_strings['headshot_xp'])
