@@ -1996,8 +1996,8 @@ def weapon_fire_pre(event):
     weapon.set_network_property_float('m_fAccuracyPenalty', 0.0)
 
 
-@Event('player_death')
-def player_death(event):
+@PreEvent('player_spawn')
+def player_spawn(event):
     repeats = _repeats.pop(event['userid'], [])
 
     for repeat in repeats:
@@ -2011,8 +2011,8 @@ def player_death(event):
             delay.cancel()
 
 
-@Event('player_spawn')
-def player_spawn(event):
+@Event('player_death')
+def player_death(event):
     repeats = _repeats.pop(event['userid'], [])
 
     for repeat in repeats:
