@@ -2010,6 +2010,9 @@ def player_spawn(event):
         if delay.running:
             delay.cancel()
 
+    _attackspeed.pop(event['userid'], None)
+    _norecoil.discard(event['userid'])
+
 
 @Event('player_death')
 def player_death(event):
@@ -2024,6 +2027,9 @@ def player_death(event):
     for delay in delays:
         if delay.running:
             delay.cancel()
+
+    _attackspeed.pop(event['userid'], None)
+    _norecoil.discard(event['userid'])
 
 
 @Event('player_blind')
