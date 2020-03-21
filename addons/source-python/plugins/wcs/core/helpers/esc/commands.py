@@ -1998,38 +1998,32 @@ def weapon_fire_pre(event):
 
 @PreEvent('player_spawn')
 def player_spawn(event):
-    repeats = _repeats.pop(event['userid'], [])
+    userid = event['userid']
+
+    repeats = _repeats.pop(userid, [])
 
     for repeat in repeats:
         if repeat.status == RepeatStatus.RUNNING:
             repeat.stop()
 
-    delays = _delays.pop(event['userid'], [])
+    delays = _delays.pop(userid, [])
 
     for delay in delays:
         if delay.running:
             delay.cancel()
 
-    _attackspeed.pop(event['userid'], None)
-    _norecoil.discard(event['userid'])
+    _attackspeed.pop(userid, None)
+    _norecoil.discard(userid)
+
+    player = Player.from_userid(userid)
+
+    for cvar in _recoil_cvars_modified:
+        player.send_convar_value(cvar, _recoil_cvars_default[cvar])
 
 
 @Event('player_death')
 def player_death(event):
-    repeats = _repeats.pop(event['userid'], [])
-
-    for repeat in repeats:
-        if repeat.status == RepeatStatus.RUNNING:
-            repeat.stop()
-
-    delays = _delays.pop(event['userid'], [])
-
-    for delay in delays:
-        if delay.running:
-            delay.cancel()
-
-    _attackspeed.pop(event['userid'], None)
-    _norecoil.discard(event['userid'])
+    player_spawn(event)
 
 
 @Event('player_blind')
