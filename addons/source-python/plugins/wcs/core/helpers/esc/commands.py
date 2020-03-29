@@ -2023,6 +2023,9 @@ def player_spawn(event):
         for cvar in _recoil_cvars_modified:
             player.send_convar_value(cvar, _recoil_cvars_default[cvar])
 
+    wcsplayer = WCSPlayer.from_userid(userid)
+    wcsplayer.data.pop('longjump', None)
+
 
 @Event('player_death')
 def player_death(event):
