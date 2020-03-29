@@ -784,13 +784,15 @@ def wcs_setfx_norecoil_command(command_info, player:convert_userid_to_player, op
     if value:
         _norecoil.add(userid)
 
-        for cvar in _recoil_cvars_modified:
-            player.send_convar_value(cvar, _recoil_cvars_modified[cvar])
+        if not player.is_bot():
+            for cvar in _recoil_cvars_modified:
+                player.send_convar_value(cvar, _recoil_cvars_modified[cvar])
     else:
         _norecoil.discard(userid)
 
-        for cvar in _recoil_cvars_modified:
-            player.send_convar_value(cvar, _recoil_cvars_default[cvar])
+        if not player.is_bot():
+            for cvar in _recoil_cvars_modified:
+                player.send_convar_value(cvar, _recoil_cvars_default[cvar])
 
     if time > 0:
         delay = Delay(time, validate_userid_after_delay, (wcs_setfx_norecoil_command, userid, '=', not value), {'validator':convert_userid_to_player})
@@ -2017,8 +2019,9 @@ def player_spawn(event):
 
     player = Player.from_userid(userid)
 
-    for cvar in _recoil_cvars_modified:
-        player.send_convar_value(cvar, _recoil_cvars_default[cvar])
+    if not player.is_bot():
+        for cvar in _recoil_cvars_modified:
+            player.send_convar_value(cvar, _recoil_cvars_default[cvar])
 
 
 @Event('player_death')
