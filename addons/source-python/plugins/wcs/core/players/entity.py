@@ -1288,7 +1288,10 @@ class _Skill(object):
     @property
     def cooldown_seconds(self):
         if 'cooldown' in self.config:
-            return self.config['cooldown'][self.level - 1]
+            try:
+                return self.config['cooldown'][self.level - 1]
+            except IndexError:
+                return self.config['cooldown'][-1]
 
         return 0
 
