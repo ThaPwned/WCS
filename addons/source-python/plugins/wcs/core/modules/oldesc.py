@@ -10,8 +10,6 @@ from collections import OrderedDict
 from configobj import ConfigObj
 #   Re
 from re import compile as re_compile
-#   Shlex
-from shlex import split
 #   Warnings
 from warnings import warn
 
@@ -424,4 +422,4 @@ def _command(command):
 
     if alias in _aliases:
         for cmd in _aliases[alias].split(';'):
-            execute_server_command(*split(cmd))
+            execute_server_command('es', cmd)

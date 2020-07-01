@@ -16,8 +16,6 @@ from json import load as json_load
 from json import dump as json_dump
 #   OS
 from os import strerror
-#   Shlex
-from shlex import split
 #   Sys
 from sys import modules
 #   Warnings
@@ -319,7 +317,7 @@ class _BaseSetting(object):
 
             if commands is not None and commands:
                 for cmd in commands.split(';'):
-                    execute_server_command(*split(cmd))
+                    execute_server_command('es', cmd)
 
     def get_game_entry(self, entry):
         return self.config['games'].get(GAME_NAME, self.config['games']['default'])[entry]

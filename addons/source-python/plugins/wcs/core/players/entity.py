@@ -15,8 +15,6 @@ from json import load as json_load
 from random import choice
 from random import randint
 from random import uniform
-#   Shlex
-from shlex import split
 #   Time
 from time import time
 #   Warnings
@@ -944,7 +942,7 @@ class _Race(object):
                         if commands:
                             for cmd in commands.split(';'):
                                 try:
-                                    execute_server_command(*split(cmd))
+                                    execute_server_command('es', cmd)
                                 except ValueError:
                                     except_hooks.print_exception()
                                     break
@@ -955,7 +953,7 @@ class _Race(object):
                             if commands:
                                 for cmd in commands.split(';'):
                                     try:
-                                        execute_server_command(*split(cmd))
+                                        execute_server_command('es', cmd)
                                     except ValueError:
                                         except_hooks.print_exception()
                                         break
@@ -997,7 +995,7 @@ class _Race(object):
                         for _ in range(item.count):
                             for cmd in commands.split(';'):
                                 try:
-                                    execute_server_command(*split(cmd))
+                                    execute_server_command('es', cmd)
                                 except ValueError:
                                     except_hooks.print_exception()
                                     break
@@ -1039,7 +1037,7 @@ class _Race(object):
 
                 for cmd in commands.split(';'):
                     try:
-                        execute_server_command(*split(cmd))
+                        execute_server_command('es', cmd)
                     except ValueError:
                         except_hooks.print_exception()
                         break
@@ -1219,7 +1217,7 @@ class _Skill(object):
                 if commands:
                     for cmd in commands.split(';'):
                         try:
-                            execute_server_command(*split(cmd))
+                            execute_server_command('es', cmd)
                         except ValueError:
                             except_hooks.print_exception()
                             break
@@ -1230,7 +1228,7 @@ class _Skill(object):
                     if commands:
                         for cmd in commands.split(';'):
                             try:
-                                execute_server_command(*split(cmd))
+                                execute_server_command('es', cmd)
                             except ValueError:
                                 except_hooks.print_exception()
                                 break
@@ -1343,7 +1341,7 @@ class _Item(object):
 
                 for cmd in commands.split(';'):
                     try:
-                        execute_server_command(*split(cmd))
+                        execute_server_command('es', cmd)
                     except ValueError:
                         except_hooks.print_exception()
                         break

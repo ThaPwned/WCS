@@ -9,8 +9,6 @@ from collections import defaultdict
 #   Random
 from random import choice
 from random import randint
-#   Shlex
-from shlex import split
 #   String
 from string import Template
 #   Time
@@ -1224,7 +1222,7 @@ def wcs_get_skill_level_command(command_info, wcsplayer:convert_userid_to_wcspla
 def wcs_foreach_command(command_info, var:str, players:convert_identifier_to_players, command:str):
     for player in players:
         for cmd in [f'es_xset {var} {player.userid}'] + command.split(';'):
-            execute_server_command(*split(cmd))
+            execute_server_command('es', cmd)
 
 
 @TypedServerCommand('wcs_nearcoord')
@@ -1234,7 +1232,7 @@ def wcs_nearcoord_command(command_info, var:str, players:convert_identifier_to_p
     for player in players:
         if vector.get_distance(player.origin) <= distance:
             for cmd in [f'es_xset {var} {player.userid}'] + command.split(';'):
-                execute_server_command(*split(cmd))
+                execute_server_command('es', cmd)
 
 
 @TypedServerCommand('wcs_color')
@@ -1292,7 +1290,7 @@ def wcs_givelevel_command(command_info, wcsplayer:convert_userid_to_wcsplayer, v
 def wcs_xalias_command(command_info, alias:str, command:str=None):
     if command is None:
         for cmd in _aliases[alias].split(';'):
-            execute_server_command(*split(cmd))
+            execute_server_command('es', cmd)
     else:
         _aliases[alias] = command
 
@@ -1303,7 +1301,7 @@ def wcs_dalias_command(command_info, alias:str, *args:str):
         ConVar(f'wcs_tmp{i}').set_string(value)
 
     for cmd in _aliases[alias].split(';'):
-        execute_server_command(*split(cmd))
+        execute_server_command('es', cmd)
 
 
 @TypedServerCommand('wcs_decimal')
