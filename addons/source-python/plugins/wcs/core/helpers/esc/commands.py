@@ -1112,7 +1112,10 @@ def wcsx_get_command(command_info, key:str, var:ConVar, userid:valid_userid):
                 else:
                     value = ','.join([str(x) for x in value[0]])
             else:
-                value = value[0]
+                if len(value) == 3:
+                    value = ','.join([str(x) for x in value])
+                else:
+                    value = value[0]
 
     var.set_string(str(value))
 
