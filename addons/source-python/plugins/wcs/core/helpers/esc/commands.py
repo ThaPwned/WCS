@@ -20,6 +20,7 @@ from warnings import warn
 #   Colors
 from colors import Color
 #   Commands
+from commands.typed import ArgumentNumberMismatch
 from commands.typed import InvalidArgumentValue
 from commands.typed import TypedServerCommand
 #   Core
@@ -54,6 +55,8 @@ from listeners import OnPlayerRunCommand
 from listeners.tick import Delay
 from listeners.tick import Repeat
 from listeners.tick import RepeatStatus
+#   Loggers
+from loggers import _sp_logger
 #   Mathlib
 from mathlib import NULL_VECTOR
 from mathlib import QAngle
@@ -138,6 +141,9 @@ if (CFG_PATH / 'es_WCSlanguage_db.txt').isfile():
     _languages = KeyValues.load_from_file(CFG_PATH / 'es_WCSlanguage_db.txt').as_dict()
 else:
     _languages = {}
+
+# EHHH???!?!
+wcs_logger = _sp_logger.wcs
 
 _repeats = defaultdict(list)
 _delays = defaultdict(list)
@@ -1949,6 +1955,18 @@ def wcs_warden_command(command_info, wcsplayer:convert_userid_to_wcsplayer, dura
     ward.team_target = team_target
 
     ward_manager.append(ward)
+
+
+@TypedServerCommand('wcs_log')
+def wcs_log_command(command_info, level:int, *message:str):
+    if not message:
+        raise ArgumentNumberMismatch('Not enough arguments:\n  wcs_log <level:int> [*message:str]')
+
+    if level == -1:
+        wcs_logger.log_message(' '.join(message))
+        return
+
+    wcs_logger.log(level, ' '.join(message))
 
 
 # ============================================================================
