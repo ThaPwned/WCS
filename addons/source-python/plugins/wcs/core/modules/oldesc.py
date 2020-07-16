@@ -16,13 +16,19 @@ from warnings import warn
 # Source.Python Imports
 #   Commands
 from commands.server import ServerCommand
+#   Cvars
+from cvars import cvar
 #   Engines
 from engines.server import execute_server_command
+#   Hooks
+from hooks.exceptions import except_hooks
 #   Keyvalues
 from _keyvalues import KeyValues
 # NOTE: Have to prefix it with a _ otherwise it'd import KeyValues from ES Emulator if it's loaded
 
 # WCS Imports
+#   Config
+from ..config import cfg_debug_alias_duplicate
 #   Constants
 from ..constants import ModuleType
 from ..constants.paths import CFG_PATH
@@ -104,102 +110,113 @@ def parse_ini_races():
         for name, data in imported.items():
             for alias, value in data.items():
                 if alias.startswith('racealias_'):
-                    _aliases[alias] = value
-
-            fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
-            settings = races[fixed_name] = ImportedRace(fixed_name, ModuleType.ESS_INI)
-
-            settings.cmds['preloadcmd'] = data['preloadcmd'] or None
-            settings.cmds['roundstartcmd'] = data['roundstartcmd'] or None
-            settings.cmds['roundendcmd'] = data['roundendcmd'] or None
-            settings.cmds['spawncmd'] = data['spawncmd'] or None
-            settings.cmds['deathcmd'] = data['deathcmd'] or None
-            settings.cmds['changeintocmd'] = data.get('changeintocmd') or None
-            settings.cmds['changefromcmd'] = data['onchange'] or None
-
-            settings.config['required'] = int(data['required'])
-            settings.config['maximum'] = int(data['maximum'])
-
-            settings.config['restrictbot'] = int(data.get('restrictbot', 0))
-            settings.config['restrictmap'] = data['restrictmap'].split('|') if data['restrictmap'] else []
-            settings.config['restrictitem'] = data['restrictitem'].split('|') if data['restrictitem'] else []
-            settings.config['restrictweapon'] = data['restrictweapon'].split('|') if 'restrictweapon' in data and data['restrictweapon'] else []
-            settings.config['restrictteam'] = int(data['restrictteam'])
-            settings.config['teamlimit'] = int(data.get('teamlimit', 0))
-
-            settings.config['author'] = data['author']
-            settings.config['allowonly'] = data['allowonly'].split('|') if data['allowonly'] else []
-
-            skillnames = data['skillnames'].split('|')
-            skilldescr = data['skilldescr'].split('|')
-            skillcfg = data['skillcfg'].split('|')
-            skillneeded = data['skillneeded'].split('|')
-            numberoflevels = map(int, data['numberoflevels'].split('|')) if '|' in data['numberoflevels'] else [int(data['numberoflevels'])] * len(skillnames)
-
-            skills = settings.config['skills'] = {}
-
-            for i, skill_name in enumerate(skillnames):
-                fixed_skill_name = FIX_NAME.sub('', skill_name.lower().replace(' ', '_'))
-
-                settings.strings[fixed_skill_name] = _LanguageString(skill_name)
-                settings.strings[f'{fixed_skill_name} description'] = _LanguageString(skilldescr[i].replace(r'\n', ''))
-
-                skill = skills[fixed_skill_name] = {}
-
-                skill['event'] = [skillcfg[i]]
-
-                skill['required'] = [int(skillneeded[i])] * numberoflevels[i]
-
-                if 'cooldown' in data[f'skill{i + 1}']:
-                    skill['cooldown'] = list(map(lambda x: float(x) if '.' in x else int(x), data[f'skill{i + 1}']['cooldown'].split('|')))
-
-                    if not len(skill['cooldown']) == numberoflevels[i]:
-                        skill['cooldown'] = [skill['cooldown'][0]] * numberoflevels[i]
-
-                skill['variables'] = {}
-
-                skill['cmds'] = {}
-                skill['cmds']['setting'] = data[f'skill{i + 1}']['setting'].split('|')
-
-                if 'block' in data[f'skill{i + 1}']:
-                    skill['cmds']['cmd'] = 'es_xdoblock ' + data[f'skill{i + 1}']['block']
-                else:
-                    cmd = data[f'skill{i + 1}']['cmd']
-                    skill['cmds']['cmd'] = None if cmd == '0' else cmd
-
-                cmd = data[f'skill{i + 1}']['sfx']
-                skill['cmds']['sfx'] = None if cmd == '0' else cmd
-
-                count = len(data[f'skill{i + 1}']['setting'].split('|'))
-
-                if count:
-                    skill['maximum'] = count
-                else:
-                    skill['maximum'] = numberoflevels[i]
-
-                for alias, value in data[f'skill{i + 1}'].items():
-                    if alias.startswith('racealias_'):
+                    if alias in _aliases:
+                        if cfg_debug_alias_duplicate.get_float():
+                            warn(f'Alias "{alias}" is already registered')
+                    else:
                         _aliases[alias] = value
 
-            settings.strings['name'] = _LanguageString(name)
-            settings.strings['description'] = _LanguageString(data['desc'].replace(r'\n', ''))
+            try:
+                fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
+                settings = ImportedRace(fixed_name, ModuleType.ESS_INI)
 
-            categories = (data['category'].split('|') if data['category'] and not data['category'] == '0' else []) if 'category' in data else []
+                settings.cmds['preloadcmd'] = data['preloadcmd'] or None
+                settings.cmds['roundstartcmd'] = data['roundstartcmd'] or None
+                settings.cmds['roundendcmd'] = data['roundendcmd'] or None
+                settings.cmds['spawncmd'] = data['spawncmd'] or None
+                settings.cmds['deathcmd'] = data['deathcmd'] or None
+                settings.cmds['changeintocmd'] = data.get('changeintocmd') or None
+                settings.cmds['changefromcmd'] = data['onchange'] or None
 
-            if categories:
-                for category in categories:
-                    if category == '0':
-                        no_category.append(settings)
-                        continue
+                settings.config['required'] = int(data['required'])
+                settings.config['maximum'] = int(data['maximum'])
 
-                    fixed_category = FIX_NAME.sub('', category.lower().replace(' ', '_'))
+                settings.config['restrictbot'] = int(data.get('restrictbot', 0))
+                settings.config['restrictmap'] = data['restrictmap'].split('|') if data['restrictmap'] else []
+                settings.config['restrictitem'] = data['restrictitem'].split('|') if data['restrictitem'] else []
+                settings.config['restrictweapon'] = data['restrictweapon'].split('|') if 'restrictweapon' in data and data['restrictweapon'] else []
+                settings.config['restrictteam'] = int(data['restrictteam'])
+                settings.config['teamlimit'] = int(data.get('teamlimit', 0))
 
-                    if fixed_category not in categories_strings:
-                        categories_strings[fixed_category] = _LanguageString(category)
+                settings.config['author'] = data['author']
+                settings.config['allowonly'] = data['allowonly'].split('|') if data['allowonly'] else []
 
-                    settings.add_to_category(fixed_category)
+                skillnames = data['skillnames'].split('|')
+                skilldescr = data['skilldescr'].split('|')
+                skillcfg = data['skillcfg'].split('|')
+                skillneeded = data['skillneeded'].split('|')
+                numberoflevels = map(int, data['numberoflevels'].split('|')) if '|' in data['numberoflevels'] else [int(data['numberoflevels'])] * len(skillnames)
+
+                skills = settings.config['skills'] = {}
+
+                for i, skill_name in enumerate(skillnames):
+                    fixed_skill_name = FIX_NAME.sub('', skill_name.lower().replace(' ', '_'))
+
+                    settings.strings[fixed_skill_name] = _LanguageString(skill_name)
+                    settings.strings[f'{fixed_skill_name} description'] = _LanguageString(skilldescr[i].replace(r'\n', ''))
+
+                    skill = skills[fixed_skill_name] = {}
+
+                    skill['event'] = [skillcfg[i]]
+
+                    skill['required'] = [int(skillneeded[i])] * numberoflevels[i]
+
+                    if 'cooldown' in data[f'skill{i + 1}']:
+                        skill['cooldown'] = list(map(lambda x: float(x) if '.' in x else int(x), data[f'skill{i + 1}']['cooldown'].split('|')))
+
+                        if not len(skill['cooldown']) == numberoflevels[i]:
+                            skill['cooldown'] = [skill['cooldown'][0]] * numberoflevels[i]
+
+                    skill['variables'] = {}
+
+                    skill['cmds'] = {}
+                    skill['cmds']['setting'] = data[f'skill{i + 1}']['setting'].split('|')
+
+                    if 'block' in data[f'skill{i + 1}']:
+                        skill['cmds']['cmd'] = 'es_xdoblock ' + data[f'skill{i + 1}']['block']
+                    else:
+                        cmd = data[f'skill{i + 1}']['cmd']
+                        skill['cmds']['cmd'] = None if cmd == '0' else cmd
+
+                    cmd = data[f'skill{i + 1}']['sfx']
+                    skill['cmds']['sfx'] = None if cmd == '0' else cmd
+
+                    count = len(data[f'skill{i + 1}']['setting'].split('|'))
+
+                    if count:
+                        skill['maximum'] = count
+                    else:
+                        skill['maximum'] = numberoflevels[i]
+
+                    for alias, value in data[f'skill{i + 1}'].items():
+                        if alias.startswith('racealias_'):
+                            _aliases[alias] = value
+
+                settings.strings['name'] = _LanguageString(name)
+                settings.strings['description'] = _LanguageString(data['desc'].replace(r'\n', ''))
+
+                categories = (data['category'].split('|') if data['category'] and not data['category'] == '0' else []) if 'category' in data else []
+
+                if categories:
+                    for category in categories:
+                        if category == '0':
+                            no_category.append(settings)
+                            continue
+
+                        fixed_category = FIX_NAME.sub('', category.lower().replace(' ', '_'))
+
+                        if fixed_category not in categories_strings:
+                            categories_strings[fixed_category] = _LanguageString(category)
+
+                        settings.add_to_category(fixed_category)
+                else:
+                    no_category.append(settings)
+            except:
+                warn(f'Unable to properly parse the race "{name}" due to the following exception:')
+                except_hooks.print_exception()
+                continue
             else:
-                no_category.append(settings)
+                races[fixed_name] = settings
 
         for settings in no_category:
             settings.add_to_category(None)
@@ -226,25 +243,36 @@ def parse_ini_items():
                 if name not in ('desc', 'maxitems'):
                     for alias, value in data.items():
                         if alias.startswith('shopalias_'):
-                            _aliases[alias] = value
+                            if alias in _aliases:
+                                if cfg_debug_alias_duplicate.get_float():
+                                    warn(f'Alias "{alias}" is already registered')
+                            else:
+                                _aliases[alias] = value
 
-                    fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
-                    settings = items[fixed_name] = ImportedItem(fixed_name, ModuleType.ESS_INI)
+                    try:
+                        fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
+                        settings = items[fixed_name] = ImportedItem(fixed_name, ModuleType.ESS_INI)
 
-                    settings.cmds['activatecmd'] = data['cmdactivate']
-                    settings.cmds['buycmd'] = data['cmdbuy']
+                        settings.cmds['activatecmd'] = data['cmdactivate']
+                        settings.cmds['buycmd'] = data['cmdbuy']
 
-                    settings.config['cost'] = int(data['cost'])
-                    settings.config['required'] = int(data['level'])
-                    settings.config['dab'] = int(data['dab'])
-                    settings.config['duration'] = int(data['duration'])
-                    settings.config['count'] = int(data['max'])
-                    settings.config['event'] = [data['cfg']]
+                        settings.config['cost'] = int(data['cost'])
+                        settings.config['required'] = int(data['level'])
+                        settings.config['dab'] = int(data['dab'])
+                        settings.config['duration'] = int(data['duration'])
+                        settings.config['count'] = int(data['max'])
+                        settings.config['event'] = [data['cfg']]
 
-                    settings.strings['name'] = _LanguageString(data['name'])
-                    settings.strings['description'] = _LanguageString(data['desc'].replace(r'\n', ''))
+                        settings.strings['name'] = _LanguageString(data['name'])
+                        settings.strings['description'] = _LanguageString(data['desc'].replace(r'\n', ''))
 
-                    settings.add_to_category(fixed_category)
+                        settings.add_to_category(fixed_category)
+                    except:
+                        warn(f'Unable to properly parse the item "{name}" due to the following exception:')
+                        except_hooks.print_exception()
+                        continue
+                    else:
+                        items[fixed_name] = settings
 
     return items
 
@@ -268,76 +296,87 @@ def parse_key_races():
         for data in imported.values():
             for alias, value in data.items():
                 if alias.startswith('racealias_'):
-                    _aliases[alias] = value
+                    if cvar.find_command(alias) is None:
+                        ServerCommand(alias)(_command)
 
-                    ServerCommand(alias)(_command)
+                        _aliases[alias] = value
+                    else:
+                        if cfg_debug_alias_duplicate.get_float():
+                            warn(f'Alias "{alias}" is already registered')
 
-            name = _get_string(data['name'])
+            try:
+                name = _get_string(data['name'])
 
-            fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
-            settings = races[fixed_name] = ImportedRace(fixed_name, ModuleType.ESS_KEY)
+                fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
+                settings = ImportedRace(fixed_name, ModuleType.ESS_KEY)
 
-            settings.cmds['preloadcmd'] = data['preloadcmd'] or None
-            settings.cmds['roundstartcmd'] = data['round_start_cmd'] or None
-            settings.cmds['roundendcmd'] = data['round_end_cmd'] or None
-            settings.cmds['spawncmd'] = data['player_spawn_cmd'] or None
-            settings.cmds['deathcmd'] = data.get('deathcmd') or None
-            settings.cmds['changeintocmd'] = data.get('changeintocmd') or None
-            settings.cmds['changefromcmd'] = data.get('changefromcmd') or None
+                settings.cmds['preloadcmd'] = data['preloadcmd'] or None
+                settings.cmds['roundstartcmd'] = data['round_start_cmd'] or None
+                settings.cmds['roundendcmd'] = data['round_end_cmd'] or None
+                settings.cmds['spawncmd'] = data['player_spawn_cmd'] or None
+                settings.cmds['deathcmd'] = data.get('deathcmd') or None
+                settings.cmds['changeintocmd'] = data.get('changeintocmd') or None
+                settings.cmds['changefromcmd'] = data.get('changefromcmd') or None
 
-            settings.config['required'] = data['required_level']
-            settings.config['maximum'] = data['maximum_level']
+                settings.config['required'] = data['required_level']
+                settings.config['maximum'] = data['maximum_level']
 
-            settings.config['restrictbot'] = int(data.get('restrictbot', 0))
-            settings.config['restrictmap'] = data['restrictmap'].split('|') if data.get('restrictmap') else []
-            settings.config['restrictitem'] = data['restrict_shop'].replace('<', '').split('>')[:-1] if 'restrict_shop' in data and data['restrict_shop'] else []
-            settings.config['restrictweapon'] = data['restrictweapon'].split('|') if data.get('restrictweapon') else []
-            settings.config['restrictteam'] = int(data.get('restrictteam', 0))
-            settings.config['teamlimit'] = data['teamlimit']
+                settings.config['restrictbot'] = int(data.get('restrictbot', 0))
+                settings.config['restrictmap'] = data['restrictmap'].split('|') if data.get('restrictmap') else []
+                settings.config['restrictitem'] = data['restrict_shop'].replace('<', '').split('>')[:-1] if 'restrict_shop' in data and data['restrict_shop'] else []
+                settings.config['restrictweapon'] = data['restrictweapon'].split('|') if data.get('restrictweapon') else []
+                settings.config['restrictteam'] = int(data.get('restrictteam', 0))
+                settings.config['teamlimit'] = data['teamlimit']
 
-            settings.config['author'] = data['author']
-            settings.config['allowonly'] = data['allow_only'].split('|') if data['allow_only'] else []
+                settings.config['author'] = data['author']
+                settings.config['allowonly'] = data['allow_only'].split('|') if data['allow_only'] else []
 
-            skillnames = _get_string(data['skillnames']).split('|')
-            skilldescr = _get_string(data['skilldescr']).split('|')
-            skillcfg = data['skillcfg'].split('|')
-            skillneeded = [8 if x == 'player_ultimate' else 0 for x in skillcfg]
-            numberoflevels = data['numberoflevels']
+                skillnames = _get_string(data['skillnames']).split('|')
+                skilldescr = _get_string(data['skilldescr']).split('|')
+                skillcfg = data['skillcfg'].split('|')
+                skillneeded = [8 if x == 'player_ultimate' else 0 for x in skillcfg]
+                numberoflevels = data['numberoflevels']
 
-            skills = settings.config['skills'] = {}
+                skills = settings.config['skills'] = {}
 
-            for i, skill_name in enumerate(skillnames):
-                fixed_skill_name = FIX_NAME.sub('', skill_name.lower().replace(' ', '_'))
+                for i, skill_name in enumerate(skillnames):
+                    fixed_skill_name = FIX_NAME.sub('', skill_name.lower().replace(' ', '_'))
 
-                settings.strings[fixed_skill_name] = _LanguageString(skill_name)
-                settings.strings[f'{fixed_skill_name} description'] = _LanguageString(skilldescr[i].replace(r'\n', ''))
+                    settings.strings[fixed_skill_name] = _LanguageString(skill_name)
+                    settings.strings[f'{fixed_skill_name} description'] = _LanguageString(skilldescr[i].replace(r'\n', ''))
 
-                skill = skills[fixed_skill_name] = {}
+                    skill = skills[fixed_skill_name] = {}
 
-                skill['event'] = [skillcfg[i]]
+                    skill['event'] = [skillcfg[i]]
 
-                if skillcfg[i] == 'player_ultimate':
-                    skill['cooldown'] = [data['ultimate_cooldown']] * numberoflevels
+                    if skillcfg[i] == 'player_ultimate':
+                        skill['cooldown'] = [data['ultimate_cooldown']] * numberoflevels
 
-                skill['required'] = [skillneeded[i]] * numberoflevels
+                    skill['required'] = [skillneeded[i]] * numberoflevels
 
-                skill['variables'] = {}
+                    skill['variables'] = {}
 
-                skill['cmds'] = {}
-                skill['cmds']['setting'] = data[f'skill{i + 1}_setting'].split('|')
+                    skill['cmds'] = {}
+                    skill['cmds']['setting'] = data[f'skill{i + 1}_setting'].split('|')
 
-                cmd = data[f'skill{i + 1}_cmd']
-                skill['cmds']['cmd'] = None if cmd == '0' else cmd
+                    cmd = data[f'skill{i + 1}_cmd']
+                    skill['cmds']['cmd'] = None if cmd == '0' else cmd
 
-                cmd = data[f'skill{i + 1}_sfx']
-                skill['cmds']['sfx'] = None if cmd == '0' else cmd
+                    cmd = data[f'skill{i + 1}_sfx']
+                    skill['cmds']['sfx'] = None if cmd == '0' else cmd
 
-                skill['maximum'] = numberoflevels
+                    skill['maximum'] = numberoflevels
 
-            settings.strings['name'] = _LanguageString(name)
-            settings.strings['description'] = _LanguageString(_get_string(data['shortdescription']).replace(r'\n', '') if data['shortdescription'] else '')
+                settings.strings['name'] = _LanguageString(name)
+                settings.strings['description'] = _LanguageString(_get_string(data['shortdescription']).replace(r'\n', '') if data['shortdescription'] else '')
 
-            settings.add_to_category(None)
+                settings.add_to_category(None)
+            except:
+                warn(f'Unable to properly parse the race "{name}" due to the following exception:')
+                except_hooks.print_exception()
+                continue
+            else:
+                races[fixed_name] = settings
 
     return races
 
@@ -382,30 +421,41 @@ def parse_key_items():
         for name, data in imported.items():
             for alias, value in data.items():
                 if alias.startswith('shopalias_'):
-                    _aliases[alias] = value
+                    if cvar.find_command(alias) is None:
+                        ServerCommand(alias)(_command)
 
-                    ServerCommand(alias)(_command)
+                        _aliases[alias] = value
+                    else:
+                        if cfg_debug_alias_duplicate.get_float():
+                            warn(f'Alias "{alias}" is already registered')
 
-            fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
-            settings = items[fixed_name] = ImportedItem(fixed_name, ModuleType.ESS_KEY)
+            try:
+                fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
+                settings = ImportedItem(fixed_name, ModuleType.ESS_KEY)
 
-            settings.cmds['activatecmd'] = data['cmdactivate']
-            settings.cmds['buycmd'] = data['cmdbuy']
+                settings.cmds['activatecmd'] = data['cmdactivate']
+                settings.cmds['buycmd'] = data['cmdbuy']
 
-            settings.config['cost'] = int(data['cost'])
-            settings.config['required'] = int(data['level'])
-            settings.config['dab'] = int(data['dab'])
-            settings.config['duration'] = int(data['duration'])
-            settings.config['count'] = int(data['maxamount'])
-            settings.config['event'] = [data['itemconfig']]
+                settings.config['cost'] = int(data['cost'])
+                settings.config['required'] = int(data['level'])
+                settings.config['dab'] = int(data['dab'])
+                settings.config['duration'] = int(data['duration'])
+                settings.config['count'] = int(data['maxamount'])
+                settings.config['event'] = [data['itemconfig']]
 
-            settings.strings['name'] = _LanguageString(_get_string(data['name']))
-            settings.strings['description'] = _LanguageString(_get_string(data['description']).replace(r'\n', '') if data['description'] else '')
+                settings.strings['name'] = _LanguageString(_get_string(data['name']))
+                settings.strings['description'] = _LanguageString(_get_string(data['description']).replace(r'\n', '') if data['description'] else '')
 
-            if categories and isinstance(data['category'], int):
-                categories[str(data['category'])]['items'].append(settings)
+                if categories and isinstance(data['category'], int):
+                    categories[str(data['category'])]['items'].append(settings)
+                else:
+                    no_category.append(settings)
+            except:
+                warn(f'Unable to properly parse the item "{name}" due to the following exception:')
+                except_hooks.print_exception()
+                continue
             else:
-                no_category.append(settings)
+                items[fixed_name] = settings
 
         for data in categories.values():
             for settings in data['items']:

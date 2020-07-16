@@ -85,6 +85,8 @@ from playerlib import Player as _PLPlayer
 from playerlib import getPlayer
 
 # WCS Imports
+#   Config
+from ...config import cfg_debug_alias_duplicate
 #   Constants
 from ...constants import COLOR_DARKGREEN
 from ...constants import COLOR_DEFAULT
@@ -1298,6 +1300,10 @@ def wcs_xalias_command(command_info, alias:str, command:str=None):
         for cmd in _aliases[alias].split(';'):
             execute_server_command('es', cmd)
     else:
+        if alias in _aliases:
+            if cfg_debug_alias_duplicate.get_float():
+                warn(f'Alias "{alias}" is already registered - overwriting...')
+
         _aliases[alias] = command
 
 
