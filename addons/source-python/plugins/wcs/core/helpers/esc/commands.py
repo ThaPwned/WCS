@@ -4,8 +4,13 @@
 # >> IMPORTS
 # ============================================================================
 # Python Imports
+#   Decimals
+from decimal import Decimal
 #   Collections
 from collections import defaultdict
+#   Math
+from math import ceil
+from math import floor
 #   Random
 from random import choice
 from random import randint
@@ -1317,8 +1322,30 @@ def wcs_dalias_command(command_info, alias:str, *args:str):
 
 
 @TypedServerCommand('wcs_decimal')
-def wcs_decimal_command(command_info, var:ConVar, value:float):
-    var.set_int(int(round(value)))
+def wcs_decimal_command(command_info, var:ConVar, value:Decimal, decimals:int=None, direction:int=None):
+    if decimals is None:
+        var.set_string(str(round(value)))
+        return
+
+    if decimals < 0:
+        raise InvalidArgumentValue(f'"{decimals}" is an invalid value for "decimals:int".')
+
+    if direction is None:
+        var.set_string(str(round(value, decimals)))
+        return
+
+    if decimals:
+        factor = 10 ** decimals
+
+        if direction:
+            var.set_string(str(ceil(value * factor) / factor))
+        else:
+            var.set_string(str(floor(value * factor) / factor))
+    else:
+        if direction:
+            var.set_int(ceil(value))
+        else:
+            var.set_int(floor(value))
 
 
 @TypedServerCommand('wcs_xtell')
