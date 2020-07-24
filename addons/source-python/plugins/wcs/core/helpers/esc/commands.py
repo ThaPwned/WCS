@@ -2186,3 +2186,13 @@ def on_take_damage_alive(wcsvictim, wcsattacker, info):
                 del wcsvictim.data['fire_owner']
             else:
                 info.inflictor = set_weapon_name('fire')
+
+    if wcsattacker is not None:
+        if wcsvictim is not wcsattacker:
+            reduced_damage = wcsattacker.data.get('reduced_damage')
+
+            if reduced_damage is not None:
+                reduced_damage = float(reduced_damage)
+
+                if reduced_damage > 0:
+                    info.damage = info.damage * (1 - reduced_damage)
