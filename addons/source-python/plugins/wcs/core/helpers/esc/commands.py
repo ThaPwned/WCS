@@ -2012,28 +2012,37 @@ def pre_player_hurt(event):
 
         absorb = wcsplayer.data.get('absorb')
 
-        if absorb is not None and absorb > 0:
-            health = int(event['dmg_health'] * absorb)
+        if absorb is not None:
+            absorb = float(absorb)
 
-            if health > 0:
-                wcsplayer.player.health += health
+            if absorb > 0:
+                health = int(event['dmg_health'] * absorb)
+
+                if health > 0:
+                    wcsplayer.player.health += health
 
         resist = wcsplayer.data.get(f'resist_{event["weapon"]}')
 
-        if resist is not None and resist > 0:
-            health = int(event['dmg_health'] * resist)
+        if resist is not None:
+            resist = float(resist)
 
-            if health > 0:
-                wcsplayer.player.health += health
+            if resist > 0:
+                health = int(event['dmg_health'] * resist)
+
+                if health > 0:
+                    wcsplayer.player.health += health
 
         evasion = wcsplayer.data.get('evasion')
 
         if evasion is not None and evasion:
             chance = wcsplayer.data.get('evasion_chance')
 
-            if chance is not None and chance > 0:
-                if randint(0, 100) <= chance:
-                    wcsplayer.player.health += int(event['dmg_health'])
+            if chance is not None:
+                chance = float(chance)
+
+                if chance > 0:
+                    if randint(0, 100) <= chance:
+                        wcsplayer.player.health += int(event['dmg_health'])
 
 
 @PreEvent('weapon_fire')
