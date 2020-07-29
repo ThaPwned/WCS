@@ -1991,13 +1991,17 @@ def wcs_warden_command(command_info, wcsplayer:convert_userid_to_wcsplayer, dura
 
 
 @TypedServerCommand('wcs_log')
-def wcs_log_command(command_info, level:int, *message:str):
+def wcs_log_command(command_info, *message:str):
     if not message:
-        raise ArgumentNumberMismatch('Not enough arguments:\n  wcs_log <level:int> [*message:str]')
+        raise ArgumentNumberMismatch('Not enough arguments:\n  wcs_log [*message:str]')
 
-    if level == -1:
-        wcs_logger.log_message(' '.join(message))
-        return
+    wcs_logger.log_message(' '.join(message))
+
+
+@TypedServerCommand('wcs_dbgmsg')
+def wcs_dbgmsg_command(command_info, level:int, *message:str):
+    if not message:
+        raise ArgumentNumberMismatch('Not enough arguments:\n  wcs_dbgmsg <level:int> [*message:str]')
 
     wcs_logger.log(level, ' '.join(message))
 
