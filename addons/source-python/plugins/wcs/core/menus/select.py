@@ -518,7 +518,7 @@ def wcsadmin_players_sub_changerace_menu_select(menu, client, option):
     if wcstarget.online:
         wcstarget.current_race = option.value
 
-        player = wcsplayer.player
+        player = wcstarget.player
 
         if not player.dead:
             player.godmode = False
