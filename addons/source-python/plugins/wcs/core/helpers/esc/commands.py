@@ -823,7 +823,7 @@ def wcsgroup_get_command(command_info, key:str, var:ConVar, userid:valid_userid_
         return
 
     if isinstance(userid, str):
-        value = team_data[{'T':2, 'CT':3}[userid]].get(key, '0')
+        value = team_data[{'#t':2, '#ct':3}[userid]].get(key, '0')
     else:
         wcsplayer = WCSPlayer.from_userid(userid)
 
@@ -838,7 +838,7 @@ def wcsgroup_set_command(command_info, key:str, userid:valid_userid_and_team, va
         return
 
     if isinstance(userid, str):
-        team_data[{'T':2, 'CT':3}[userid]][key] = value
+        team_data[{'#t':2, '#ct':3}[userid]][key] = value
     else:
         wcsplayer = WCSPlayer.from_userid(userid)
 

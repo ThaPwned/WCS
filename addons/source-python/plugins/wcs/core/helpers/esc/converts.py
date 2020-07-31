@@ -35,7 +35,9 @@ def valid_userid_and_team(userid):
     new_userid = valid_userid(userid)
 
     if new_userid is None:
-        if userid in ('T', 'CT'):
+        userid = userid.lower()
+
+        if userid in ('#t', '#ct'):
             return userid
 
         return None
