@@ -3,6 +3,10 @@
 # ============================================================================
 # >> IMPORTS
 # ============================================================================
+# Python Imports
+#   Warnings
+from warnings import warn
+
 # WCS Imports
 #   Constants
 from ...constants import ItemReason
@@ -114,6 +118,11 @@ class _ItemManager(_BaseManager):
             self._category_max_items[category] = value
 
         self._load_categories_and_values('items', config, ITEM_PATH, ITEM_PATH_ES)
+
+        for category in self._info_category_menus:
+            if category not in self._category_max_items:
+                warn(f'The category "{category}" was not found in items.json under "maxitems" - setting it to 1')
+                self._category_max_items[category] = 1
 
     def unload(self, name):
         self._unload(name, 'items')
