@@ -596,7 +596,7 @@ def wcs_setfx_longjump_command(command_info, wcsplayer:convert_userid_to_wcsplay
         wcsplayer.data['longjump'] = value
         value = old_value - value
     elif operator == '+':
-        wcsplayer.data['longjump'] = wcsplayer.data.get('longjump', 0)
+        wcsplayer.data['longjump'] = wcsplayer.data.get('longjump', 0) + value
         value *= -1
     else:
         old_value = wcsplayer.data.get('longjump', 0)
