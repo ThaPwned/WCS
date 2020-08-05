@@ -1220,6 +1220,10 @@ def wcs_get_skill_level_command(command_info, wcsplayer:convert_userid_to_wcspla
         var.set_int(0)
         return
 
+    if not wcsplayer.ready:
+        var.set_int(0)
+        return
+
     active_race = wcsplayer.active_race
 
     skills = [*active_race.settings.config['skills']]
