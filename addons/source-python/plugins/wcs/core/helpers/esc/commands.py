@@ -1292,12 +1292,24 @@ def wcs_givexp_command(command_info, wcsplayer:convert_userid_to_wcsplayer, valu
     if wcsplayer is None:
         return
 
+    active_race = wcsplayer.active_race
+    maximum = active_race.settings.config['maximum']
+
+    if maximum and active_race.level >= maximum:
+        return
+
     wcsplayer.xp += value
 
 
 @TypedServerCommand('wcs_givelevel')
 def wcs_givelevel_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:int, reason:deprecated=None, forced:deprecated=None):
     if wcsplayer is None:
+        return
+
+    active_race = wcsplayer.active_race
+    maximum = active_race.settings.config['maximum']
+
+    if maximum and active_race.level >= maximum:
         return
 
     wcsplayer.level += value
