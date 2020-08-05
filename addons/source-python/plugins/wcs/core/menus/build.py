@@ -286,9 +286,9 @@ def changerace_menu_build(menu, client):
                 option.text = deepcopy(menu_strings['changerace_menu required level'])
                 option.text.tokens['level'] = settings.config['required']
                 option.selectable = option.highlight = False
-            elif reason is RaceReason.MAXIMUM_LEVEL:
+            elif reason is RaceReason.MAXIMUM_LEVEL or reason is RaceReason.MAXIMUM_RACE_LEVEL:
                 option.text = deepcopy(menu_strings['changerace_menu maximum level'])
-                option.text.tokens['level'] = settings.config['maximum']
+                option.text.tokens['level'] = settings.config['maximum'] if reason is RaceReason.MAXIMUM_LEVEL else settings.config['maximum_race_level']
                 option.selectable = option.highlight = False
             elif reason is RaceReason.TEAM_LIMIT:
                 option.text = deepcopy(menu_strings['changerace_menu team limit'])
@@ -349,9 +349,9 @@ def changerace_search_menu_build(menu, client):
                 option.text = deepcopy(menu_strings['changerace_menu required level'])
                 option.text.tokens['level'] = settings.config['required']
                 option.selectable = option.highlight = False
-            elif reason is RaceReason.MAXIMUM_LEVEL:
+            elif reason is RaceReason.MAXIMUM_LEVEL or reason is RaceReason.MAXIMUM_RACE_LEVEL:
                 option.text = deepcopy(menu_strings['changerace_menu maximum level'])
-                option.text.tokens['level'] = settings.config['maximum']
+                option.text.tokens['level'] = settings.config['maximum'] if reason is RaceReason.MAXIMUM_LEVEL else settings.config['maximum_race_level']
                 option.selectable = option.highlight = False
             elif reason is RaceReason.TEAM_LIMIT:
                 option.text = deepcopy(menu_strings['changerace_menu team limit'])

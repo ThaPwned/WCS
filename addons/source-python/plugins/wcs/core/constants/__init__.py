@@ -80,13 +80,14 @@ class RaceReason(IntEnum):
     ALLOWED = 0
     REQUIRED_LEVEL = 1
     MAXIMUM_LEVEL = 2
-    TEAM_LIMIT = 3
-    TEAM = 4
-    PRIVATE = 5
-    MAP = 6
-    VIP = 7
-    ADMIN = 8
-    BOT = 9
+    MAXIMUM_RACE_LEVEL = 3
+    TEAM_LIMIT = 4
+    TEAM = 5
+    PRIVATE = 6
+    MAP = 7
+    VIP = 8
+    ADMIN = 9
+    BOT = 10
 
 
 class GithubStatus(IntEnum):

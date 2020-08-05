@@ -130,6 +130,7 @@ def parse_ini_races():
 
                 settings.config['required'] = int(data['required'])
                 settings.config['maximum'] = int(data['maximum'])
+                settings.config['maximum_race_level'] = int(data.get('maximum_race_level', 0))
 
                 settings.config['restrictbot'] = int(data.get('restrictbot', 0))
                 settings.config['restrictmap'] = data['restrictmap'].split('|') if data['restrictmap'] else []
@@ -320,6 +321,7 @@ def parse_key_races():
 
                 settings.config['required'] = data['required_level']
                 settings.config['maximum'] = data['maximum_level']
+                settings.config['maximum_race_level'] = int(data.get('maximum_race_level', 0))
 
                 settings.config['restrictbot'] = int(data.get('restrictbot', 0))
                 settings.config['restrictmap'] = data['restrictmap'].split('|') if data.get('restrictmap') else []
