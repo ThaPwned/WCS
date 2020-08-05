@@ -407,25 +407,27 @@ def _give_players_xp_if_set(wcsplayers, config, bot_config, message):
         bot_value = value
 
     for _, wcsplayer in wcsplayers:
-        if wcsplayer.fake_client:
-            if bot_value:
-                wcsplayer.xp += bot_value
-        else:
-            if value:
-                active_race = wcsplayer.active_race
+        active_race = wcsplayer.active_race
+        maximum = active_race.settings.config['maximum']
 
-                old_level = active_race.level
+        if not maximum or active_race.level < maximum:
+            if wcsplayer.fake_client:
+                if bot_value:
+                    wcsplayer.xp += bot_value
+            else:
+                if value:
+                    old_level = active_race.level
 
-                active_race.xp += value
+                    active_race.xp += value
 
-                delay = Delay(1, _send_message_and_remove, (message, wcsplayer), {'value':value})
-                delay.args += (delay, )
-                _delays[wcsplayer].add(delay)
-
-                if active_race.level > old_level:
-                    delay = Delay(1.01, _send_message_and_remove, (gain_level_message, wcsplayer), {'level':active_race.level, 'xp':active_race.xp, 'required':active_race.required_xp})
+                    delay = Delay(1, _send_message_and_remove, (message, wcsplayer), {'value':value})
                     delay.args += (delay, )
                     _delays[wcsplayer].add(delay)
+
+                    if active_race.level > old_level:
+                        delay = Delay(1.01, _send_message_and_remove, (gain_level_message, wcsplayer), {'level':active_race.level, 'xp':active_race.xp, 'required':active_race.required_xp})
+                        delay.args += (delay, )
+                        _delays[wcsplayer].add(delay)
 
 
 def _fire_post_player_spawn(wcsplayer, delay):
