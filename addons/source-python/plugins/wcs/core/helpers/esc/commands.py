@@ -1228,7 +1228,7 @@ def wcs_get_skill_level_command(command_info, wcsplayer:convert_userid_to_wcspla
         var.set_int(0)
         return
 
-    var.set_int(active_race.skills[skills[index]].level)
+    var.set_int(active_race.skills[skills[index - 1]].level)
 
 
 @TypedServerCommand(['wcs_foreach', 'player'])
