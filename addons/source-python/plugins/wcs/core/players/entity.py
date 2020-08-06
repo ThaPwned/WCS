@@ -1052,9 +1052,9 @@ class _Race(object):
 
     @xp.setter
     def xp(self, value):
-        maximum = self.settings.config['maximum']
+        maximum_race_level = self.settings.config['maximum_race_level']
 
-        if maximum and self.level >= maximum:
+        if maximum_race_level and self.level >= maximum_race_level:
             raise ValueError('Cannot modify xp of a race which is maxed.')
 
         self._modified = True
@@ -1069,7 +1069,7 @@ class _Race(object):
 
             new_level += 1
 
-            if new_level == maximum:
+            if new_level == maximum_race_level:
                 value = 0
                 break
 
@@ -1086,14 +1086,17 @@ class _Race(object):
 
     @level.setter
     def level(self, value):
-        maximum = self.settings.config['maximum']
+        maximum_race_level = self.settings.config['maximum_race_level']
 
-        if maximum and self.level >= maximum and value >= maximum:
+        if maximum_race_level and self.level >= maximum_race_level and value >= maximum_race_level:
             raise ValueError('Cannot give levels to a race which is maxed.')
 
         self._modified = True
 
         from_level = self.level
+
+        if maximum_race_level:
+            value = min(maximum_race_level, value)
 
         self.unused += value - from_level
 
