@@ -1228,7 +1228,7 @@ def wcs_get_skill_level_command(command_info, wcsplayer:convert_userid_to_wcspla
 
     skills = [*active_race.settings.config['skills']]
 
-    if index >= len(skills):
+    if index > len(skills):
         var.set_int(0)
         return
 
