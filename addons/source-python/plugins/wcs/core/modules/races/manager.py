@@ -157,7 +157,7 @@ class RaceSetting(_BaseSetting):
         maximum_race_level = self.config.get('maximum_race_level')
 
         if maximum_race_level:
-            if wcsplayer.level >= maximum_race_level:
+            if wcsplayer.races[self.name].level >= maximum_race_level:
                 return RaceReason.MAXIMUM_RACE_LEVEL
 
         maximum = self.config.get('maximum')
