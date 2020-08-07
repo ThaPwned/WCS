@@ -856,7 +856,10 @@ def wcs_sub_damage_command(command_info, wcsplayer:convert_userid_to_wcsplayer, 
     if attacker is None:
         attacker = 0
     else:
-        attacker = index_from_userid(attacker)
+        try:
+            attacker = index_from_userid(attacker)
+        except ValueError:
+            attacker = 0
 
     wcsplayer.take_damage(damage, attacker=attacker)
 
@@ -1412,7 +1415,10 @@ def wcs_dealdamage_command(command_info, wcstarget:convert_userid_to_wcsplayer, 
     if attacker is None:
         attacker = 0
     else:
-        attacker = index_from_userid(attacker)
+        try:
+            attacker = index_from_userid(attacker)
+        except ValueError:
+            attacker = 0
 
     wcstarget.take_damage(damage, attacker=attacker, weapon=weapon)
 
