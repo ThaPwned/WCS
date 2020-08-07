@@ -1301,7 +1301,7 @@ def wcs_givexp_command(command_info, wcsplayer:convert_userid_to_wcsplayer, valu
         return
 
     active_race = wcsplayer.active_race
-    maximum_race_level = active_race.settings.config['maximum_race_level']
+    maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
 
     if maximum_race_level and active_race.level >= maximum_race_level:
         return
@@ -1315,7 +1315,7 @@ def wcs_givelevel_command(command_info, wcsplayer:convert_userid_to_wcsplayer, v
         return
 
     active_race = wcsplayer.active_race
-    maximum_race_level = active_race.settings.config['maximum_race_level']
+    maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
 
     if maximum_race_level and active_race.level >= maximum_race_level:
         return
