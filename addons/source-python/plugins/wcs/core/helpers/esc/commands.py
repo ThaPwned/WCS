@@ -846,11 +846,19 @@ def wcsgroup_set_command(command_info, key:str, userid:valid_userid_and_team, va
 
 
 @TypedServerCommand(['wcs', 'damage'])
-def wcs_sub_damaget_command(command_info, wcsplayer:convert_userid_to_wcsplayer, damage:int, attacker:int=None, armor:deprecated=None, weapon:deprecated=None, solo:deprecated=None):
+def wcs_sub_damage_command(command_info, wcsplayer:convert_userid_to_wcsplayer, damage:int, attacker:int=None, armor:deprecated=None, weapon:deprecated=None, solo:deprecated=None):
     if wcsplayer is None:
         return
 
-    wcsplayer.take_damage(damage, attacker)
+    if wcsplayer.player.dead:
+        return
+
+    if attacker is None:
+        attacker = 0
+    else:
+        attacker = index_from_userid(attacker)
+
+    wcsplayer.take_damage(damage, attacker=attacker)
 
 
 @TypedServerCommand(['wcs', 'spawn'])
