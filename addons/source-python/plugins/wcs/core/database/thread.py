@@ -242,6 +242,8 @@ class _Thread(Thread):
             if self._use_database is not None:
                 self.cur.execute(self._use_database)
         except OperationalError:
+            _output.put((None, _Result(exception=exc_info())))
+
             if self.unloading:
                 if self._counter >= 4:
                     _queue.put(_Node(NodeType.CLOSE, priority=4))
