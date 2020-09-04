@@ -19,13 +19,17 @@ from ..translations import config_strings
 # ============================================================================
 __all__ = (
     'cfg_bonus_xp',
+    'cfg_bonus_bot_xp',
     'cfg_bonus_xp_level_cap',
     'cfg_default_race',
     'cfg_disable_text_on_level',
     'cfg_headshot_xp',
+    'cfg_headshot_bot_xp',
     'cfg_interval',
     'cfg_kill_xp',
+    'cfg_kill_bot_xp',
     'cfg_knife_xp',
+    'cfg_knife_bot_xp',
     'cfg_spawn_text',
     'cfg_hinttext_cooldown',
     'cfg_changerace_next_round',
@@ -64,10 +68,14 @@ __all__ = (
 with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as config:
     cfg_interval = config.cvar('interval', '80', config_strings['interval'])
     cfg_bonus_xp = config.cvar('bonus_xp', '4', config_strings['bonus_xp'])
+    cfg_bonus_bot_xp = config.cvar('bonus_bot_xp', '4', config_strings['bonus_bot_xp'])
     cfg_bonus_xp_level_cap = config.cvar('bonus_xp_level_cap', '0', config_strings['bonus_xp_level_cap'])
     cfg_kill_xp = config.cvar('kill_xp', '20', config_strings['kill_xp'])
+    cfg_kill_bot_xp = config.cvar('kill_bot_xp', '20', config_strings['kill_bot_xp'])
     cfg_knife_xp = config.cvar('knife_xp', '40', config_strings['knife_xp'])
+    cfg_knife_bot_xp = config.cvar('knife_bot_xp', '40', config_strings['knife_bot_xp'])
     cfg_headshot_xp = config.cvar('headshot_xp', '15', config_strings['headshot_xp'])
+    cfg_headshot_bot_xp = config.cvar('headshot_bot_xp', '15', config_strings['headshot_bot_xp'])
     cfg_welcome_text = config.cvar('welcome_text', '0', config_strings['welcome_text'])
     cfg_welcome_gui_text = config.cvar('welcome_gui_text', '0', config_strings['welcome_gui_text'])
     cfg_debug_alias_duplicate = config.cvar('debug_alias_duplicate', '1', config_strings['debug_alias_duplicate'])

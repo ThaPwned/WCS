@@ -62,10 +62,14 @@ from weapons.manager import weapon_manager
 # WCS Imports
 #   Config
 from .core.config import cfg_bonus_xp
+from .core.config import cfg_bonus_bot_xp
 from .core.config import cfg_bonus_xp_level_cap
 from .core.config import cfg_kill_xp
+from .core.config import cfg_kill_bot_xp
 from .core.config import cfg_knife_xp
+from .core.config import cfg_knife_bot_xp
 from .core.config import cfg_headshot_xp
+from .core.config import cfg_headshot_bot_xp
 from .core.config import cfg_welcome_text
 from .core.config import cfg_welcome_gui_text
 from .core.config import cfg_level_up_effect
@@ -644,10 +648,10 @@ def player_death(event):
                     maximum_race_level = active_race.settings.config['maximum_race_level']
 
                     if not maximum_race_level or active_race.level < maximum_race_level:
-                        value = kill_xp = cfg_kill_xp.get_int()
+                        value = kill_xp = (cfg_kill_bot_xp if wcsvictim.fake_client else cfg_kill_xp).get_int()
 
                         if event['headshot']:
-                            headshot_xp = cfg_headshot_xp.get_int()
+                            headshot_xp = (cfg_headshot_bot_xp if wcsvictim.fake_client else cfg_headshot_xp).get_int()
 
                             if headshot_xp:
                                 value += headshot_xp
@@ -661,7 +665,7 @@ def player_death(event):
                             difference = wcsvictim.level - active_race.level
 
                             if difference > 0:
-                                bonus_xp = cfg_bonus_xp.get_int()
+                                bonus_xp = (cfg_bonus_bot_xp if wcsvictim.fake_client else cfg_bonus_xp).get_int()
 
                                 if bonus_xp:
                                     cap = cfg_bonus_xp_level_cap.get_int()
@@ -675,7 +679,7 @@ def player_death(event):
                                         _delays[wcsattacker].add(delay)
 
                         if event['weapon'] in _melee_weapons:
-                            knife_xp = cfg_knife_xp.get_int()
+                            knife_xp = (cfg_knife_bot_xp if wcsvictim.fake_client else cfg_knife_xp).get_int()
 
                             if knife_xp:
                                 value += knife_xp
