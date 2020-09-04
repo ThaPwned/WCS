@@ -412,7 +412,7 @@ def _give_players_xp_if_set(wcsplayers, config, bot_config, message):
 
     for _, wcsplayer in wcsplayers:
         active_race = wcsplayer.active_race
-        maximum_race_level = active_race.settings.config['maximum_race_level']
+        maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
 
         if not maximum_race_level or active_race.level < maximum_race_level:
             if wcsplayer.fake_client:
@@ -645,7 +645,7 @@ def player_death(event):
 
                 if not wcsvictim.player.team_index == wcsattacker.player.team_index:
                     active_race = wcsattacker.active_race
-                    maximum_race_level = active_race.settings.config['maximum_race_level']
+                    maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
 
                     if not maximum_race_level or active_race.level < maximum_race_level:
                         value = kill_xp = (cfg_kill_bot_xp if wcsvictim.fake_client else cfg_kill_xp).get_int()
