@@ -37,6 +37,7 @@ from entities.constants import RenderMode
 from entities.entity import Entity
 #   Events
 from events import Event
+from events.hooks import PreEvent
 #   Filters
 from filters.weapons import WeaponClassIter
 #   Listeners
@@ -623,6 +624,35 @@ def player_hurt(event):
                             wcsattacker.notify(event, 'player_hurt')
 
 
+@PreEvent('player_hurt')
+def pre_player_hurt(event):
+    attacker = event['attacker']
+
+    if attacker:
+        if event['weapon'] not in ('point_hurt', 'worldspawn') and not event['weapon'].startswith('wcs_'):
+            userid = event['userid']
+
+            if not userid == attacker:
+                wcsvictim = Player.from_userid(userid)
+                wcsattacker = Player.from_userid(attacker)
+
+                if wcsvictim.ready:
+                    health = event['health']
+
+                    if not wcsvictim.player.team_index == wcsattacker.player.team_index:
+                        wcsvictim.notify(event, 'pre_player_victim')
+
+                        if health > 0:
+                            if wcsattacker.ready:
+                                wcsattacker.notify(event, 'pre_player_attacker')
+
+                    wcsvictim.notify(event, 'pre_player_hurt')
+
+                    if health > 0:
+                        if wcsattacker.ready:
+                            wcsattacker.notify(event, 'pre_player_hurt')
+
+
 @Event('player_death')
 def player_death(event):
     userid = event['userid']
@@ -1088,20 +1118,20 @@ def on_take_damage_alive(wcsvictim, wcsattacker, info):
                     health = wcsvictim.player.health - info.damage
 
                     if not wcsvictim.player.team_index == wcsattacker.player.team_index:
-                        with FakeEvent('pre_player_victim', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon_name, info=info) as event:
+                        with FakeEvent('pre_take_damage_victim', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon_name, info=info) as event:
                             wcsvictim.notify(event)
 
                         if health > 0:
                             if wcsattacker.ready:
-                                with FakeEvent('pre_player_attacker', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon_name, info=info) as event:
+                                with FakeEvent('pre_take_damage_attacker', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon_name, info=info) as event:
                                     wcsattacker.notify(event)
 
-                    with FakeEvent('pre_player_hurt', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon_name, info=info) as event:
+                    with FakeEvent('pre_take_damage_hurt', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon_name, info=info) as event:
                         wcsvictim.notify(event)
 
                     if health > 0:
                         if wcsattacker.ready:
-                            with FakeEvent('pre_player_hurt', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon_name, info=info) as event:
+                            with FakeEvent('pre_take_damage_hurt', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon_name, info=info) as event:
                                 wcsattacker.notify(event)
 
 
