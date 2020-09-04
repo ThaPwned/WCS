@@ -1428,7 +1428,11 @@ def pre_on_take_damage(stack):
         return
 
     info = make_object(TakeDamageInfo, stack[1])
-    attacker = info.attacker
+
+    try:
+        attacker = info.attacker
+    except ValueError:
+        attacker = 0
 
     if 0 < attacker <= global_vars.max_clients:
         wcsattacker = Player(attacker)
@@ -1447,7 +1451,11 @@ def pre_on_take_damage_alive(stack):
         return
 
     info = make_object(TakeDamageInfo, stack[1])
-    attacker = info.attacker
+
+    try:
+        attacker = info.attacker
+    except ValueError:
+        attacker = 0
 
     if 0 < attacker <= global_vars.max_clients:
         wcsattacker = Player(attacker)
