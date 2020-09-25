@@ -108,6 +108,7 @@ from .converts import convert_identifier_to_players
 from .converts import convert_userid_identifier_to_players
 from .converts import any_value
 from .converts import valid_operators
+from .converts import clamp
 from .converts import convert_to_vector
 from .converts import split_str
 from .converts import deprecated
@@ -1264,7 +1265,7 @@ def wcs_nearcoord_command(command_info, var:str, players:convert_identifier_to_p
 
 
 @TypedServerCommand('wcs_color')
-def wcs_color_command(command_info, player:convert_userid_to_player, red:int, green:int, blue:int, alpha:int=255, weapons:int=0):
+def wcs_color_command(command_info, player:convert_userid_to_player, red:clamp(0, 255), green:clamp(0, 255), blue:clamp(0, 255), alpha:clamp(0, 255)=255, weapons:int=0):
     if player is None:
         return
 
