@@ -1565,19 +1565,28 @@ def hinttext_repeat():
     now = time()
 
     for _, wcsplayer in PlayerReadyIter():
-        for skill in wcsplayer.active_race.skills.values():
-            if 'player_ultimate' in skill.config['event']:
+        messages = []
+        language = get_client_language(wcsplayer.index)
+
+        for i, skill in enumerate(wcsplayer.active_race.skills.values()):
+            if 'player_ability' in skill.config['event'] or 'player_ultimate' in skill.config['event']:
                 if skill.cooldown_seconds:
                     if skill.cooldown > now:
-                        hinttext_cooldown_message.send(wcsplayer.index, name=wcsplayer.active_race.settings.strings[skill.name], seconds=skill.cooldown - now)
+                        messages.append(menu_strings['hinttext_cooldown'].get_string(language, name=wcsplayer.active_race.settings.strings[skill.name], seconds=skill.cooldown - now))
 
-                        wcsplayer.data['_internal_hinttext_cooldown_shown'] = False
-                    elif not wcsplayer.data.get('_internal_hinttext_cooldown_shown', False):
-                        wcsplayer.data['_internal_hinttext_cooldown_shown'] = True
+                        wcsplayer.data[f'_internal_hinttext_cooldown_showing_{i}'] = True
+                        wcsplayer.data[f'_internal_hinttext_cooldown_duration_{i}'] = None
+                    elif wcsplayer.data.get(f'_internal_hinttext_cooldown_showing_{i}', False):
+                        if wcsplayer.data[f'_internal_hinttext_cooldown_duration_{i}'] is None:
+                            wcsplayer.data[f'_internal_hinttext_cooldown_duration_{i}'] = now + 3
 
-                        hinttext_cooldown_ready_message.send(wcsplayer.index, name=wcsplayer.active_race.settings.strings[skill.name])
+                        if wcsplayer.data[f'_internal_hinttext_cooldown_duration_{i}'] > now:
+                            messages.append(menu_strings['hinttext_cooldown ready'].get_string(language, name=wcsplayer.active_race.settings.strings[skill.name]))
+                        else:
+                            wcsplayer.data[f'_internal_hinttext_cooldown_showing_{i}'] = False
 
-                break
+        if messages:
+            HintText('\n'.join(messages)).send(wcsplayer.index)
 
 
 if cfg_hinttext_cooldown.get_int():
