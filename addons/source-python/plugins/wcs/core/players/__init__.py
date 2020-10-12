@@ -44,6 +44,7 @@ team_data = {2:{}, 3:{}}
 
 _global_weapon_entity = None
 _authenticate = set()
+_bots = set()
 
 
 # ============================================================================
@@ -237,12 +238,15 @@ def on_client_put_in_server(edict, name):
         baseplayer._uniqueid = f'BOT_{name}'
         baseplayer._authorized = True
 
-        OnClientAuthorized.manager.notify(baseplayer)
+        if _authenticate:
+            _bots.add(baseplayer)
+        else:
+            OnClientAuthorized.manager.notify(baseplayer)
 
 
 @OnTick
 def on_tick():
-    for baseplayer in _authenticate.copy():
+    for baseplayer in _authenticate:
         if engine_server.is_client_fully_authenticated(baseplayer.edict):
             _initialize(baseplayer)
 
@@ -270,18 +274,24 @@ def _initialize_players():
                 baseplayer._uniqueid = f'BOT_{baseplayer.name}'
                 baseplayer._authorized = True
 
-                OnClientAuthorized.manager.notify(baseplayer)
+                _bots.add(baseplayer)
             else:
                 if engine_server.is_client_fully_authenticated(baseplayer.edict):
                     _initialize(baseplayer)
                 else:
                     _authenticate.add(baseplayer)
 
+    if not _authenticate:
+        for baseplayer in _bots:
+            OnClientAuthorized.manager.notify(baseplayer)
+
+        _bots.clear()
+
 
 def _initialize(baseplayer):
     # Wait until we can retrieve a playerinfo from the baseplayer (prevents a lot of errors further on)
     try:
-        playerinfo = playerinfo_from_edict(baseplayer.edict)
+        playerinfo_from_edict(baseplayer.edict)
     except ValueError:
         pass
     else:
@@ -290,8 +300,15 @@ def _initialize(baseplayer):
         _authenticate.discard(baseplayer)
 
         baseplayer._accountid = steamid.account_id
-        baseplayer._uniqueid = baseplayer._steamid2 = playerinfo.steamid  # steamid.to_steamid2()
+        baseplayer._uniqueid = baseplayer._steamid2 = steamid.to_steamid2()
         baseplayer._steamid3 = steamid.to_steamid3()
         baseplayer._authorized = True
 
         OnClientAuthorized.manager.notify(baseplayer)
+
+    # Are there no more human players waiting to get authenticated?
+    if not _authenticate:
+        for baseplayer in _bots:
+            OnClientAuthorized.manager.notify(baseplayer)
+
+        _bots.clear()
