@@ -24,6 +24,7 @@ from players.helpers import userid_from_edict
 from ..listeners import OnClientAuthorized
 from ..listeners import OnClientConnect
 from ..listeners import OnClientDisconnect
+from ..listeners import OnSettingsLoaded
 
 
 # ============================================================================
@@ -43,6 +44,7 @@ __all__ = (
 team_data = {2:{}, 3:{}}
 
 _global_weapon_entity = None
+_allow_authentication = False
 _authenticate = set()
 _bots = set()
 
@@ -246,9 +248,17 @@ def on_client_put_in_server(edict, name):
 
 @OnTick
 def on_tick():
-    for baseplayer in _authenticate:
-        if engine_server.is_client_fully_authenticated(baseplayer.edict):
-            _initialize(baseplayer)
+    if _allow_authentication:
+        for baseplayer in _authenticate.copy():
+            if engine_server.is_client_fully_authenticated(baseplayer.edict):
+                _initialize(baseplayer)
+
+
+@OnSettingsLoaded
+def on_settings_loaded(settings):
+    # The settings has been loaded, and any updates to the database has been queued
+    global _allow_authentication
+    _allow_authentication = True
 
 
 # ============================================================================
@@ -276,7 +286,7 @@ def _initialize_players():
 
                 _bots.add(baseplayer)
             else:
-                if engine_server.is_client_fully_authenticated(baseplayer.edict):
+                if _allow_authentication and engine_server.is_client_fully_authenticated(baseplayer.edict):
                     _initialize(baseplayer)
                 else:
                     _authenticate.add(baseplayer)
