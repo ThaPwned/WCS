@@ -146,7 +146,7 @@ if (CFG_PATH / 'privileges.json').isfile():
 else:
     privileges = {
         'players':{
-            'dummy':{
+            'STEAMID_EXAMPLE1':{
                 'wcsadmin': 1,
                 'wcsadmin_githubaccess': 1,
                 'wcsadmin_managementaccess': 1,
