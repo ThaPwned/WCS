@@ -192,6 +192,7 @@ class _Thread(Thread):
                             node._executed.set()
                     elif node._blocking:
                         result._data = self.cur.fetchall()
+                        result._lastrowid = self.cur.lastrowid
 
                         node._result = result
                         node._executed.set()

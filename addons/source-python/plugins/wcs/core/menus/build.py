@@ -65,6 +65,7 @@ from . import playerinfo_detail_skills_menu
 from . import playerinfo_detail_stats_menu
 from . import wcstop_menu
 from . import wcstop_detail_menu
+from . import levelbank_menu
 from . import input_menu
 from . import wcsadmin_menu
 from . import wcsadmin_players_menu
@@ -72,6 +73,7 @@ from . import wcsadmin_players_sub_menu
 from . import wcsadmin_players_sub_xp_menu
 from . import wcsadmin_players_sub_levels_menu
 from . import wcsadmin_players_sub_changerace_menu
+from . import wcsadmin_players_sub_bank_levels_menu
 from . import wcsadmin_management_races_menu
 from . import wcsadmin_management_items_menu
 from . import wcsadmin_management_races_add_menu
@@ -560,6 +562,7 @@ def playerinfo_detail_menu_build(menu, client):
         menu[1].text.tokens['race'] = active_race.settings.strings['name']
         menu[2].text.tokens['xp'] = active_race.xp
         menu[2].text.tokens['required'] = active_race.required_xp
+        menu[2].text.tokens['rested_xp'] = wcsplayer.rested_xp
         menu[3].text.tokens['level'] = active_race.level
         menu[3].text.tokens['total_level'] = wcstarget.total_level
         menu[5].text.tokens['value'] = strftime(TIME_FORMAT, localtime(wcstarget._lastconnect))
@@ -569,6 +572,7 @@ def playerinfo_detail_menu_build(menu, client):
         menu[1].text.tokens['race'] = -1
         menu[2].text.tokens['xp'] = -1
         menu[2].text.tokens['required'] = -1
+        menu[2].text.tokens['rested_xp'] = -1
         menu[3].text.tokens['level'] = -1
         menu[3].text.tokens['total_level'] = -1
         menu[5].text.tokens['value'] = -1
@@ -652,6 +656,21 @@ def wcstop_detail_menu_build(menu, client):
         menu[4].text.tokens['name'] = current_race
     else:
         menu[4].text.tokens['name'] = settings.strings['name']
+
+
+@levelbank_menu.register_build_callback
+def levelbank_menu_build(menu, client):
+    wcsplayer = Player(client)
+    active_race = wcsplayer.active_race
+
+    menu[0].text.tokens['bank_level'] = wcsplayer.bank_level
+    menu[2].text.tokens['name'] = active_race.settings.strings['name']
+    menu[2].text.tokens['level'] = active_race.level
+
+    maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
+
+    for i in range(3, 8):
+        menu[i].selectable = menu[i].highlight = wcsplayer.bank_level >= menu[i].value and (not maximum_race_level or active_race.level + menu[i].value <= maximum_race_level)
 
 
 @input_menu.register_build_callback
@@ -758,6 +777,19 @@ def wcsadmin_players_sub_changerace_menu_build(menu, client):
         option.highlight = option.selectable = not wcstarget.current_race == name
 
         menu.append(option)
+
+
+@wcsadmin_players_sub_bank_levels_menu.register_build_callback
+def wcsadmin_players_sub_bank_levels_menu_build(menu, client):
+    wcsplayer = Player(client)
+    accountid = wcsplayer.data['_internal_wcsadmin_player']
+
+    if accountid is None:
+        menu[0].text.tokens['name'] = menu_strings['wcsadmin_players_menu all']
+    else:
+        wcstarget = Player.from_accountid(accountid)
+
+        menu[0].text.tokens['name'] = wcstarget.name
 
 
 @wcsadmin_management_races_menu.register_build_callback

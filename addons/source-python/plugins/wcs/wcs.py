@@ -12,6 +12,8 @@ from copy import deepcopy
 from enum import IntEnum
 #   JSON
 from json import load as json_load
+#   Math
+from math import floor
 #   Random
 from random import choice
 #   Time
@@ -71,6 +73,13 @@ from .core.config import cfg_knife_xp
 from .core.config import cfg_knife_bot_xp
 from .core.config import cfg_headshot_xp
 from .core.config import cfg_headshot_bot_xp
+from .core.config import cfg_rested_xp_gained_base
+from .core.config import cfg_rested_xp_gained_percentage
+from .core.config import cfg_rested_xp_online_tick
+from .core.config import cfg_rested_xp_online_value
+from .core.config import cfg_rested_xp_offline_tick
+from .core.config import cfg_rested_xp_offline_value
+from .core.config import cfg_rested_xp_offline_duration
 from .core.config import cfg_welcome_text
 from .core.config import cfg_welcome_gui_text
 from .core.config import cfg_level_up_effect
@@ -149,6 +158,7 @@ from .core.menus import raceinfo_search_menu
 from .core.menus import raceinfo_detail_menu
 from .core.menus import playerinfo_menu
 from .core.menus import wcstop_menu
+from .core.menus import levelbank_menu
 from .core.menus import wcshelp_menu
 from .core.menus import welcome_menu
 from .core.menus import wcsadmin_menu
@@ -166,6 +176,7 @@ from .core.players import _initialize_players
 from .core.players import index_from_accountid
 from .core.players import team_data
 from .core.players.entity import Player
+from .core.players.filters import PlayerIter
 from .core.players.filters import PlayerReadyIter
 #   Ranks
 from .core.ranks import rank_manager
@@ -198,10 +209,12 @@ not_ready_message = SayText2(chat_strings['not ready'])
 xp_required_message = SayText2(chat_strings['xp required'])
 help_text_message = SayText2(chat_strings['help text'])
 welcome_text_message = SayText2(chat_strings['welcome text'])
+rested_xp_message = SayText2(chat_strings['rested xp'])
 changerace_message = SayText2(chat_strings['changerace'])
 changerace_warning_message = SayText2(chat_strings['changerace warning'])
 no_race_found_message = SayText2(chat_strings['no race found'])
 gain_xp_killed_message = SayText2(chat_strings['gain xp killed'])
+gain_xp_killed_rested_message = SayText2(chat_strings['gain xp killed rested'])
 gain_xp_killed_higher_level_message = SayText2(chat_strings['gain xp killed higher level'])
 gain_xp_headshot_message = SayText2(chat_strings['gain xp headshot'])
 gain_xp_knife_message = SayText2(chat_strings['gain xp knife'])
@@ -270,6 +283,10 @@ def load():
     race_manager.load_all()
     item_manager.load_all()
 
+    # Get the current players on the server, as we want to ignore them when giving out rested xp
+    for _, wcsplayer in PlayerIter():
+        wcsplayer.data['_internal_rested_xp_prevent'] = True
+
     _initialize_players()
 
     for settings in race_manager.values():
@@ -308,8 +325,11 @@ def unload():
         sleep(0.01)
 
 
-def _xp_gained(wcsplayer, active_race, old_level, value, delay, _allow=True):
-    gain_xp_killed_message.send(wcsplayer.index, value=value)
+def _xp_gained(wcsplayer, active_race, old_level, value, rested_xp, delay, _allow=True):
+    if rested_xp:
+        gain_xp_killed_rested_message.send(wcsplayer.index, value=value, rested_xp=rested_xp)
+    else:
+        gain_xp_killed_message.send(wcsplayer.index, value=value)
 
     if active_race.level > old_level and _allow:
         gain_level_message.send(wcsplayer.index, level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
@@ -721,12 +741,24 @@ def player_death(event):
 
                         if value:
                             if not wcsattacker.fake_client:
+                                rested_xp_gained_base = cfg_rested_xp_gained_base.get_int()
+                                rested_xp_gained_percentage = cfg_rested_xp_gained_percentage.get_float()
+
+                                rested_xp = min(rested_xp_gained_base, wcsattacker.rested_xp)
+
+                                if rested_xp_gained_percentage > 0:
+                                    rested_xp += floor((wcsattacker.rested_xp - rested_xp) * rested_xp_gained_percentage)
+
+                                if rested_xp > 0:
+                                    wcsattacker.rested_xp -= rested_xp
+                                    value += rested_xp
+
                                 for delay in _delays[wcsattacker]:
                                     if delay.callback is _xp_gained:
                                         delay.kwargs['_allow'] = False
 
                                 # I want this to be the last one
-                                delay = Delay(1.01, _xp_gained, (wcsattacker, active_race, active_race.level, kill_xp))
+                                delay = Delay(1.01, _xp_gained, (wcsattacker, active_race, active_race.level, kill_xp, rested_xp))
                                 delay.args += (delay, )
                                 _delays[wcsattacker].add(delay)
 
@@ -914,9 +946,23 @@ def on_player_delete(wcsplayer):
         with FakeEvent('disconnectcmd', userid=wcsplayer.userid) as event:
             wcsplayer.execute(event.name, event)
 
+        tick = cfg_rested_xp_online_tick.get_int()
+
+        if tick > 0:
+            value = cfg_rested_xp_online_value.get_int()
+
+            now = time()
+
+            rested_xp = floor((now - wcsplayer.data['_internal_rested_xp']) / tick * value)
+
+            if rested_xp > 0:
+                wcsplayer.rested_xp += rested_xp
+
     for delay in _delays.pop(wcsplayer, []):
         if delay.running:
             delay.cancel()
+
+    wcsplayer.data.pop('_internal_rested_xp_prevent', None)
 
 
 @OnPlayerDestroy
@@ -1075,6 +1121,8 @@ def on_player_ready(wcsplayer):
 
         wcsplayer.execute('readycmd', define=True)
 
+    wcsplayer.data['_internal_rested_xp'] = time()
+
     if not wcsplayer.fake_client:
         if wcsplayer.total_level <= cfg_disable_text_on_level.get_int():
             if cfg_welcome_text.get_int():
@@ -1086,6 +1134,28 @@ def on_player_ready(wcsplayer):
                 delay = Delay(5, _send_message_and_remove, (welcome_menu, wcsplayer))
                 delay.args += (delay, )
                 _delays[wcsplayer].add(delay)
+
+        if wcsplayer.data.pop('_internal_rested_xp_prevent', None):
+            return
+
+        tick = cfg_rested_xp_offline_tick.get_int()
+
+        if tick > 0:
+            value = cfg_rested_xp_offline_value.get_int()
+            duration = cfg_rested_xp_offline_duration.get_int()
+
+            now = time()
+            diff = now - wcsplayer.lastconnect
+
+            if duration > 0:
+                diff = min(diff, duration)
+
+            rested_xp = floor(diff / tick * value)
+
+            if rested_xp > 0:
+                wcsplayer.rested_xp += rested_xp
+
+                rested_xp_message.send(wcsplayer.index, value=rested_xp)
 
 
 @OnSettingsLoaded
@@ -1380,6 +1450,19 @@ def say_command_showxp(command, index, team=None):
         active_race = wcsplayer.active_race
 
         show_xp_message.send(wcsplayer.index, name=active_race.settings.strings['name'], level=active_race.level, total_level=wcsplayer.total_level, xp=active_race.xp, required=active_race.required_xp)
+    else:
+        not_ready_message.send(index)
+
+    return CommandReturn.BLOCK
+
+
+@ClientCommand(COMMANDS['levelbank'])
+@SayCommand(COMMANDS['levelbank'])
+def say_command_levelbank(command, index, team=None):
+    wcsplayer = Player(index)
+
+    if wcsplayer.ready:
+        levelbank_menu.send(index)
     else:
         not_ready_message.send(index)
 

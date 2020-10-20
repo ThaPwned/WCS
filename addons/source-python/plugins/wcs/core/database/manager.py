@@ -116,8 +116,14 @@ def _query_settings(result):
     version = settings[setting] = DatabaseVersion(int(settings['version']))
 
     if version < DatabaseVersion.CURRENT:
+        # Change from using steamid to use accountid and set all bots accountid to NULL
         if version < DatabaseVersion.UPDATE1:
             for statement in [x for x in statements if x.startswith(f'database upgrade {DatabaseVersion.UPDATE1.value}.')]:
+                database_manager.execute(statement)
+
+        # Add bank level and rested xp
+        if version < DatabaseVersion.UPDATE2:
+            for statement in [x for x in statements if x.startswith(f'database upgrade {DatabaseVersion.UPDATE2.value}.')]:
                 database_manager.execute(statement)
 
         database_manager.execute('setting update', arguments=(str(DatabaseVersion.CURRENT.value), ), format_args=('version', ))

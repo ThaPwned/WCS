@@ -109,7 +109,8 @@ class NodeType(IntEnum):
 class DatabaseVersion(IntEnum):
     INITIAL = 0
     UPDATE1 = 1
-    CURRENT = UPDATE1
+    UPDATE2 = 2
+    CURRENT = UPDATE2
 
 
 # ============================================================================
@@ -178,7 +179,15 @@ if not (CFG_PATH / 'commands.json').isfile():
             'wcsrank':['wcsrank'],
             'wcshelp':['wcshelp'],
             'wcsadmin':['wcsadmin'],
-            'showxp':['showxp']}, outputfile, indent=4)
+            'showxp':['showxp'],
+            'levelbank':['levelbank', 'wcsbank']},
+            outputfile, indent=4)
 
 with open(CFG_PATH / 'commands.json') as inputfile:
     COMMANDS = load(inputfile)
+
+if 'levelbank' not in COMMANDS:
+    COMMANDS['levelbank'] = ['levelbank', 'wcsbank']
+
+    with open(CFG_PATH / 'commands.json', 'w') as outputfile:
+        dump(COMMANDS, outputfile, indent=4)

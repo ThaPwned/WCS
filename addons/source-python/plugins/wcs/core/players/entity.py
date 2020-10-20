@@ -62,6 +62,7 @@ from weapons.restrictions import WeaponRestrictionHandler
 #   Config
 from ..config import cfg_interval
 from ..config import cfg_bot_random_race
+from ..config import cfg_new_player_bank_bonus
 #   Constants
 from ..constants import IS_ESC_SUPPORT_ENABLED
 from ..constants import ModuleType
@@ -278,6 +279,8 @@ class Player(object, metaclass=_PlayerMeta):
         self._name = None
         self._current_race = None
         self._lastconnect = None
+        self._bank_level = None
+        self._rested_xp = None
 
         self.data = {}
 
@@ -302,7 +305,7 @@ class Player(object, metaclass=_PlayerMeta):
         data = result.fetchone()
 
         if data is None:
-            database_manager.execute('player insert', (None if isinstance(self.accountid, str) else self.accountid, result['name'], race_manager.default_race, time()))
+            database_manager.execute('player insert', (None if isinstance(self.accountid, str) else self.accountid, result['name'], race_manager.default_race, time(), cfg_new_player_bank_bonus.get_int(), 0))
             database_manager.execute('player get' + (' bot' if isinstance(self.accountid, str) else ''), (self.accountid, ), callback=self._query_get_player, name=result['name'])
             return
 
@@ -310,12 +313,20 @@ class Player(object, metaclass=_PlayerMeta):
         self._name = data[1]
         self._current_race = data[2]
         self._lastconnect = data[3]
+        self._bank_level = data[4]
+        self._rested_xp = data[5]
 
         if self._current_race not in race_manager:
             self._current_race = race_manager.default_race
 
         if result['name'] is not None:
             self._name = result['name']
+
+        if self._bank_level is None:
+            self._bank_level = cfg_new_player_bank_bonus.get_int()
+
+        if self._rested_xp is None:
+            self._rested_xp = 0
 
         database_manager.execute('race get', (self.id, ), callback=self._query_get_races)
         database_manager.execute('skill get', (self.id, ), callback=self._query_get_skills)
@@ -459,7 +470,7 @@ class Player(object, metaclass=_PlayerMeta):
 
         # TODO: This could use a hand...
 
-        database_manager.execute('player update', (self.name, self._current_race, self._lastconnect, self._id))
+        database_manager.execute('player update', (self.name, self._current_race, self._lastconnect, self._bank_level, self._rested_xp, self._id))
 
         races = []
         skills = []
@@ -683,6 +694,10 @@ class Player(object, metaclass=_PlayerMeta):
         return self._name
 
     @property
+    def lastconnect(self):
+        return self._lastconnect
+
+    @property
     def ready(self):
         return self._ready
 
@@ -788,6 +803,22 @@ class Player(object, metaclass=_PlayerMeta):
     @property
     def total_level(self):
         return sum([race.level for race in self._races.values()])
+
+    @property
+    def bank_level(self):
+        return self._bank_level
+
+    @bank_level.setter
+    def bank_level(self, value):
+        self._bank_level = value
+
+    @property
+    def rested_xp(self):
+        return self._rested_xp
+
+    @rested_xp.setter
+    def rested_xp(self, value):
+        self._rested_xp = value
 
     @property
     def unused(self):

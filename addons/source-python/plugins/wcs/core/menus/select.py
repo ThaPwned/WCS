@@ -53,12 +53,14 @@ from . import playerinfo_detail_menu
 from . import playerinfo_detail_stats_menu
 from . import wcstop_menu
 from . import wcstop_detail_menu
+from . import levelbank_menu
 from . import wcsadmin_menu
 from . import wcsadmin_players_menu
 from . import wcsadmin_players_sub_menu
 from . import wcsadmin_players_sub_xp_menu
 from . import wcsadmin_players_sub_levels_menu
 from . import wcsadmin_players_sub_changerace_menu
+from . import wcsadmin_players_sub_bank_levels_menu
 from . import wcsadmin_management_menu
 from . import wcsadmin_management_races_menu
 from . import wcsadmin_management_items_menu
@@ -109,6 +111,7 @@ changerace_changed_message = SayText2(chat_strings['changerace updated'])
 skills_reset_updated_message = SayText2(chat_strings['skills reset updated'])
 skill_upgrade_message = SayText2(chat_strings['skill upgrade'])
 item_bought_message = SayText2(chat_strings['item bought'])
+levelbank_spent_message = SayText2(chat_strings['levelbank spent'])
 admin_gain_xp_all_message = SayText2(chat_strings['admin gain xp all'])
 admin_gain_xp_receiver_message = SayText2(chat_strings['admin gain xp receiver'])
 admin_gain_xp_sender_message = SayText2(chat_strings['admin gain xp sender'])
@@ -120,6 +123,10 @@ admin_gain_levels_self_message = SayText2(chat_strings['admin gain levels self']
 admin_changerace_receiver_message = SayText2(chat_strings['admin changerace receiver'])
 admin_changerace_sender_message = SayText2(chat_strings['admin changerace sender'])
 admin_changerace_self_message = SayText2(chat_strings['admin changerace self'])
+admin_gain_bank_levels_all_message = SayText2(chat_strings['admin gain bank levels all'])
+admin_gain_bank_levels_receiver_message = SayText2(chat_strings['admin gain bank levels receiver'])
+admin_gain_bank_levels_sender_message = SayText2(chat_strings['admin gain bank levels sender'])
+admin_gain_bank_levels_self_message = SayText2(chat_strings['admin gain bank levels self'])
 github_installing_message = SayText2(chat_strings['github installing'])
 github_installing_message = SayText2(chat_strings['github installing'])
 github_updating_message = SayText2(chat_strings['github updating'])
@@ -396,6 +403,30 @@ def wcstop_detail_menu_select(menu, client, option):
     return option.value
 
 
+@levelbank_menu.register_select_callback
+def levelbank_menu(menu, client, option):
+    if isinstance(option.value, int):
+        wcsplayer = Player(client)
+        active_race = wcsplayer.active_race
+
+        maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
+
+        value = option.value if not maximum_race_level else min(maximum_race_level, active_race.level + option.value)
+
+        wcsplayer.bank_level -= value
+        active_race.level += value
+
+        levelbank_spent_message.send(client, value=value, name=active_race.settings.strings['name'], level=active_race.level)
+
+        return menu
+    elif option.value is None:
+        wcsplayer = Player(client)
+
+        return wcsplayer.request_input(_spend_bank_levels, return_menu=menu)
+
+    return option.value
+
+
 # ============================================================================
 # >> ADMIN SELECT CALLBACKS
 # ============================================================================
@@ -536,6 +567,42 @@ def wcsadmin_players_sub_changerace_menu_select(menu, client, option):
         xp_required_message.send(wcsplayer.index, name=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
 
     return menu.parent_menu
+
+
+@wcsadmin_players_sub_bank_levels_menu.register_select_callback
+def wcsadmin_players_sub_bank_levels_menu_select(menu, client, option):
+    if isinstance(option.value, int):
+        wcsplayer = Player(client)
+        accountid = wcsplayer.data['_internal_wcsadmin_player']
+
+        if accountid is None:
+            for _, wcstarget in PlayerReadyIter():
+                wcstarget.bank_level += option.value
+
+                if wcstarget is wcsplayer:
+                    admin_gain_bank_levels_self_message.send(wcsplayer.index, value=option.value)
+                else:
+                    admin_gain_bank_levels_receiver_message.send(wcstarget.index, value=option.value, name=wcsplayer.name)
+
+            admin_gain_bank_levels_all_message.send(wcsplayer.index, value=option.value)
+        else:
+            wcstarget = Player.from_accountid(accountid)
+
+            wcstarget.bank_level += option.value
+
+            if wcstarget is wcsplayer:
+                admin_gain_bank_levels_self_message.send(wcsplayer.index, value=option.value)
+            else:
+                admin_gain_bank_levels_sender_message.send(wcsplayer.index, name=wcstarget.name, value=option.value)
+                admin_gain_bank_levels_receiver_message.send(wcstarget.index, value=option.value, name=wcsplayer.name)
+
+        return menu
+    elif option.value is None:
+        wcsplayer = Player(client)
+
+        return wcsplayer.request_input(_give_bank_levels, return_menu=menu)
+
+    return option.value
 
 
 @wcsadmin_management_menu.register_select_callback
@@ -977,6 +1044,63 @@ def _give_levels(wcsplayer, value):
             else:
                 admin_gain_levels_sender_message.send(wcsplayer.index, name=wcstarget.name, value=value)
                 admin_gain_levels_receiver_message.send(wcstarget.index, value=value, name=wcsplayer.name)
+
+    return True
+
+
+def _give_bank_levels(wcsplayer, value):
+    if not value.isdigit():
+        return False
+
+    value = int(value)
+
+    accountid = wcsplayer.data.get('_internal_wcsadmin_player')
+
+    if accountid is None:
+        for _, wcstarget in PlayerReadyIter():
+            wcstarget.bank_level += value
+
+            if wcstarget is wcsplayer:
+                admin_gain_bank_levels_self_message.send(wcsplayer.index, value=value)
+            else:
+                admin_gain_bank_levels_receiver_message.send(wcstarget.index, value=value, name=wcsplayer.name)
+
+        admin_gain_bank_levels_all_message.send(wcsplayer.index, value=value)
+    else:
+        wcstarget = Player.from_accountid(accountid)
+
+        if wcstarget.ready:
+            wcstarget.bank_level += value
+
+            if wcstarget is wcsplayer:
+                admin_gain_bank_levels_self_message.send(wcsplayer.index, value=value)
+            else:
+                admin_gain_bank_levels_sender_message.send(wcsplayer.index, name=wcstarget.name, value=value)
+                admin_gain_bank_levels_receiver_message.send(wcstarget.index, value=value, name=wcsplayer.name)
+
+    return True
+
+
+def _spend_bank_levels(wcsplayer, value):
+    if not value.isdigit():
+        return False
+
+    value = int(value)
+
+    if value > wcsplayer.bank_level:
+        # Let the player know they entered an invalid value to prevent typos
+        return False
+
+    active_race = wcsplayer.active_race
+
+    maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
+
+    value = value if not maximum_race_level else min(maximum_race_level, active_race.level + value)
+
+    wcsplayer.bank_level -= value
+    active_race.level += value
+
+    levelbank_spent_message.send(wcsplayer.index, value=value, name=active_race.settings.strings['name'], level=active_race.level)
 
     return True
 

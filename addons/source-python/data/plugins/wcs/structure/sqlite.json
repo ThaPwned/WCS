@@ -1,5 +1,5 @@
 {
-    "create players": "CREATE TABLE IF NOT EXISTS players (id INTEGER PRIMARY KEY AUTOINCREMENT, accountid INTEGER UNIQUE, name TEXT, current_race TEXT, lastconnect REAL)",
+    "create players": "CREATE TABLE IF NOT EXISTS players (id INTEGER PRIMARY KEY AUTOINCREMENT, accountid INTEGER UNIQUE, name TEXT, current_race TEXT, lastconnect REAL, bank_level INTEGER, rested_xp INTEGER)",
     "create races": "CREATE TABLE IF NOT EXISTS races (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, playerid INTEGER, xp INTEGER DEFAULT 0, level INTEGER DEFAULT 0, unused INTEGER DEFAULT 0)",
     "create skills": "CREATE TABLE IF NOT EXISTS skills (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, race TEXT, playerid INTEGER, level INTEGER DEFAULT 0)",
     "create stats races": "CREATE TABLE IF NOT EXISTS stats_races (id INTEGER PRIMARY KEY AUTOINCREMENT, playerid INTEGER, owner TEXT, key TEXT, value REAL)",
@@ -7,10 +7,10 @@
     "create settings": "CREATE TABLE IF NOT EXISTS settings (setting TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL)",
 
     "player offline": "SELECT IFNULL(accountid, name), name FROM players ORDER BY name ASC",
-    "player get": "SELECT id, name, current_race, lastconnect FROM players WHERE accountid = ?",
-    "player get bot": "SELECT id, name, current_race, lastconnect FROM players WHERE accountid IS NULL AND name = ?",
-    "player insert": "INSERT INTO players (accountid, name, current_race, lastconnect) VALUES (?, ?, ?, ?)",
-    "player update": "UPDATE players SET name = ?, current_race = ?, lastconnect = ? WHERE id = ?",
+    "player get": "SELECT id, name, current_race, lastconnect, bank_level, rested_xp FROM players WHERE accountid = ?",
+    "player get bot": "SELECT id, name, current_race, lastconnect, bank_level, rested_xp FROM players WHERE accountid IS NULL AND name = ?",
+    "player insert": "INSERT INTO players (accountid, name, current_race, lastconnect, bank_level, rested_xp) VALUES (?, ?, ?, ?, ?, ?)",
+    "player update": "UPDATE players SET name = ?, current_race = ?, lastconnect = ?, bank_level = ?, rested_xp = ? WHERE id = ?",
 
     "race get": "SELECT name, xp, level, unused FROM races WHERE playerid = ?",
     "race insert": "INSERT INTO races (name, playerid) VALUES (?, ?)",
@@ -38,5 +38,8 @@
     "database upgrade 1.2": "INSERT INTO players_copy SELECT id, CAST(SUBSTR(uniqueid, 9, 1) AS INTEGER) + CAST(SUBSTR(uniqueid, 11) * 2 AS INTEGER), name, current_race, lastconnect FROM players WHERE uniqueid LIKE 'STEAM_%'",
     "database upgrade 1.3": "INSERT INTO players_copy SELECT id, SUBSTR(uniqueid, 6, LENGTH(uniqueid) - 6) AS INTEGER, name, current_race, lastconnect FROM players WHERE uniqueid LIKE '[_:_:%]'",
     "database upgrade 1.4": "DROP TABLE players",
-    "database upgrade 1.5": "ALTER TABLE players_copy RENAME TO players"
+    "database upgrade 1.5": "ALTER TABLE players_copy RENAME TO players",
+
+    "database upgrade 2.0": "ALTER TABLE players ADD COLUMN bank_level INTEGER",
+    "database upgrade 2.1": "ALTER TABLE players ADD COLUMN rested_xp INTEGER"
 }

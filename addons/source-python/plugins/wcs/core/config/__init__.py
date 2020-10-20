@@ -40,9 +40,17 @@ __all__ = (
     'cfg_top_stolen_notify',
     'cfg_welcome_gui_text',
     'cfg_welcome_text',
+    'cfg_new_player_bank_bonus',
     'cfg_debug_alias_duplicate',
     'cfg_level_up_effect',
     'cfg_rank_gain_effect',
+    'cfg_rested_xp_gained_base',
+    'cfg_rested_xp_gained_percentage',
+    'cfg_rested_xp_online_tick',
+    'cfg_rested_xp_online_value',
+    'cfg_rested_xp_offline_tick',
+    'cfg_rested_xp_offline_value',
+    'cfg_rested_xp_offline_duration',
     'cfg_assist_xp',
     'cfg_round_survival_xp',
     'cfg_round_win_xp',
@@ -76,8 +84,16 @@ with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as co
     cfg_knife_bot_xp = config.cvar('knife_bot_xp', '40', config_strings['knife_bot_xp'])
     cfg_headshot_xp = config.cvar('headshot_xp', '15', config_strings['headshot_xp'])
     cfg_headshot_bot_xp = config.cvar('headshot_bot_xp', '15', config_strings['headshot_bot_xp'])
+    cfg_rested_xp_gained_base = config.cvar('rested_xp_gained_base', '10', config_strings['rested_xp_gained_base'])
+    cfg_rested_xp_gained_percentage = config.cvar('rested_xp_gained_percentage', '0.01', config_strings['rested_xp_gained_percentage'])
+    cfg_rested_xp_online_tick = config.cvar('rested_xp_online_tick', '60', config_strings['rested_xp_online_tick'])
+    cfg_rested_xp_online_value = config.cvar('rested_xp_online_value', '1', config_strings['rested_xp_online_value'])
+    cfg_rested_xp_offline_tick = config.cvar('rested_xp_offline_tick', '120', config_strings['rested_xp_offline_tick'])
+    cfg_rested_xp_offline_value = config.cvar('rested_xp_offline_value', '1', config_strings['rested_xp_offline_value'])
+    cfg_rested_xp_offline_duration = config.cvar('rested_xp_offline_duration', '604800', config_strings['rested_xp_offline_duration'])
     cfg_welcome_text = config.cvar('welcome_text', '0', config_strings['welcome_text'])
     cfg_welcome_gui_text = config.cvar('welcome_gui_text', '0', config_strings['welcome_gui_text'])
+    cfg_new_player_bank_bonus = config.cvar('new_player_bank_bonus', '15', config_strings['new_player_bank_bonus'])
     cfg_debug_alias_duplicate = config.cvar('debug_alias_duplicate', '1', config_strings['debug_alias_duplicate'])
     cfg_level_up_effect = config.cvar('level_up_effect', '1', config_strings['level_up_effect'])
     cfg_rank_gain_effect = config.cvar('rank_gain_effect', '1', config_strings['rank_gain_effect'])

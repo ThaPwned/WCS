@@ -56,6 +56,7 @@ from . import playerinfo_detail_skills_menu
 from . import playerinfo_detail_stats_menu
 from . import wcstop_menu
 from . import wcstop_detail_menu
+from . import levelbank_menu
 from . import wcshelp_menu
 from . import welcome_menu
 from . import input_menu
@@ -65,6 +66,7 @@ from . import wcsadmin_players_sub_menu
 from . import wcsadmin_players_sub_xp_menu
 from . import wcsadmin_players_sub_levels_menu
 from . import wcsadmin_players_sub_changerace_menu
+from . import wcsadmin_players_sub_bank_levels_menu
 from . import wcsadmin_management_menu
 from . import wcsadmin_management_races_menu
 from . import wcsadmin_management_items_menu
@@ -282,6 +284,22 @@ wcstop_detail_menu.extend(
     ]
 )
 
+levelbank_menu.extend(
+    [
+        Text(menu_strings['levelbank_menu title']),
+        Text(' '),
+        Text(deepcopy(menu_strings['levelbank_menu line 1'])),
+        SimpleOption(2, deepcopy(menu_strings['levelbank_menu line']), 1),
+        SimpleOption(3, deepcopy(menu_strings['levelbank_menu line']), 5),
+        SimpleOption(4, deepcopy(menu_strings['levelbank_menu line']), 10),
+        SimpleOption(5, deepcopy(menu_strings['levelbank_menu line']), 20),
+        SimpleOption(6, deepcopy(menu_strings['levelbank_menu line']), 50),
+        SimpleOption(7, menu_strings['levelbank_menu custom']),
+        Text(' '),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
+    ]
+)
+
 wcshelp_menu.extend(
     [
         Text(menu_strings['wcshelp_menu title']),
@@ -366,7 +384,7 @@ wcsadmin_players_sub_menu.extend(
         SimpleOption(1, menu_strings['wcsadmin_players_sub_menu line 1'], wcsadmin_players_sub_xp_menu),
         SimpleOption(2, menu_strings['wcsadmin_players_sub_menu line 2'], wcsadmin_players_sub_levels_menu),
         SimpleOption(3, menu_strings['wcsadmin_players_sub_menu line 3']),
-        Text(' '),
+        SimpleOption(4, menu_strings['wcsadmin_players_sub_menu line 4'], wcsadmin_players_sub_bank_levels_menu),
         Text(' '),
         Text(' '),
         SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_players_menu),
@@ -401,6 +419,22 @@ wcsadmin_players_sub_levels_menu.extend(
         SimpleOption(4, deepcopy(menu_strings['wcsadmin_players_sub_levels_menu line']), 20),
         SimpleOption(5, deepcopy(menu_strings['wcsadmin_players_sub_levels_menu line']), 50),
         SimpleOption(6, menu_strings['wcsadmin_players_sub_levels_menu custom']),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_players_sub_menu),
+        Text(' '),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
+    ]
+)
+
+wcsadmin_players_sub_bank_levels_menu.extend(
+    [
+        Text(menu_strings['wcsadmin_players_sub_bank_levels_menu title']),
+        Text(' '),
+        SimpleOption(1, deepcopy(menu_strings['wcsadmin_players_sub_bank_levels_menu line']), 1),
+        SimpleOption(2, deepcopy(menu_strings['wcsadmin_players_sub_bank_levels_menu line']), 5),
+        SimpleOption(3, deepcopy(menu_strings['wcsadmin_players_sub_bank_levels_menu line']), 10),
+        SimpleOption(4, deepcopy(menu_strings['wcsadmin_players_sub_bank_levels_menu line']), 20),
+        SimpleOption(5, deepcopy(menu_strings['wcsadmin_players_sub_bank_levels_menu line']), 50),
+        SimpleOption(6, menu_strings['wcsadmin_players_sub_bank_levels_menu custom']),
         SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_players_sub_menu),
         Text(' '),
         SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
@@ -585,6 +619,7 @@ if BUTTON_BACK == 8:
     wcsadmin_players_sub_menu.insert(-3, Text(' '))
     wcsadmin_players_sub_xp_menu.insert(-3, Text(' '))
     wcsadmin_players_sub_levels_menu.insert(-3, Text(' '))
+    wcsadmin_players_sub_bank_levels_menu.insert(-3, Text(' '))
     wcsadmin_management_menu.insert(-3, Text(' '))
     wcsadmin_management_races_editor_menu.insert(-3, Text(' '))
     wcsadmin_management_items_editor_menu.insert(-3, Text(' '))
@@ -596,8 +631,10 @@ if BUTTON_BACK == 8:
 
 
 for i in range(2, 7):
+    levelbank_menu[i + 1].text.tokens['value'] = levelbank_menu[i + 1].value
     wcsadmin_players_sub_xp_menu[i].text.tokens['value'] = wcsadmin_players_sub_xp_menu[i].value
     wcsadmin_players_sub_levels_menu[i].text.tokens['value'] = wcsadmin_players_sub_levels_menu[i].value
+    wcsadmin_players_sub_bank_levels_menu[i].text.tokens['value'] = wcsadmin_players_sub_bank_levels_menu[i].value
 
 
 # ============================================================================
