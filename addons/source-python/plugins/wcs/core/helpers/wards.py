@@ -36,6 +36,8 @@ from mathlib import Vector
 #   Players
 
 # WCS Imports
+#   Config
+from ..config import cfg_ffa_enabled
 #   Helpers
 from .effects import effect3
 from .effects import effect10
@@ -62,9 +64,11 @@ __all__ = (
 # >> CLASSES
 # =============================================================================
 class BaseWard(object):
-    def __init__(self, owner, origin, radius, duration, tick_interval=1, update_interval=1, **kwargs):
+    def __init__(self, owner, origin, radius, duration, tick_interval=1, update_interval=1, target_owner=True, **kwargs):
         assert isinstance(owner, Player)
         assert owner.ready
+
+        self._team_target = None
 
         self.owner = owner
         self.origin = origin
@@ -74,6 +78,7 @@ class BaseWard(object):
         self.team_target = self.team
         self.tick_interval = tick_interval
         self.update_interval = update_interval
+        self.target_owner = target_owner
         self.data = kwargs
         self.entities = {}
 
@@ -106,15 +111,30 @@ class BaseWard(object):
     def has_within(self, origin):
         return self.origin.get_distance_sqr(origin) <= self.radius ** 2
 
+    @property
+    def team_target(self):
+        return self._team_target
+
+    @team_target.setter
+    def team_target(self, value):
+        self._team_target = value
+
 
 class DamageWard(BaseWard):
     def __init__(self, owner, origin, radius, duration, damage, tick_interval=1, update_interval=1, **kwargs):
-        super().__init__(owner, origin, radius, duration, tick_interval, update_interval, **kwargs)
+        super().__init__(owner, origin, radius, duration, tick_interval, update_interval, target_owner=False, **kwargs)
 
         self.damage = damage
         self.team_target = 5 - self.team
 
         self.speed = {}
+
+    @BaseWard.team_target.getter
+    def team_target(self):
+        if cfg_ffa_enabled.get_int():
+            return None
+
+        return self._team_target
 
     def on_spawned(self):
         # TODO: Find models for csgo (only tested in css)
@@ -210,6 +230,9 @@ class _WardManager(AutoUnload, list):
             team = ward.team_target
 
             for wcsplayer, origin in players.items():
+                if not ward.target_owner and wcsplayer == ward.owner:
+                    continue
+
                 if team is None or wcsplayer.player.team == team:
                     trace = GameTrace()
                     ray = Ray(ward.origin, origin)

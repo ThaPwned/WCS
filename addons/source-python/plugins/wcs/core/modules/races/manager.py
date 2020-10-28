@@ -4,6 +4,8 @@
 # >> IMPORTS
 # ============================================================================
 # Python Imports
+#   Itertools
+from itertools import chain
 #   Warnings
 from warnings import warn
 
@@ -14,6 +16,7 @@ from engines.server import global_vars
 # WCS Imports
 #   Config
 from ...config import cfg_default_race
+from ...config import cfg_ffa_enabled
 #   Constants
 from ...constants import IS_ESC_SUPPORT_ENABLED
 from ...constants import RaceReason
@@ -133,10 +136,14 @@ class RaceSetting(_BaseSetting):
         restrictteam = self.config.get('restrictteam')
 
         if restrictteam:
-            team = wcsplayer.player.team_index
+            ffa_enabled = cfg_ffa_enabled.get_int()
 
-            if team >= 2 and not restrictteam == team:
-                return RaceReason.TEAM
+            # If FFA is enabled it should ignore the team restriction
+            if not ffa_enabled:
+                team = wcsplayer.player.team_index
+
+                if team >= 2 and not restrictteam == team:
+                    return RaceReason.TEAM
 
         restrictbot = self.config.get('restrictbot')
 
@@ -149,7 +156,13 @@ class RaceSetting(_BaseSetting):
             team = wcsplayer.player.team_index
 
             if team >= 2:
-                limit = team_data[team].get(f'_internal_{self.name}_limit_allowed', [])
+                ffa_enabled = cfg_ffa_enabled.get_int()
+
+                # If FFA is enabled the limit is considered to be for all the players on the server
+                if ffa_enabled:
+                    limit = list(chain.from_iterable([team_data[i][f'_internal_{self.name}_limit_allowed'] for i in team_data]))
+                else:
+                    limit = team_data[team].get(f'_internal_{self.name}_limit_allowed', [])
 
                 if teamlimit <= len(limit) and wcsplayer.userid not in limit:
                     return RaceReason.TEAM_LIMIT

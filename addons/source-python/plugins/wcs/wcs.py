@@ -31,6 +31,8 @@ from colors import Color
 #   Core
 from core import SOURCE_ENGINE_BRANCH
 from core import OutputReturn
+#   CVars
+from cvars import cvar
 #   Engines
 from engines.server import global_vars
 #   Entities
@@ -43,6 +45,7 @@ from events.hooks import PreEvent
 #   Filters
 from filters.weapons import WeaponClassIter
 #   Listeners
+from listeners import OnConVarChanged
 from listeners import OnLevelInit
 from listeners import OnServerOutput
 from listeners import OnTick
@@ -86,6 +89,7 @@ from .core.config import cfg_level_up_effect
 from .core.config import cfg_rank_gain_effect
 from .core.config import cfg_spawn_text
 from .core.config import cfg_hinttext_cooldown
+from .core.config import cfg_ffa_enabled
 from .core.config import cfg_changerace_next_round
 from .core.config import cfg_resetskills_next_round
 from .core.config import cfg_disable_text_on_level
@@ -260,6 +264,7 @@ hinttext_cooldown_ready_message = HintText(menu_strings['hinttext_cooldown ready
 _delays = defaultdict(set)
 _melee_weapons = [weapon.basename for weapon in WeaponClassIter('melee')]
 _new_version = None
+_pre_ffa_enabled = {}
 
 _effect_angle = QAngle(0, 0, 0)
 _level_effect_color = Color(252, 232, 131)
@@ -463,6 +468,30 @@ def _fire_post_player_spawn(wcsplayer, delay):
     _delays[wcsplayer].remove(delay)
 
 
+def _toggle_ffa(enable):
+    if enable:
+        for name, value in {
+            'mp_teammates_are_enemies': 1,
+            'mp_autokick': 0,
+            'mp_tkpunish': 0,
+            'mp_friendlyfire': 1,
+            'ff_damage_reduction_bullets': 1,
+            'ff_damage_reduction_grenade': 1,
+            'ff_damage_reduction_other': 1
+        }.items():
+            variable = cvar.find_var(name)
+
+            if variable is not None:
+                _pre_ffa_enabled[name] = variable.get_int()
+
+                variable.set_int(value)
+    else:
+        for name, value in _pre_ffa_enabled.items():
+            cvar.find_var(name).set_int(value)
+
+        _pre_ffa_enabled.clear()
+
+
 # ============================================================================
 # >> EVENTS
 # ============================================================================
@@ -629,8 +658,9 @@ def player_hurt(event):
 
                 if wcsvictim.ready:
                     health = event['health']
+                    ffa_enabled = cfg_ffa_enabled.get_int()
 
-                    if not wcsvictim.player.team_index == wcsattacker.player.team_index:
+                    if ffa_enabled or not wcsvictim.player.team_index == wcsattacker.player.team_index:
                         wcsvictim.notify(event, 'player_victim')
 
                         if health > 0:
@@ -658,8 +688,9 @@ def pre_player_hurt(event):
 
                 if wcsvictim.ready:
                     health = event['health']
+                    ffa_enabled = cfg_ffa_enabled.get_int()
 
-                    if not wcsvictim.player.team_index == wcsattacker.player.team_index:
+                    if ffa_enabled or not wcsvictim.player.team_index == wcsattacker.player.team_index:
                         wcsvictim.notify(event, 'pre_player_victim')
 
                         if health > 0:
@@ -693,7 +724,9 @@ def player_death(event):
             if not userid == attacker:
                 wcsattacker.notify(event, 'player_kill')
 
-                if not wcsvictim.player.team_index == wcsattacker.player.team_index:
+                ffa_enabled = cfg_ffa_enabled.get_int()
+
+                if ffa_enabled or not wcsvictim.player.team_index == wcsattacker.player.team_index:
                     active_race = wcsattacker.active_race
                     maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
 
@@ -841,6 +874,13 @@ def player_jump(event):
 # ============================================================================
 # >> LISTENERS
 # ============================================================================
+@OnConVarChanged
+def on_con_var_changed(convar, old_value):
+    if convar.name == cfg_ffa_enabled.name:
+        # This has to be delayed by a tick otherwise it'll crash the server
+        Delay(0, _toggle_ffa, (convar.get_int(), ))
+
+
 @OnLevelInit
 def on_level_init(map_name):
     # Remove all offline players from the cache (better place for this?)
@@ -1186,8 +1226,9 @@ def on_take_damage_alive(wcsvictim, wcsattacker, info):
                         weapon_name = class_name
 
                     health = wcsvictim.player.health - info.damage
+                    ffa_enabled = cfg_ffa_enabled.get_int()
 
-                    if not wcsvictim.player.team_index == wcsattacker.player.team_index:
+                    if ffa_enabled or not wcsvictim.player.team_index == wcsattacker.player.team_index:
                         with FakeEvent('pre_take_damage_victim', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon_name, info=info) as event:
                             wcsvictim.notify(event)
 
