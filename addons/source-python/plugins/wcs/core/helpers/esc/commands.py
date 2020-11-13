@@ -462,8 +462,7 @@ def wcs_setfx_health_command(command_info, player:convert_userid_to_player, oper
         player.health += value
         value *= -1
     else:
-        # TODO: Minimum 1 health?
-        player.health -= value
+        player.health = max(player.health - value, 1)
 
     if time > 0:
         delay = Delay(time, validate_userid_after_delay, (wcs_setfx_health_command, player.userid, '+', value))
