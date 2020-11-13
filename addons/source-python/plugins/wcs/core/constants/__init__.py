@@ -174,13 +174,15 @@ if not (CFG_PATH / 'commands.json').isfile():
             'changerace':['changerace'],
             'raceinfo':['raceinfo'],
             'myraceinfo':['myraceinfo'],
+            'myinfo':['myinfo'],
             'playerinfo':['playerinfo'],
             'wcstop':['wcstop'],
             'wcsrank':['wcsrank'],
             'wcshelp':['wcshelp'],
             'wcsadmin':['wcsadmin'],
             'showxp':['showxp'],
-            'levelbank':['levelbank', 'wcsbank']},
+            'levelbank':['levelbank', 'wcsbank']
+        },
             outputfile, indent=4)
 
 with open(CFG_PATH / 'commands.json') as inputfile:
@@ -188,6 +190,12 @@ with open(CFG_PATH / 'commands.json') as inputfile:
 
 if 'levelbank' not in COMMANDS:
     COMMANDS['levelbank'] = ['levelbank', 'wcsbank']
+
+    with open(CFG_PATH / 'commands.json', 'w') as outputfile:
+        dump(COMMANDS, outputfile, indent=4)
+
+if 'myinfo' not in COMMANDS:
+    COMMANDS['myinfo'] = ['myinfo']
 
     with open(CFG_PATH / 'commands.json', 'w') as outputfile:
         dump(COMMANDS, outputfile, indent=4)

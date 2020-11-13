@@ -161,6 +161,7 @@ from .core.menus import raceinfo_menu
 from .core.menus import raceinfo_search_menu
 from .core.menus import raceinfo_detail_menu
 from .core.menus import playerinfo_menu
+from .core.menus import playerinfo_detail_menu
 from .core.menus import wcstop_menu
 from .core.menus import levelbank_menu
 from .core.menus import wcshelp_menu
@@ -1437,6 +1438,22 @@ def say_command_myraceinfo(command, index, team=None):
 @SayCommand(COMMANDS['playerinfo'])
 def say_command_playerinfo(command, index, team=None):
     playerinfo_menu.send(index)
+
+    return CommandReturn.BLOCK
+
+
+@ClientCommand(COMMANDS['myinfo'])
+@SayCommand(COMMANDS['myinfo'])
+def say_command_myinfo(command, index, team=None):
+    wcsplayer = Player(index)
+
+    if wcsplayer.ready:
+        wcsplayer.data['_internal_playerinfo'] = wcsplayer.accountid
+        wcsplayer.data['_internal_playerinfo_name'] = wcsplayer.name
+
+        playerinfo_detail_menu.send(index)
+    else:
+        not_ready_message.send(index)
 
     return CommandReturn.BLOCK
 
