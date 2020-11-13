@@ -2078,6 +2078,8 @@ def pre_player_hurt(event):
                     if randint(0, 100) <= chance:
                         wcsplayer.player.health += int(event['dmg_health'])
 
+                        wcsplayer.data['evasion_count'] = wcsplayer.data.get('evasion_count', 0) + 1
+
 
 @PreEvent('weapon_fire')
 def weapon_fire_pre(event):

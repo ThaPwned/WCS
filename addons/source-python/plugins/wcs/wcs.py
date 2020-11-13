@@ -467,6 +467,9 @@ def _fire_post_player_spawn(wcsplayer, delay):
 
     _delays[wcsplayer].remove(delay)
 
+    # TODO: This should be in commands.py but whatever...
+    wcsplayer.data.pop('evasion_count', None)
+
 
 def _toggle_ffa(enable):
     if enable:
