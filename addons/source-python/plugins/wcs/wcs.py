@@ -501,12 +501,16 @@ def _toggle_ffa(enable):
 # ============================================================================
 @Event('round_start')
 def round_start(event):
+    item_manager._round_restart = False
+
     for _, wcsplayer in PlayerReadyIter(not_filters=['un', 'spec']):
         wcsplayer.execute('roundstartcmd', event, define=True)
 
 
 @Event('round_end')
 def round_end(event):
+    item_manager._round_restart = True
+
     for _, wcsplayer in PlayerReadyIter(not_filters=['un', 'spec']):
         wcsplayer.execute('roundendcmd', event, define=True)
 

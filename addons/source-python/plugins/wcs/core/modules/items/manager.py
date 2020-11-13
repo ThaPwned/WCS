@@ -53,6 +53,9 @@ class ItemSetting(_BaseSetting):
         if data['reason'] is not None:
             return data['reason']
 
+        if item_manager._round_restart:
+            return ItemReason.ROUND_RESTART
+
         required = self.config.get('required')
 
         if required:
@@ -107,6 +110,7 @@ class _ItemManager(_BaseManager):
         super().__init__()
 
         self._category_max_items = {}
+        self._round_restart = False
 
     def load(self, name):
         return self._load(name, 'items', ITEM_PATH, ITEM_PATH_ES, OnPluginItemLoad)

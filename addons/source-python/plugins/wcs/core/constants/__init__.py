@@ -65,6 +65,7 @@ class ItemReason(IntEnum):
     TOO_MANY_CATEGORY = 4
     WRONG_STATUS = 5
     REQUIRED_LEVEL = 6
+    ROUND_RESTART = 7
 
 
 class SkillReason(IntEnum):

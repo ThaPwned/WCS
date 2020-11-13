@@ -161,6 +161,9 @@ def shopmenu_menu_build(menu, client):
                 option.text = deepcopy(menu_strings['shopmenu_menu required level'])
                 option.text.tokens['level'] = settings.config['required']
                 option.selectable = option.highlight = False
+            elif reason is ItemReason.ROUND_RESTART:
+                option.text = deepcopy(menu_strings['shopmenu_menu round restart'])
+                option.selectable = option.highlight = False
             elif isinstance(reason, IntEnum):
                 data = {'reason':reason, 'string':None}
 
