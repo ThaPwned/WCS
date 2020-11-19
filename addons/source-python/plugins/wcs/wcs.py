@@ -1478,7 +1478,7 @@ def say_command_wcsrank(command, index, team=None):
     if wcsplayer.ready:
         active_race = wcsplayer.active_race
 
-        rank_message.send(name=wcsplayer.name, race=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp, rank=wcsplayer.rank, total=len(rank_manager))
+        rank_message.send(name=wcsplayer.name, race=active_race.settings.strings['name'], level=active_race.level, total_level=wcsplayer.total_level, xp=active_race.xp, required=active_race.required_xp, rank=wcsplayer.rank, total=len(rank_manager))
     else:
         not_ready_message.send(index)
 
