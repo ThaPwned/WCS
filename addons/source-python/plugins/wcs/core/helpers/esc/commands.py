@@ -459,7 +459,7 @@ def wcs_setfx_health_command(command_info, player:convert_userid_to_player, oper
         player.health = value
         value = old_value - value
     elif operator == '+':
-        player.health += value
+        player.health = max(player.health + value, 1)
         value *= -1
     else:
         player.health = max(player.health - value, 1)
@@ -480,7 +480,7 @@ def wcs_setfx_armor_command(command_info, player:convert_userid_to_player, opera
         player.armor = value
         value = old_value - value
     elif operator == '+':
-        player.armor += value
+        player.armor = max(player.armor + value, 0)
         value *= -1
     else:
         player.armor = max(player.armor - value, 0)
@@ -501,7 +501,7 @@ def wcs_setfx_cash_command(command_info, player:convert_userid_to_player, operat
         player.cash = value
         value = old_value - value
     elif operator == '+':
-        player.cash += value
+        player.cash = max(player.cash + value, 0)
         value *= -1
     else:
         player.cash = max(player.cash - value, 0)
@@ -522,7 +522,7 @@ def wcs_setfx_gravity_command(command_info, player:convert_userid_to_player, ope
         player.gravity = value
         value = old_value - value
     elif operator == '+':
-        player.gravity += value
+        player.gravity = max(player.gravity + value, 0)
         value *= -1
     else:
         player.gravity = max(player.gravity - value, 0)
@@ -628,7 +628,7 @@ def wcs_setfx_1stclip_command(command_info, player:convert_userid_to_player, ope
         weapon.clip = value
         value = old_value - value
     elif operator == '+':
-        weapon.clip += value
+        weapon.clip = max(weapon.clip + value, 0)
         value *= -1
     else:
         old_value = weapon.clip
@@ -659,7 +659,7 @@ def wcs_setfx_2ndclip_command(command_info, player:convert_userid_to_player, ope
         weapon.clip = value
         value = old_value - value
     elif operator == '+':
-        weapon.clip += value
+        weapon.clip = max(weapon.clip + value, 0)
         value *= -1
     else:
         old_value = weapon.clip
@@ -690,7 +690,7 @@ def wcs_setfx_1stammo_command(command_info, player:convert_userid_to_player, ope
         weapon.ammo = value
         value = old_value - value
     elif operator == '+':
-        weapon.ammo += value
+        weapon.ammo = max(weapon.ammo + value, 0)
         value *= -1
     else:
         old_value = weapon.ammo
@@ -721,7 +721,7 @@ def wcs_setfx_2ndammo_command(command_info, player:convert_userid_to_player, ope
         weapon.ammo = value
         value = old_value - value
     elif operator == '+':
-        weapon.ammo += value
+        weapon.ammo = max(weapon.ammo + value, 0)
         value *= -1
     else:
         old_value = weapon.ammo
