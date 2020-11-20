@@ -2010,7 +2010,7 @@ def wcs_regeneration_command(command_info, player:convert_userid_to_player, valu
 
 
 @TypedServerCommand('wcs_warden')
-def wcs_warden_command(command_info, wcsplayer:convert_userid_to_wcsplayer, duration:int, damage:int, radius:float, team_target:int, team_target_name:deprecated, x:float, y:float, z:float, round:deprecated):
+def wcs_warden_command(command_info, wcsplayer:convert_userid_to_wcsplayer, duration:float, damage:int, radius:float, team_target:int, team_target_name:deprecated, x:float, y:float, z:float, round:deprecated):
     if wcsplayer is None:
         return
 
