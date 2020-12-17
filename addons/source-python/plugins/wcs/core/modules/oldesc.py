@@ -34,6 +34,7 @@ from ..constants import ModuleType
 from ..constants.paths import CFG_PATH
 #   Helpers
 from ..helpers.esc.commands import _aliases
+from ..helpers.esc.commands import _esc_strings
 from ..helpers.esc.commands import _languages
 #   Modules
 from .items.manager import ItemSetting
@@ -117,7 +118,8 @@ def parse_ini_races():
                         _aliases[alias] = value
 
             try:
-                fixed_name = FIX_NAME.sub('', name.lower().replace(' ', '_'))
+                fixed_name = FIX_NAME.sub('', (name[8:] if name.startswith('wcs_lng_') else name).lower().replace(' ', '_'))
+
                 settings = ImportedRace(fixed_name, ModuleType.ESS_INI)
 
                 settings.cmds['preloadcmd'] = data['preloadcmd'] or None
@@ -142,8 +144,8 @@ def parse_ini_races():
                 settings.config['author'] = data['author']
                 settings.config['allowonly'] = data['allowonly'].split('|') if data['allowonly'] else []
 
-                skillnames = data['skillnames'].split('|')
-                skilldescr = data['skilldescr'].split('|')
+                skillnames = (_esc_strings[fixed_name][data['skillnames'][8:]].get_string('en') if data['skillnames'].startswith('wcs_lng_') else data['skillnames']).split('|')
+                skilldescr = (_esc_strings[fixed_name][data['skilldescr'][8:]].get_string('en') if data['skilldescr'].startswith('wcs_lng_') else data['skilldescr']).split('|')
                 skillcfg = data['skillcfg'].split('|')
                 skillneeded = data['skillneeded'].split('|')
                 numberoflevels = map(int, data['numberoflevels'].split('|')) if '|' in data['numberoflevels'] else [int(data['numberoflevels'])] * len(skillnames)
@@ -151,10 +153,10 @@ def parse_ini_races():
                 skills = settings.config['skills'] = {}
 
                 for i, skill_name in enumerate(skillnames):
-                    fixed_skill_name = FIX_NAME.sub('', skill_name.lower().replace(' ', '_'))
+                    fixed_skill_name = FIX_NAME.sub('', (skill_name[8:] if skill_name.startswith('wcs_lng_') else skill_name).replace(' ', '_'))
 
-                    settings.strings[fixed_skill_name] = _LanguageString(skill_name)
-                    settings.strings[f'{fixed_skill_name} description'] = _LanguageString(skilldescr[i].replace(r'\n', ''))
+                    settings.strings[fixed_skill_name] = _esc_strings[fixed_name][fixed_skill_name] if skill_name.startswith('wcs_lng_') else _LanguageString(skill_name)
+                    settings.strings[f'{fixed_skill_name} description'] = _esc_strings[fixed_name][f'{fixed_skill_name} description'] if skilldescr[i].startswith('wcs_lng_') else _LanguageString(skilldescr[i].replace(r'\n', ''))
 
                     skill = skills[fixed_skill_name] = {}
 
@@ -193,8 +195,8 @@ def parse_ini_races():
                         if alias.startswith('racealias_'):
                             _aliases[alias] = value
 
-                settings.strings['name'] = _LanguageString(name)
-                settings.strings['description'] = _LanguageString(data['desc'].replace(r'\n', ''))
+                settings.strings['name'] = _esc_strings[fixed_name]['name'] if name.startswith('wcs_lng_') else _LanguageString(name)
+                settings.strings['description'] = _esc_strings[fixed_name][data['desc'][8:]] if data['desc'].startswith('wcs_lng_') else _LanguageString(data['desc'].replace(r'\n', ''))
 
                 categories = (data['category'].split('|') if data['category'] and not data['category'] == '0' else []) if 'category' in data else []
 

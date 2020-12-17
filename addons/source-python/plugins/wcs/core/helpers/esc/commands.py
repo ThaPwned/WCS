@@ -142,6 +142,20 @@ if (TRANSLATION_PATH / 'strings.ini').isfile():
 else:
     _strings = None
 
+_esc_strings = {}
+_esc_strings_ids = {}
+
+if (TRANSLATION_PATH / 'esc').isdir():
+    for name in [x.basename().rsplit('.', 1)[0] for x in (TRANSLATION_PATH / 'esc').listdir() if x.endswith('.ini') and not x.endswith('_server.ini')]:
+        shortname = name.rsplit('_', 1)[0]
+
+        _esc_strings[shortname] = LangStrings(TRANSLATION_PATH / 'esc' / name)
+
+        for key in _esc_strings[shortname]:
+            for language, message in _esc_strings[shortname][key].items():
+                _esc_strings[shortname][key][language] = message.replace('#default', COLOR_DEFAULT).replace('#green', COLOR_GREEN).replace('#lightgreen', COLOR_LIGHTGREEN).replace('#darkgreen', COLOR_DARKGREEN)
+
+
 _restrictions = WeaponRestrictionHandler()
 _all_weapons = set([x.basename for x in WeaponClassIter('all', ['melee', 'objective'])])
 
@@ -249,12 +263,7 @@ def validate_userid_after_delay(callback, userid, operator, value, delay, valida
 
 
 def _format_message(userid, name, args):
-    if _strings is None:
-        return tuple(), None
-
-    text = _strings.get(name)
-
-    if text is None:
+    if _strings is None and _esc_strings is None:
         return tuple(), None
 
     if userid.isdigit():
@@ -264,6 +273,14 @@ def _format_message(userid, name, args):
             return tuple(), None
     else:
         players = convert_identifier_to_players(userid)
+
+    if name.isdigit():
+        text = _esc_strings_ids.get(int(name))
+    else:
+        text = None if _strings is None else _strings.get(name)
+
+    if text is None:
+        return tuple(), None
 
     if args:
         tokens = {}
@@ -1498,8 +1515,18 @@ def wcs_unrestrict_command(command_info, player:convert_userid_to_player, weapon
 
 
 @TypedServerCommand('wcs_getlanguage')
-def wcs_getlanguage_command(command_info, var:ConVar, id_:str, language:str='en'):
-    var.set_string(_languages.get(language, {}).get(id_, 'n/a'))
+def wcs_getlanguage_command(command_info, var:ConVar, id_:str, language:str='en', module:str=None):
+    if module is None:
+        var.set_string(_languages.get(language, {}).get(id_, 'n/a'))
+    else:
+        try:
+            identifier = id(_esc_strings[module][id_])
+        except KeyError:
+            var.set_int(0)
+        else:
+            _esc_strings_ids[identifier] = _esc_strings[module][id_]
+
+            var.set_int(identifier)
 
 
 @TypedServerCommand('wcs_randplayer')
