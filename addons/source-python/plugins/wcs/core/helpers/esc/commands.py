@@ -2260,3 +2260,9 @@ def on_take_damage_alive(wcsvictim, wcsattacker, info):
 
                 if reduced_damage > 0:
                     info.damage = info.damage * (1 - reduced_damage)
+
+    if info.type & DamageTypes.FALL:
+        fall_damage = wcsvictim.data.get('falldamage')
+
+        if fall_damage is not None and fall_damage != 1:
+            info.damage *= fall_damage
