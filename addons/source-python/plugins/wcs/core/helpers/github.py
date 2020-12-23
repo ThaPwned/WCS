@@ -51,6 +51,7 @@ from ..constants import GITHUB_PASSWORD
 from ..constants import GITHUB_REPOSITORIES
 from ..constants import GITHUB_USERNAME
 from ..constants import GithubStatus
+from ..constants import GithubModuleStatus
 from ..constants.info import info
 from ..constants.paths import DATA_PATH
 from ..constants.paths import MODULE_PATH
@@ -69,6 +70,7 @@ from ..listeners import OnGithubModulesRefresh
 from ..listeners import OnGithubModulesRefreshed
 from ..listeners import OnGithubNewVersionChecked
 from ..listeners import OnGithubNewVersionInstalled
+from ..listeners import OnGithubNewVersionUpdating
 #   Menus
 from ..menus import wcsadmin_github_races_options_menu
 from ..menus import wcsadmin_github_items_options_menu
@@ -91,6 +93,7 @@ __all__ = (
 filterwarnings('ignore', category=ResourceWarning, message='unclosed.*<ssl.SSLSocket.*>')
 
 _output = Queue()
+_ignore_thread_counter = (OnGithubNewVersionUpdating.manager.notify, )
 
 github_installing_failed_message = SayText2(chat_strings['github installing failed'])
 github_installing_success_message = SayText2(chat_strings['github installing success'])
@@ -121,12 +124,16 @@ class _GithubManager(dict):
 
     def _tick(self):
         if not _output.empty():
+            items = _output.get_nowait()
+
+            if isinstance(items, tuple):
+                if items[0] in _ignore_thread_counter:
+                    self._counter += 1
+
             self._counter -= 1
 
             if not self._counter:
                 self._repeat.stop()
-
-            items = _output.get_nowait()
 
             if items is not None:
                 if isinstance(items, tuple):
@@ -221,6 +228,8 @@ class _GithubManager(dict):
 
     def _install_new_version(self):
         try:
+            _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.PREPARING))
+
             _github = self._connect()
 
             _repo = _github.get_repo(f'{info.author.replace(" ", "")}/WCS')
@@ -231,15 +240,28 @@ class _GithubManager(dict):
             else:
                 blacklist = []
 
+            _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.CONNECTING))
+
             with urlopen(_repo.get_archive_link('zipball', 'master')) as response:
+                _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.DOWNLOADING))
+
                 with ZipFile(BytesIO(response.read()), 'r') as ref:
+                    _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.UNZIPPING))
+
                     files = ref.namelist()
                     unique_name = files[0]
 
                     files.remove(unique_name)
 
+                    files_count = len(files)
+
+                    _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.EXTRACTING, 0))
+
                     with TemporaryDirectory() as tmpdir:
-                        for member in files:
+                        for i, member in enumerate(files, 1):
+                            if i % 25 == 0:
+                                _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.EXTRACTING, round(i / files_count * 100, 1)))
+
                             name = member.replace(unique_name, '')
 
                             if name in blacklist:
@@ -247,7 +269,11 @@ class _GithubManager(dict):
 
                             ref.extract(member, path=tmpdir)
 
+                        _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.EXTRACTING, 100))
+
                         copy_tree(Path(tmpdir) / unique_name, GAME_PATH)
+
+            _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.FINISHING))
 
             commits = _repo.get_commits()
             sha = commits[0].sha
@@ -282,14 +308,14 @@ class _GithubManager(dict):
                             wcs_install_path = path / content.name / '.wcs_install'
 
                             if wcs_install_path.isfile():
-                                status = GithubStatus.INSTALLED
+                                status = GithubModuleStatus.INSTALLED
 
                                 last_updated = wcs_install_path.mtime
 
                                 with open(wcs_install_path) as inputfile:
                                     repository_installed = inputfile.read()
                             else:
-                                status = GithubStatus.UNINSTALLED
+                                status = GithubModuleStatus.UNINSTALLED
 
                                 last_updated = None
                                 repository_installed = None
@@ -335,13 +361,13 @@ class _GithubManager(dict):
             with open(_path, 'w') as outputfile:
                 outputfile.write(repository)
 
-            self[module][name]['status'] = GithubStatus.INSTALLED
+            self[module][name]['status'] = GithubModuleStatus.INSTALLED
             self[module][name]['last_updated'] = _path.mtime
             self[module][name]['repository'] = repository
 
             _output.put((OnGithubModuleInstalled.manager.notify, repository, module, name, userid))
         except:
-            _output.put((OnGithubModuleFailed.manager.notify, repository, module, name, userid, GithubStatus.INSTALLING))
+            _output.put((OnGithubModuleFailed.manager.notify, repository, module, name, userid, GithubModuleStatus.INSTALLING))
             raise
 
     def _update_module(self, repository, module, name, userid):
@@ -394,12 +420,12 @@ class _GithubManager(dict):
             # Update the installation file, so we know it's been updated
             _path.utime(None)
 
-            self[module][name]['status'] = GithubStatus.INSTALLED
+            self[module][name]['status'] = GithubModuleStatus.INSTALLED
             self[module][name]['last_updated'] = _path.mtime
 
             _output.put((OnGithubModuleUpdated.manager.notify, repository, module, name, userid))
         except:
-            _output.put((OnGithubModuleFailed.manager.notify, repository, module, name, userid, GithubStatus.UPDATING))
+            _output.put((OnGithubModuleFailed.manager.notify, repository, module, name, userid, GithubModuleStatus.UPDATING))
             raise
 
     def _uninstall_module(self, repository, module, name, userid):
@@ -409,13 +435,13 @@ class _GithubManager(dict):
 
             (MODULE_PATH / module / name).rmtree()
 
-            self[module][name]['status'] = GithubStatus.UNINSTALLED
+            self[module][name]['status'] = GithubModuleStatus.UNINSTALLED
             self[module][name]['last_updated'] = None
             self[module][name]['repository'] = None
 
             _output.put((OnGithubModuleUninstalled.manager.notify, repository, module, name, userid))
         except:
-            _output.put((OnGithubModuleFailed.manager.notify, repository, module, name, userid, GithubStatus.UNINSTALLING))
+            _output.put((OnGithubModuleFailed.manager.notify, repository, module, name, userid, GithubModuleStatus.UNINSTALLING))
             raise
 
     def _download_module(self, repository, from_path):
@@ -538,14 +564,14 @@ class _GithubManager(dict):
             self._threads.append(thread)
 
         def install_module(self, repository, module, name, userid=None):
-            assert self[module][name]['status'] is GithubStatus.UNINSTALLED
+            assert self[module][name]['status'] is GithubModuleStatus.UNINSTALLED
 
             if not self._counter:
                 self._repeat.start(0.1)
 
             self._counter += 1
 
-            self[module][name]['status'] = GithubStatus.INSTALLING
+            self[module][name]['status'] = GithubModuleStatus.INSTALLING
 
             thread = Thread(target=self._install_module, name=f'wcs.install.{module}.{name}', args=(repository, module, name, userid))
             thread.start()
@@ -553,14 +579,14 @@ class _GithubManager(dict):
             self._threads.append(thread)
 
         def update_module(self, module, name, userid=None):
-            assert self[module][name]['status'] is GithubStatus.INSTALLED
+            assert self[module][name]['status'] is GithubModuleStatus.INSTALLED
 
             if not self._counter:
                 self._repeat.start(0.1)
 
             self._counter += 1
 
-            self[module][name]['status'] = GithubStatus.UPDATING
+            self[module][name]['status'] = GithubModuleStatus.UPDATING
 
             thread = Thread(target=self._update_module, name=f'wcs.update.{module}.{name}', args=(self[module][name]['repository'], module, name, userid))
             thread.start()
@@ -568,14 +594,14 @@ class _GithubManager(dict):
             self._threads.append(thread)
 
         def uninstall_module(self, module, name, userid=None):
-            assert self[module][name]['status'] is GithubStatus.INSTALLED
+            assert self[module][name]['status'] is GithubModuleStatus.INSTALLED
 
             if not self._counter:
                 self._repeat.start(0.1)
 
             self._counter += 1
 
-            self[module][name]['status'] = GithubStatus.UNINSTALLING
+            self[module][name]['status'] = GithubModuleStatus.UNINSTALLING
 
             thread = Thread(target=self._uninstall_module, name=f'wcs.uninstall.{module}.{name}', args=(self[module][name]['repository'], module, name, userid))
             thread.start()
@@ -612,18 +638,18 @@ def on_github_commits_refreshed(commits):
 
 @OnGithubModuleFailed
 def on_github_failed(repository, module, name, userid, task):
-    if task is GithubStatus.INSTALLING:
+    if task is GithubModuleStatus.INSTALLING:
         _send_message(module, github_installing_failed_message, userid, name=name)
 
-        github_manager[module][name]['status'] = GithubStatus.UNINSTALLED
-    elif task is GithubStatus.UPDATING:
+        github_manager[module][name]['status'] = GithubModuleStatus.UNINSTALLED
+    elif task is GithubModuleStatus.UPDATING:
         _send_message(module, github_updating_failed_message, userid, name=name)
 
-        github_manager[module][name]['status'] = GithubStatus.INSTALLED
-    elif task is GithubStatus.UNINSTALLING:
+        github_manager[module][name]['status'] = GithubModuleStatus.INSTALLED
+    elif task is GithubModuleStatus.UNINSTALLING:
         _send_message(module, github_uninstalling_failed_message, userid, name=name)
 
-        github_manager[module][name]['status'] = GithubStatus.INSTALLED
+        github_manager[module][name]['status'] = GithubModuleStatus.INSTALLED
 
 
 @OnGithubNewVersionChecked
