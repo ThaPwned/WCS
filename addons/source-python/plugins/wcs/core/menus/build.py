@@ -34,7 +34,7 @@ from translations.strings import TranslationStrings
 # WCS Imports
 #   Constants
 from ..constants import TIME_FORMAT
-from ..constants import GithubStatus
+from ..constants import GithubModuleStatus
 from ..constants import ItemReason
 from ..constants import RaceReason
 from ..constants.paths import CFG_PATH
@@ -964,13 +964,13 @@ def wcsadmin_github_races_options_menu_build(menu, client):
 
     menu[0].text.tokens['name'] = name
 
-    menu[2].selectable = menu[2].highlight = status is GithubStatus.UNINSTALLED
-    menu[3].selectable = menu[3].highlight = status is GithubStatus.INSTALLED
-    menu[4].selectable = menu[4].highlight = status is GithubStatus.INSTALLED
+    menu[2].selectable = menu[2].highlight = status is GithubModuleStatus.UNINSTALLED
+    menu[3].selectable = menu[3].highlight = status is GithubModuleStatus.INSTALLED
+    menu[4].selectable = menu[4].highlight = status is GithubModuleStatus.INSTALLED
 
     menu[5].text = menu_strings[f'wcsadmin_github_options_menu status {status.value}']
 
-    if status is not GithubStatus.UNINSTALLED and not GithubStatus.INSTALLED:
+    if status is not GithubModuleStatus.UNINSTALLED and not GithubModuleStatus.INSTALLED:
         cycle = wcsplayer.data.get('_internal_wcsadmin_github_cycle', 0)
 
         menu[5].text.tokens['cycle'] = '.' * (cycle % 3 + 1)
@@ -1026,13 +1026,13 @@ def wcsadmin_github_items_options_menu_build(menu, client):
 
     menu[0].text.tokens['name'] = name
 
-    menu[2].selectable = menu[2].highlight = status is GithubStatus.UNINSTALLED
-    menu[3].selectable = menu[3].highlight = status is GithubStatus.INSTALLED
-    menu[4].selectable = menu[4].highlight = status is GithubStatus.INSTALLED
+    menu[2].selectable = menu[2].highlight = status is GithubModuleStatus.UNINSTALLED
+    menu[3].selectable = menu[3].highlight = status is GithubModuleStatus.INSTALLED
+    menu[4].selectable = menu[4].highlight = status is GithubModuleStatus.INSTALLED
 
     menu[5].text = menu_strings[f'wcsadmin_github_options_menu status {status.value}']
 
-    if status is not GithubStatus.UNINSTALLED and not GithubStatus.INSTALLED:
+    if status is not GithubModuleStatus.UNINSTALLED and not GithubModuleStatus.INSTALLED:
         cycle = wcsplayer.data.get('_internal_wcsadmin_github_cycle', 0)
 
         menu[5].text.tokens['cycle'] = '.' * (cycle % 3 + 1)
@@ -1085,10 +1085,13 @@ def wcsadmin_github_info_menu_build(menu, client):
 
         menu._checking_cycle += 1
 
-    if menu._installing_cycle is not None:
-        menu[4].text.tokens['cycle'] = '.' * (menu._installing_cycle % 3 + 1)
+    try:
+        if menu._installing_cycle is not None:
+            menu[4].text.tokens['cycle'] = '.' * (menu._installing_cycle % 3 + 1)
 
-        menu._installing_cycle += 1
+            menu._installing_cycle += 1
+    except:
+        pass
 
 
 @wcsadmin_github_info_commits_menu.register_build_callback

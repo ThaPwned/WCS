@@ -22,6 +22,7 @@ from menus.radio import BUTTON_CLOSE_SLOT
 # WCS Imports
 #   Constants
 from ..constants import GithubStatus
+from ..constants import GithubModuleStatus
 from ..constants.info import info
 #   Listeners
 from ..listeners import OnGithubCommitsRefresh
@@ -33,6 +34,7 @@ from ..listeners import OnGithubModulesRefresh
 from ..listeners import OnGithubModulesRefreshed
 from ..listeners import OnGithubNewVersionChecked
 from ..listeners import OnGithubNewVersionInstalled
+from ..listeners import OnGithubNewVersionUpdating
 from ..listeners import OnPlayerQuery
 #   Menus
 from . import main_menu
@@ -546,9 +548,9 @@ wcsadmin_github_races_options_menu.extend(
     [
         Text(menu_strings['wcsadmin_github_options_menu title']),
         Text(' '),
-        SimpleOption(1, menu_strings['wcsadmin_github_options_menu install'], GithubStatus.INSTALLING),
-        SimpleOption(2, menu_strings['wcsadmin_github_options_menu update'], GithubStatus.UPDATING),
-        SimpleOption(3, menu_strings['wcsadmin_github_options_menu uninstall'], GithubStatus.UNINSTALLING),
+        SimpleOption(1, menu_strings['wcsadmin_github_options_menu install'], GithubModuleStatus.INSTALLING),
+        SimpleOption(2, menu_strings['wcsadmin_github_options_menu update'], GithubModuleStatus.UPDATING),
+        SimpleOption(3, menu_strings['wcsadmin_github_options_menu uninstall'], GithubModuleStatus.UNINSTALLING),
         Text(menu_strings['wcsadmin_github_options_menu status 4']),
         Text(menu_strings['wcsadmin_github_options_menu last updated']),
         Text(menu_strings['wcsadmin_github_options_menu last modified']),
@@ -562,9 +564,9 @@ wcsadmin_github_items_options_menu.extend(
     [
         Text(menu_strings['wcsadmin_github_options_menu title']),
         Text(' '),
-        SimpleOption(1, menu_strings['wcsadmin_github_options_menu install'], GithubStatus.INSTALLING),
-        SimpleOption(2, menu_strings['wcsadmin_github_options_menu update'], GithubStatus.UPDATING),
-        SimpleOption(3, menu_strings['wcsadmin_github_options_menu uninstall'], GithubStatus.UNINSTALLING),
+        SimpleOption(1, menu_strings['wcsadmin_github_options_menu install'], GithubModuleStatus.INSTALLING),
+        SimpleOption(2, menu_strings['wcsadmin_github_options_menu update'], GithubModuleStatus.UPDATING),
+        SimpleOption(3, menu_strings['wcsadmin_github_options_menu uninstall'], GithubModuleStatus.UNINSTALLING),
         Text(menu_strings['wcsadmin_github_options_menu status 4']),
         Text(menu_strings['wcsadmin_github_options_menu last updated']),
         Text(menu_strings['wcsadmin_github_options_menu last modified']),
@@ -796,6 +798,18 @@ def on_github_new_version_installed():
     wcsadmin_github_info_menu._installing_cycle = None
     wcsadmin_github_info_menu[3] = SimpleOption(1, menu_strings['wcsadmin_github_info_menu check'])
     wcsadmin_github_info_menu[4] = Text(' ')
+
+
+@OnGithubNewVersionUpdating
+def on_github_new_version_updating(state, *data):
+    wcsadmin_github_info_menu[4] = Text(menu_strings[f'wcsadmin_github_info_menu updating {state}'])
+
+    if state == GithubStatus.EXTRACTING:
+        wcsadmin_github_info_menu[4].text.tokens['percentage'] = data[0]
+
+    for index in wcsadmin_github_info_menu._player_pages:
+        if wcsadmin_github_info_menu.is_active_menu(index):
+            wcsadmin_github_info_menu._refresh(index)
 
 
 @OnPlayerQuery
