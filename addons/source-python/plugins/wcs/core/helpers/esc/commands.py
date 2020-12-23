@@ -158,7 +158,7 @@ if (TRANSLATION_PATH / 'esc').isdir():
         shortname = name.rsplit('_', 1)[0]
 
         try:
-            _esc_strings[shortname] = LangStrings(TRANSLATION_PATH / 'esc' / shortname)
+            _esc_strings[shortname] = LangStrings(TRANSLATION_PATH / 'esc' / name)
         except:
             warn(f"Unable to load the translation file 'resource/source-python/translations/wcs/esc/{name}.ini' due to the following exception:")
             except_hooks.print_exception()
