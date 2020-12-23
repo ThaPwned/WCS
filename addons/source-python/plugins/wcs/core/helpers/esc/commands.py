@@ -52,6 +52,8 @@ from events.hooks import PreEvent
 #   Filters
 from filters.players import PlayerIter
 from filters.weapons import WeaponClassIter
+#   Hooks
+from hooks.exceptions import except_hooks
 #   Keyvalues
 from _keyvalues import KeyValues
 # NOTE: Have to prefix it with a _ otherwise it'd import KeyValues from ES Emulator if it's loaded
@@ -134,11 +136,17 @@ from ...players.entity import Player as WCSPlayer
 _aliases = {}
 
 if (TRANSLATION_PATH / 'strings.ini').isfile():
-    _strings = LangStrings(TRANSLATION_PATH / 'strings')
+    try:
+        _strings = LangStrings(TRANSLATION_PATH / 'strings')
+    except:
+        warn("Unable to load the translation file 'resource/source-python/translations/wcs/strings.ini' due to the following exception:")
+        except_hooks.print_exception()
 
-    for key in _strings:
-        for language, message in _strings[key].items():
-            _strings[key][language] = message.replace('#default', COLOR_DEFAULT).replace('#green', COLOR_GREEN).replace('#lightgreen', COLOR_LIGHTGREEN).replace('#darkgreen', COLOR_DARKGREEN)
+        _strings = None
+    else:
+        for key in _strings:
+            for language, message in _strings[key].items():
+                _strings[key][language] = message.replace('#default', COLOR_DEFAULT).replace('#green', COLOR_GREEN).replace('#lightgreen', COLOR_LIGHTGREEN).replace('#darkgreen', COLOR_DARKGREEN)
 else:
     _strings = None
 
@@ -149,11 +157,15 @@ if (TRANSLATION_PATH / 'esc').isdir():
     for name in [x.basename().rsplit('.', 1)[0] for x in (TRANSLATION_PATH / 'esc').listdir() if x.endswith('.ini') and not x.endswith('_server.ini')]:
         shortname = name.rsplit('_', 1)[0]
 
-        _esc_strings[shortname] = LangStrings(TRANSLATION_PATH / 'esc' / name)
-
-        for key in _esc_strings[shortname]:
-            for language, message in _esc_strings[shortname][key].items():
-                _esc_strings[shortname][key][language] = message.replace('#default', COLOR_DEFAULT).replace('#green', COLOR_GREEN).replace('#lightgreen', COLOR_LIGHTGREEN).replace('#darkgreen', COLOR_DARKGREEN)
+        try:
+            _esc_strings[shortname] = LangStrings(TRANSLATION_PATH / 'esc' / shortname)
+        except:
+            warn(f"Unable to load the translation file 'resource/source-python/translations/wcs/esc/{name}.ini' due to the following exception:")
+            except_hooks.print_exception()
+        else:
+            for key in _esc_strings[shortname]:
+                for language, message in _esc_strings[shortname][key].items():
+                    _esc_strings[shortname][key][language] = message.replace('#default', COLOR_DEFAULT).replace('#green', COLOR_GREEN).replace('#lightgreen', COLOR_LIGHTGREEN).replace('#darkgreen', COLOR_DARKGREEN)
 
 
 _restrictions = WeaponRestrictionHandler()
