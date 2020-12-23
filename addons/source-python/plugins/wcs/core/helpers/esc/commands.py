@@ -146,8 +146,10 @@ _esc_strings = {}
 _esc_strings_ids = {}
 
 if (TRANSLATION_PATH / 'esc').isdir():
-    for shortname in [x.basename().rsplit('.', 1)[0] for x in (TRANSLATION_PATH / 'esc').listdir() if x.endswith('.ini') and not x.endswith('_server.ini')]:
-        _esc_strings[shortname] = LangStrings(TRANSLATION_PATH / 'esc' / shortname)
+    for name in [x.basename().rsplit('.', 1)[0] for x in (TRANSLATION_PATH / 'esc').listdir() if x.endswith('.ini') and not x.endswith('_server.ini')]:
+        shortname = name.rsplit('_', 1)[0]
+
+        _esc_strings[shortname] = LangStrings(TRANSLATION_PATH / 'esc' / name)
 
         for key in _esc_strings[shortname]:
             for language, message in _esc_strings[shortname][key].items():
