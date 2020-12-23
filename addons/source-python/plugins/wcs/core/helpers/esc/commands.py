@@ -1539,7 +1539,7 @@ def wcs_getlanguage_command(command_info, var:ConVar, id_:str, language:str='en'
         else:
             _esc_strings_ids[identifier] = _esc_strings[module][id_]
 
-            var.set_int(identifier)
+            var.set_string(str(identifier))
 
 
 @TypedServerCommand('wcs_randplayer')
