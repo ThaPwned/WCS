@@ -121,7 +121,8 @@ class DatabaseVersion(IntEnum):
     INITIAL = 0
     UPDATE1 = 1
     UPDATE2 = 2
-    CURRENT = UPDATE2
+    UPDATE3 = 3
+    CURRENT = UPDATE3
 
 
 # ============================================================================
