@@ -507,14 +507,12 @@ class Player(object, metaclass=_PlayerMeta):
                 stats_races.append((race_name, stat, race.stats[stat], self.id))
 
             race.stats._not_added.clear()
-            race.stats._modified.clear()
 
         for item_name, item in self._items.items():
             for stat in item.stats._not_added:
                 stats_items.append((item_name, stat, item.stats[stat], self.id))
 
             item.stats._not_added.clear()
-            item.stats._modified.clear()
 
         for stat in self.stats._not_added:
             stats.append((stat, self.stats[stat], self.id))
