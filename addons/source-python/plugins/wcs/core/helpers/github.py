@@ -9,10 +9,7 @@ from collections import OrderedDict
 #   Disutils
 from distutils.dir_util import copy_tree
 #   Github
-try:
-    from github import Github
-except ImportError:
-    Github = None
+from github import Github
 #   IO
 from io import BytesIO
 #   JSON
@@ -26,9 +23,6 @@ from queue import Queue
 from tempfile import TemporaryDirectory
 #   Threading
 from threading import Thread
-#   Time
-from time import mktime
-from time import strptime
 #   Urllib
 from urllib.request import urlopen
 #   Warnings
@@ -39,6 +33,8 @@ from zipfile import ZipFile
 # Source.Python Imports
 #   Constants
 from paths import GAME_PATH
+#   Hooks
+from hooks.exceptions import except_hooks
 #   Listeners
 from listeners.tick import Repeat
 #   Players
@@ -93,7 +89,6 @@ __all__ = (
 filterwarnings('ignore', category=ResourceWarning, message='unclosed.*<ssl.SSLSocket.*>')
 
 _output = Queue()
-_ignore_thread_counter = (OnGithubNewVersionUpdating.manager.notify, )
 
 github_installing_failed_message = SayText2(chat_strings['github installing failed'])
 github_installing_success_message = SayText2(chat_strings['github installing success'])
@@ -124,22 +119,22 @@ class _GithubManager(dict):
 
     def _tick(self):
         if not _output.empty():
-            items = _output.get_nowait()
+            value = _output.get_nowait()
 
-            if isinstance(items, tuple):
-                if items[0] in _ignore_thread_counter:
-                    self._counter += 1
+            decrease = value[0]
+            listener = value[1]
 
-            self._counter -= 1
+            if listener is not None:
+                try:
+                    listener(*value[2:])
+                except:
+                    except_hooks.print_exception()
 
-            if not self._counter:
-                self._repeat.stop()
+            if decrease:
+                self._counter -= 1
 
-            if items is not None:
-                if isinstance(items, tuple):
-                    items[0](*items[1:])
-                else:
-                    items()
+                if not self._counter:
+                    self._repeat.stop()
 
             for thread in self._threads.copy():
                 if not thread.is_alive():
@@ -156,10 +151,10 @@ class _GithubManager(dict):
 
     def _check_new_version(self):
         try:
-            _github = self._connect()
+            github = self._connect()
 
-            _repo = _github.get_repo(f'{info.author.replace(" ", "")}/WCS')
-            info_file = _repo.get_contents('addons/source-python/plugins/wcs/info.ini')
+            repo = github.get_repo(f'{info.author.replace(" ", "")}/WCS')
+            info_file = repo.get_contents('addons/source-python/plugins/wcs/info.ini')
 
             for line in info_file.decoded_content.decode('utf8').split('\n'):
                 if line.startswith('version'):
@@ -186,7 +181,7 @@ class _GithubManager(dict):
                     current_version = None
 
                 sha = None
-                commits = _repo.get_commits(path='addons/source-python/plugins/wcs/info.ini')
+                commits = repo.get_commits(path='addons/source-python/plugins/wcs/info.ini')
 
                 if current_version is None:
                     sha = list(commits)[-1].sha
@@ -210,8 +205,8 @@ class _GithubManager(dict):
 
                 valid_version = current_version is not None
 
-            commit = _repo.get_commit(sha)
-            response = _repo.get_commits(since=commit.commit.committer.date)
+            commit = repo.get_commit(sha)
+            response = repo.get_commits(since=commit.commit.committer.date)
 
             if response.totalCount > 1:
                 commits = []
@@ -219,20 +214,20 @@ class _GithubManager(dict):
                 for response in (list(response)[:-1] if valid_version else list(response)):
                     commits.append({'date':response.commit.author.date, 'author':response.commit.author.name, 'messages':response.commit.message})
 
-                _output.put((OnGithubNewVersionChecked.manager.notify, new_version, commits))
+                _output.put((True, OnGithubNewVersionChecked.manager.notify, new_version, commits))
             else:
-                _output.put((OnGithubNewVersionChecked.manager.notify, None, []))
+                _output.put((True, OnGithubNewVersionChecked.manager.notify, None, []))
         except:
-            _output.put(None)
+            _output.put((True, None))
             raise
 
     def _install_new_version(self):
         try:
-            _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.PREPARING))
+            _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.PREPARING))
 
-            _github = self._connect()
+            github = self._connect()
 
-            _repo = _github.get_repo(f'{info.author.replace(" ", "")}/WCS')
+            repo = github.get_repo(f'{info.author.replace(" ", "")}/WCS')
 
             if (DATA_PATH / 'update_blacklist.txt').isfile():
                 with open(DATA_PATH / 'update_blacklist.txt') as inputfile:
@@ -240,13 +235,13 @@ class _GithubManager(dict):
             else:
                 blacklist = []
 
-            _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.CONNECTING))
+            _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.CONNECTING))
 
-            with urlopen(_repo.get_archive_link('zipball', 'master')) as response:
-                _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.DOWNLOADING))
+            with urlopen(repo.get_archive_link('zipball', 'master')) as response:
+                _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.DOWNLOADING))
 
                 with ZipFile(BytesIO(response.read()), 'r') as ref:
-                    _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.UNZIPPING))
+                    _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.UNZIPPING))
 
                     files = ref.namelist()
                     unique_name = files[0]
@@ -255,12 +250,12 @@ class _GithubManager(dict):
 
                     files_count = len(files)
 
-                    _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.EXTRACTING, 0))
+                    _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.EXTRACTING, 0))
 
                     with TemporaryDirectory() as tmpdir:
                         for i, member in enumerate(files, 1):
                             if i % 25 == 0:
-                                _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.EXTRACTING, round(i / files_count * 100, 1)))
+                                _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.EXTRACTING, round(i / files_count * 100, 1)))
 
                             name = member.replace(unique_name, '')
 
@@ -269,35 +264,35 @@ class _GithubManager(dict):
 
                             ref.extract(member, path=tmpdir)
 
-                        _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.COPYING))
+                        _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.COPYING))
 
                         copy_tree(Path(tmpdir) / unique_name, GAME_PATH)
 
-            _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.FINISHING))
+            _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.FINISHING))
 
-            commits = _repo.get_commits()
+            commits = repo.get_commits()
             sha = commits[0].sha
 
             with open(DATA_PATH / 'metadata.wcs_install', 'w') as outputfile:
                 outputfile.write(sha)
 
-            _output.put(OnGithubNewVersionInstalled.manager.notify)
+            _output.put((True, OnGithubNewVersionInstalled.manager.notify))
         except:
-            _output.put(None)
+            _output.put((True, None))
             raise
 
     def _refresh_modules(self):
         try:
-            _github = self._connect()
+            github = self._connect()
 
             for repository in GITHUB_REPOSITORIES:
-                _repo = _github.get_repo(repository)
-                modules = _repo.get_contents('')
+                repo = github.get_repo(repository)
+                modules = repo.get_contents('')
 
                 modules_left = {}
 
                 for module in [x.name for x in modules if x.name in self]:
-                    contents = _repo.get_contents(module)
+                    contents = repo.get_contents(module)
                     path = MODULE_PATH / module
                     modules_left[module] = []
 
@@ -322,7 +317,7 @@ class _GithubManager(dict):
 
                             self[module][content.name] = {'status':status, 'last_updated':last_updated, 'repository':repository_installed, 'repositories':{repository:{}}}
 
-                commits = _repo.get_commits()
+                commits = repo.get_commits()
 
                 for commit in commits:
                     last_modified = commit.commit.committer.date.timestamp()
@@ -344,17 +339,17 @@ class _GithubManager(dict):
                     if not modules_left:
                         break
 
-            _output.put((OnGithubModulesRefreshed.manager.notify, self['races'], self['items']))
+            _output.put((True, OnGithubModulesRefreshed.manager.notify, self['races'], self['items']))
         except:
-            _output.put(None)
+            _output.put((True, None))
             raise
 
     def _install_module(self, repository, module, name, userid):
         try:
-            _github = self._connect()
-            _repo = _github.get_repo(repository)
+            github = self._connect()
+            repo = github.get_repo(repository)
 
-            self._download_module(_repo, f'{module}/{name}')
+            self._download_module(repo, f'{module}/{name}')
 
             _path = MODULE_PATH / module / name / '.wcs_install'
 
@@ -365,15 +360,15 @@ class _GithubManager(dict):
             self[module][name]['last_updated'] = _path.mtime
             self[module][name]['repository'] = repository
 
-            _output.put((OnGithubModuleInstalled.manager.notify, repository, module, name, userid))
+            _output.put((True, OnGithubModuleInstalled.manager.notify, repository, module, name, userid))
         except:
-            _output.put((OnGithubModuleFailed.manager.notify, repository, module, name, userid, GithubModuleStatus.INSTALLING))
+            _output.put((True, OnGithubModuleFailed.manager.notify, repository, module, name, userid, GithubModuleStatus.INSTALLING))
             raise
 
     def _update_module(self, repository, module, name, userid):
         try:
-            _github = self._connect()
-            _repo = _github.get_repo(repository)
+            github = self._connect()
+            repo = github.get_repo(repository)
 
             path = MODULE_PATH / module / name
             config_path = path / 'config.json'
@@ -382,7 +377,7 @@ class _GithubManager(dict):
             if config_path.isfile():
                 config_path.rename(config_tmp_path)
 
-            self._download_module(_repo, f'{module}/{name}')
+            self._download_module(repo, f'{module}/{name}')
 
             if config_tmp_path.isfile():
                 with open(config_tmp_path) as inputfile:
@@ -423,9 +418,9 @@ class _GithubManager(dict):
             self[module][name]['status'] = GithubModuleStatus.INSTALLED
             self[module][name]['last_updated'] = _path.mtime
 
-            _output.put((OnGithubModuleUpdated.manager.notify, repository, module, name, userid))
+            _output.put((True, OnGithubModuleUpdated.manager.notify, repository, module, name, userid))
         except:
-            _output.put((OnGithubModuleFailed.manager.notify, repository, module, name, userid, GithubModuleStatus.UPDATING))
+            _output.put((True, OnGithubModuleFailed.manager.notify, repository, module, name, userid, GithubModuleStatus.UPDATING))
             raise
 
     def _uninstall_module(self, repository, module, name, userid):
@@ -439,13 +434,13 @@ class _GithubManager(dict):
             self[module][name]['last_updated'] = None
             self[module][name]['repository'] = None
 
-            _output.put((OnGithubModuleUninstalled.manager.notify, repository, module, name, userid))
+            _output.put((True, OnGithubModuleUninstalled.manager.notify, repository, module, name, userid))
         except:
-            _output.put((OnGithubModuleFailed.manager.notify, repository, module, name, userid, GithubModuleStatus.UNINSTALLING))
+            _output.put((True, OnGithubModuleFailed.manager.notify, repository, module, name, userid, GithubModuleStatus.UNINSTALLING))
             raise
 
-    def _download_module(self, repository, from_path):
-        contents = repository.get_contents(from_path)
+    def _download_module(self, repo, from_path):
+        contents = repo.get_contents(from_path)
         name = from_path.split('/')[1]
 
         for content in contents:
@@ -458,173 +453,103 @@ class _GithubManager(dict):
                 if not path.isdir():
                     path.makedirs()
 
-                self._download_module(repository, content.path)
+                self._download_module(repo, content.path)
             else:
                 if not path.parent.isdir():
                     path.parent.makedirs()
 
                 with open(path, 'wb') as outputfile:
-                    outputfile.write(repository.get_contents(content.path).decoded_content)
+                    outputfile.write(repo.get_contents(content.path).decoded_content)
 
     def _refresh_commits(self):
         try:
-            _github = self._connect()
-            _repo = _github.get_repo(f'{info.author.replace(" ", "")}/WCS')
+            github = self._connect()
+            repo = github.get_repo(f'{info.author.replace(" ", "")}/WCS')
 
             commits = []
 
-            for response in _repo.get_commits():
+            for response in repo.get_commits():
                 commits.append({'date':response.commit.author.date, 'author':response.commit.author.name, 'messages':response.commit.message})
 
-            _output.put((OnGithubCommitsRefreshed.manager.notify, commits))
+            _output.put((True, OnGithubCommitsRefreshed.manager.notify, commits))
         except:
-            _output.put(None)
+            _output.put((True, None))
             raise
 
-    if Github is None:
-        def stop(self):
-            pass
+    def _start_thread(self, target, name, args=None):
+        if not self._counter:
+            self._repeat.start(0.1)
 
-        def check_new_version(self):
-            pass
+        self._counter += 1
 
-        def install_new_version(self):
-            pass
+        thread = Thread(target=target, name=name, args=args or ())
+        thread.start()
 
-        def refresh_modules(self):
-            pass
+        self._threads.append(thread)
 
-        def install_module(self, repository, module, name, userid=None):
-            pass
+    def stop(self):
+        for thread in self._threads:
+            if thread.is_alive():
+                thread.join()
 
-        def update_module(self, repository, module, name, userid=None):
-            pass
+        self._repeat.stop()
 
-        def uninstall_module(self, repository, module, name, userid=None):
-            pass
+    def check_new_version(self):
+        if self._checking_new_version:
+            return
 
-        def refresh_commits(self):
-            pass
-    else:
-        def stop(self):
-            for thread in self._threads:
-                if thread.is_alive():
-                    thread.join()
+        self._checking_new_version = True
 
-            self._repeat.stop()
+        self._start_thread(self._check_new_version, 'wcs.checking')
 
-        def check_new_version(self):
-            if self._checking_new_version:
-                return
+    def install_new_version(self):
+        if self._installing_new_version:
+            return
 
-            self._checking_new_version = True
+        self._installing_new_version = True
 
-            if not self._counter:
-                self._repeat.start(0.1)
+        self._start_thread(self._install_new_version, 'wcs.installing')
 
-            self._counter += 1
+    def refresh_modules(self):
+        if self._refreshing_modules:
+            return
 
-            thread = Thread(target=self._check_new_version, name='wcs.checking')
-            thread.start()
+        self._refreshing_modules = True
 
-            self._threads.append(thread)
+        OnGithubModulesRefresh.manager.notify()
 
-        def install_new_version(self):
-            if self._installing_new_version:
-                return
+        self._start_thread(self._refresh_modules, 'wcs.refresh.modules')
 
-            self._installing_new_version = True
+    def install_module(self, repository, module, name, userid=None):
+        assert self[module][name]['status'] is GithubModuleStatus.UNINSTALLED
 
-            if not self._counter:
-                self._repeat.start(0.1)
+        self[module][name]['status'] = GithubModuleStatus.INSTALLING
 
-            self._counter += 1
+        self._start_thread(self._install_module, f'wcs.install.{module}.{name}', (repository, module, name, userid))
 
-            thread = Thread(target=self._install_new_version, name='wcs.installing')
-            thread.start()
+    def update_module(self, module, name, userid=None):
+        assert self[module][name]['status'] is GithubModuleStatus.INSTALLED
 
-            self._threads.append(thread)
+        self[module][name]['status'] = GithubModuleStatus.UPDATING
 
-        def refresh_modules(self):
-            if self._refreshing_modules:
-                return
+        self._start_thread(self._install_module, f'wcs.update.{module}.{name}', (self[module][name]['repository'], module, name, userid))
 
-            self._refreshing_modules = True
+    def uninstall_module(self, module, name, userid=None):
+        assert self[module][name]['status'] is GithubModuleStatus.INSTALLED
 
-            if not self._counter:
-                self._repeat.start(0.1)
+        self[module][name]['status'] = GithubModuleStatus.UNINSTALLING
 
-            self._counter += 1
+        self._start_thread(self._install_module, f'wcs.uninstall.{module}.{name}', (self[module][name]['repository'], module, name, userid))
 
-            OnGithubModulesRefresh.manager.notify()
+    def refresh_commits(self):
+        if self._refreshing_commits:
+            return
 
-            thread = Thread(target=self._refresh_modules, name='wcs.refresh.modules')
-            thread.start()
+        self._refreshing_commits = True
 
-            self._threads.append(thread)
+        OnGithubCommitsRefresh.manager.notify()
 
-        def install_module(self, repository, module, name, userid=None):
-            assert self[module][name]['status'] is GithubModuleStatus.UNINSTALLED
-
-            if not self._counter:
-                self._repeat.start(0.1)
-
-            self._counter += 1
-
-            self[module][name]['status'] = GithubModuleStatus.INSTALLING
-
-            thread = Thread(target=self._install_module, name=f'wcs.install.{module}.{name}', args=(repository, module, name, userid))
-            thread.start()
-
-            self._threads.append(thread)
-
-        def update_module(self, module, name, userid=None):
-            assert self[module][name]['status'] is GithubModuleStatus.INSTALLED
-
-            if not self._counter:
-                self._repeat.start(0.1)
-
-            self._counter += 1
-
-            self[module][name]['status'] = GithubModuleStatus.UPDATING
-
-            thread = Thread(target=self._update_module, name=f'wcs.update.{module}.{name}', args=(self[module][name]['repository'], module, name, userid))
-            thread.start()
-
-            self._threads.append(thread)
-
-        def uninstall_module(self, module, name, userid=None):
-            assert self[module][name]['status'] is GithubModuleStatus.INSTALLED
-
-            if not self._counter:
-                self._repeat.start(0.1)
-
-            self._counter += 1
-
-            self[module][name]['status'] = GithubModuleStatus.UNINSTALLING
-
-            thread = Thread(target=self._uninstall_module, name=f'wcs.uninstall.{module}.{name}', args=(self[module][name]['repository'], module, name, userid))
-            thread.start()
-
-            self._threads.append(thread)
-
-        def refresh_commits(self):
-            if self._refreshing_commits:
-                return
-
-            self._refreshing_commits = True
-
-            if not self._counter:
-                self._repeat.start(0.1)
-
-            self._counter += 1
-
-            OnGithubCommitsRefresh.manager.notify()
-
-            thread = Thread(target=self._refresh_commits, name='wcs.refresh.commits')
-            thread.start()
-
-            self._threads.append(thread)
+        self._start_thread(self._install_module, 'wcs.refresh.commits')
 github_manager = _GithubManager()
 
 
