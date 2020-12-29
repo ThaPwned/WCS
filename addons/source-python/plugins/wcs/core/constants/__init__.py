@@ -37,6 +37,7 @@ __all__ = (
     'IS_ESC_SUPPORT_ENABLED',
     'TIME_FORMAT',
     'GithubStatus',
+    'GithubModuleStatus',
     'ItemReason',
     'NodeType',
     'SkillReason',
@@ -91,6 +92,16 @@ class RaceReason(IntEnum):
 
 
 class GithubStatus(IntEnum):
+    PREPARING = 0
+    CONNECTING = 1
+    DOWNLOADING = 2
+    UNZIPPING = 3
+    EXTRACTING = 4
+    COPYING = 5
+    FINISHING = 6
+
+
+class GithubModuleStatus(IntEnum):
     INSTALLED = 0
     INSTALLING = 1
     UPDATING = 2
@@ -111,7 +122,8 @@ class DatabaseVersion(IntEnum):
     INITIAL = 0
     UPDATE1 = 1
     UPDATE2 = 2
-    CURRENT = UPDATE2
+    UPDATE3 = 3
+    CURRENT = UPDATE3
 
 
 # ============================================================================

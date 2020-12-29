@@ -218,7 +218,7 @@ class _WardManager(AutoUnload, list):
 
                     ward.duration -= 1
 
-                    if not ward.duration:
+                    if ward.duration <= 0:
                         try:
                             ward.on_disappear()
                         except:

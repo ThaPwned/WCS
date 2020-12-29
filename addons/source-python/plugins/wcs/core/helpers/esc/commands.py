@@ -52,6 +52,8 @@ from events.hooks import PreEvent
 #   Filters
 from filters.players import PlayerIter
 from filters.weapons import WeaponClassIter
+#   Hooks
+from hooks.exceptions import except_hooks
 #   Keyvalues
 from _keyvalues import KeyValues
 # NOTE: Have to prefix it with a _ otherwise it'd import KeyValues from ES Emulator if it's loaded
@@ -134,16 +136,41 @@ from ...players.entity import Player as WCSPlayer
 _aliases = {}
 
 if (TRANSLATION_PATH / 'strings.ini').isfile():
-    _strings = LangStrings(TRANSLATION_PATH / 'strings')
+    try:
+        _strings = LangStrings(TRANSLATION_PATH / 'strings')
+    except:
+        warn("Unable to load the translation file 'resource/source-python/translations/wcs/strings.ini' due to the following exception:")
+        except_hooks.print_exception()
 
-    for key in _strings:
-        for language, message in _strings[key].items():
-            _strings[key][language] = message.replace('#default', COLOR_DEFAULT).replace('#green', COLOR_GREEN).replace('#lightgreen', COLOR_LIGHTGREEN).replace('#darkgreen', COLOR_DARKGREEN)
+        _strings = None
+    else:
+        for key in _strings:
+            for language, message in _strings[key].items():
+                _strings[key][language] = message.replace('#default', COLOR_DEFAULT).replace('#green', COLOR_GREEN).replace('#lightgreen', COLOR_LIGHTGREEN).replace('#darkgreen', COLOR_DARKGREEN)
 else:
     _strings = None
 
+_esc_strings = {}
+_esc_strings_ids = {}
+
+if (TRANSLATION_PATH / 'esc').isdir():
+    for name in [x.basename().rsplit('.', 1)[0] for x in (TRANSLATION_PATH / 'esc').listdir() if x.endswith('.ini') and not x.endswith('_server.ini')]:
+        shortname = name.rsplit('_', 1)[0]
+
+        try:
+            _esc_strings[shortname] = LangStrings(TRANSLATION_PATH / 'esc' / name)
+        except:
+            warn(f"Unable to load the translation file 'resource/source-python/translations/wcs/esc/{name}.ini' due to the following exception:")
+            except_hooks.print_exception()
+        else:
+            for key in _esc_strings[shortname]:
+                for language, message in _esc_strings[shortname][key].items():
+                    _esc_strings[shortname][key][language] = message.replace('#default', COLOR_DEFAULT).replace('#green', COLOR_GREEN).replace('#lightgreen', COLOR_LIGHTGREEN).replace('#darkgreen', COLOR_DARKGREEN)
+
+
 _restrictions = WeaponRestrictionHandler()
-_all_weapons = set([x.basename for x in WeaponClassIter('all', ['melee', 'objective'])])
+_all_weapons = set([x.basename for x in WeaponClassIter('all', 'objective')])
+_all_weapons_but_knife = set([x.basename for x in WeaponClassIter('all', ['melee', 'objective'])])
 
 if (CFG_PATH / 'es_WCSlanguage_db.txt').isfile():
     _languages = KeyValues.load_from_file(CFG_PATH / 'es_WCSlanguage_db.txt').as_dict()
@@ -249,12 +276,7 @@ def validate_userid_after_delay(callback, userid, operator, value, delay, valida
 
 
 def _format_message(userid, name, args):
-    if _strings is None:
-        return tuple(), None
-
-    text = _strings.get(name)
-
-    if text is None:
+    if _strings is None and _esc_strings is None:
         return tuple(), None
 
     if userid.isdigit():
@@ -264,6 +286,14 @@ def _format_message(userid, name, args):
             return tuple(), None
     else:
         players = convert_identifier_to_players(userid)
+
+    if name.isdigit():
+        text = _esc_strings_ids.get(int(name))
+    else:
+        text = None if _strings is None else _strings.get(name)
+
+    if text is None:
+        return tuple(), None
 
     if args:
         tokens = {}
@@ -1472,13 +1502,13 @@ def wcs_restrict_command(command_info, player:convert_userid_to_player, weapons:
         return
 
     if weapons[0] == 'all':
-        _restrictions.add_player_restrictions(player, *_all_weapons)
+        _restrictions.add_player_restrictions(player, *_all_weapons_but_knife)
         return
 
     if 'only' in weapons:
         weapons.remove('only')
 
-        weapons = _all_weapons.difference(weapons)
+        weapons = _all_weapons_but_knife.difference(weapons)
 
         _restrictions.player_restrictions[player.userid].clear()
 
@@ -1498,8 +1528,18 @@ def wcs_unrestrict_command(command_info, player:convert_userid_to_player, weapon
 
 
 @TypedServerCommand('wcs_getlanguage')
-def wcs_getlanguage_command(command_info, var:ConVar, id_:str, language:str='en'):
-    var.set_string(_languages.get(language, {}).get(id_, 'n/a'))
+def wcs_getlanguage_command(command_info, var:ConVar, id_:str, language:str='en', module:str=None):
+    if module is None:
+        var.set_string(_languages.get(language, {}).get(id_, 'n/a'))
+    else:
+        try:
+            identifier = id(_esc_strings[module][id_])
+        except KeyError:
+            var.set_int(0)
+        else:
+            _esc_strings_ids[identifier] = _esc_strings[module][id_]
+
+            var.set_string(str(identifier))
 
 
 @TypedServerCommand('wcs_randplayer')
@@ -2010,7 +2050,7 @@ def wcs_regeneration_command(command_info, player:convert_userid_to_player, valu
 
 
 @TypedServerCommand('wcs_warden')
-def wcs_warden_command(command_info, wcsplayer:convert_userid_to_wcsplayer, duration:int, damage:int, radius:float, team_target:int, team_target_name:deprecated, x:float, y:float, z:float, round:deprecated):
+def wcs_warden_command(command_info, wcsplayer:convert_userid_to_wcsplayer, duration:float, damage:int, radius:float, team_target:int, team_target_name:deprecated, x:float, y:float, z:float, round:deprecated):
     if wcsplayer is None:
         return
 
@@ -2232,3 +2272,9 @@ def on_take_damage_alive(wcsvictim, wcsattacker, info):
 
                 if reduced_damage > 0:
                     info.damage = info.damage * (1 - reduced_damage)
+
+    if info.type & DamageTypes.FALL:
+        fall_damage = wcsvictim.data.get('falldamage')
+
+        if fall_damage is not None and fall_damage != 1:
+            info.damage *= fall_damage

@@ -26,6 +26,7 @@ __all__ = (
     'OnGithubModulesRefreshed',
     'OnGithubNewVersionChecked',
     'OnGithubNewVersionInstalled',
+    'OnGithubNewVersionUpdating',
     'OnIsItemUsable',
     'OnIsItemUsableText',
     'OnIsRaceUsable',
@@ -101,6 +102,10 @@ class OnGithubNewVersionChecked(ListenerManagerDecorator):
 
 
 class OnGithubNewVersionInstalled(ListenerManagerDecorator):
+    manager = ListenerManager()
+
+
+class OnGithubNewVersionUpdating(ListenerManagerDecorator):
     manager = ListenerManager()
 
 

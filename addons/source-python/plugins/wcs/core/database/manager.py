@@ -126,6 +126,11 @@ def _query_settings(result):
             for statement in [x for x in statements if x.startswith(f'database upgrade {DatabaseVersion.UPDATE2.value}.')]:
                 database_manager.execute(statement)
 
+        # Create table 'stats' for custom player data
+        if version < DatabaseVersion.UPDATE3:
+            for statement in [x for x in statements if x.startswith(f'database upgrade {DatabaseVersion.UPDATE3.value}.')]:
+                database_manager.execute(statement)
+
         database_manager.execute('setting update', arguments=(str(DatabaseVersion.CURRENT.value), ), format_args=('version', ))
         settings['version'] = DatabaseVersion.CURRENT
 

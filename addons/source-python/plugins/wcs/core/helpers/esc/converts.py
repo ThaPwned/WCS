@@ -45,6 +45,13 @@ def valid_userid_and_team(userid):
     return new_userid
 
 
+def convert_userid_to_index(userid):
+    try:
+        return index_from_userid(int(userid))
+    except ValueError:
+        return None
+
+
 def convert_userid_to_player(userid):
     userid = valid_userid(userid)
 

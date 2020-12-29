@@ -25,7 +25,7 @@ from players.helpers import userid_from_index
 from ..config import cfg_changerace_next_round
 from ..config import cfg_resetskills_next_round
 #   Constants
-from ..constants import GithubStatus
+from ..constants import GithubModuleStatus
 from ..constants import ItemReason
 from ..constants import RaceReason
 from ..constants.paths import CFG_PATH
@@ -777,19 +777,19 @@ def wcsadmin_github_races_menu_select(menu, client, option):
 def wcsadmin_github_races_options_menu_select(menu, client, option):
     wcsplayer = Player(client)
 
-    if isinstance(option.value, GithubStatus):
+    if isinstance(option.value, GithubModuleStatus):
         wcsplayer.data['_internal_wcsadmin_github_cycle'] = 0
 
         name = wcsplayer.data['_internal_wcsadmin_github_name']
 
-        if option.value is GithubStatus.INSTALLING:
+        if option.value is GithubModuleStatus.INSTALLING:
             if len(github_manager['races'][name]['repositories']) > 1:
                 return wcsadmin_github_races_repository_menu
             else:
                 github_installing_message.send(client, name=name)
 
                 github_manager.install_module(list(github_manager['races'][name]['repositories'])[0], 'races', name, userid_from_index(client))
-        elif option.value is GithubStatus.UPDATING:
+        elif option.value is GithubModuleStatus.UPDATING:
             github_updating_message.send(client, name=name)
 
             github_manager.update_module('races', name, userid_from_index(client))
@@ -828,19 +828,19 @@ def wcsadmin_github_items_menu_select(menu, client, option):
 def wcsadmin_github_items_options_menu_select(menu, client, option):
     wcsplayer = Player(client)
 
-    if isinstance(option.value, GithubStatus):
+    if isinstance(option.value, GithubModuleStatus):
         wcsplayer.data['_internal_wcsadmin_github_cycle'] = 0
 
         name = wcsplayer.data['_internal_wcsadmin_github_name']
 
-        if option.value is GithubStatus.INSTALLING:
+        if option.value is GithubModuleStatus.INSTALLING:
             if len(github_manager['items'][name]['repositories']) > 1:
                 return wcsadmin_github_items_repository_menu
             else:
                 github_installing_message.send(client, name=name)
 
                 github_manager.install_module(list(github_manager['items'][name]['repositories'])[0], 'items', name, userid_from_index(client))
-        elif option.value is GithubStatus.UPDATING:
+        elif option.value is GithubModuleStatus.UPDATING:
             github_updating_message.send(client, name=name)
 
             github_manager.update_module('items', name, userid_from_index(client))
