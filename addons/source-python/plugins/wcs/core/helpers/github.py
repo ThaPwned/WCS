@@ -23,6 +23,8 @@ from queue import Queue
 from tempfile import TemporaryDirectory
 #   Threading
 from threading import Thread
+#   Time
+from time import time
 #   Urllib
 from urllib.request import urlopen
 #   Warnings
@@ -243,35 +245,67 @@ class _GithubManager(dict):
             _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.CONNECTING))
 
             with urlopen(repo.get_archive_link('zipball', 'master')) as response:
-                _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.DOWNLOADING))
+                size = response.headers['Content-Length'] or None
 
-                with ZipFile(BytesIO(response.read()), 'r') as ref:
-                    _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.UNZIPPING))
+                if size is not None:
+                    size = int(size)
 
-                    files = ref.namelist()
-                    unique_name = files[0]
+                _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.DOWNLOADING, 0, size))
 
-                    files.remove(unique_name)
+                with BytesIO() as data:
+                    length = 0
+                    next_update = time()
 
-                    files_count = len(files)
+                    while True:
+                        chunk = response.read(2 ** 16)
 
-                    _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.EXTRACTING, 0))
+                        if not chunk:
+                            break
 
-                    with TemporaryDirectory() as tmpdir:
-                        for i, member in enumerate(files, 1):
-                            if i % 25 == 0:
-                                _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.EXTRACTING, round(i / files_count * 100, 1)))
+                        length += len(chunk)
 
-                            name = member.replace(unique_name, '')
+                        data.write(chunk)
 
-                            if name in blacklist:
-                                continue
+                        now = time()
 
-                            ref.extract(member, path=tmpdir)
+                        if now >= next_update:
+                            _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.DOWNLOADING, length, size))
 
-                        _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.COPYING))
+                            next_update = now + 0.125
 
-                        copy_tree(Path(tmpdir) / unique_name, GAME_PATH)
+                    with ZipFile(data, 'r') as ref:
+                        _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.UNZIPPING))
+
+                        files = ref.namelist()
+                        unique_name = files[0]
+
+                        files.remove(unique_name)
+
+                        files_count = len(files)
+
+                        _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.EXTRACTING, 0, files_count))
+
+                        with TemporaryDirectory() as tmpdir:
+                            next_update = time()
+
+                            for i, member in enumerate(files, 1):
+                                now = time()
+
+                                if now >= next_update:
+                                    _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.EXTRACTING, i, files_count))
+
+                                    next_update = now + 0.125
+
+                                name = member.replace(unique_name, '')
+
+                                if name in blacklist:
+                                    continue
+
+                                ref.extract(member, path=tmpdir)
+
+                            _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.COPYING))
+
+                            copy_tree(Path(tmpdir) / unique_name, GAME_PATH)
 
             _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.FINISHING))
 

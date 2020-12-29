@@ -804,8 +804,10 @@ def on_github_new_version_installed():
 def on_github_new_version_updating(state, *data):
     wcsadmin_github_info_menu[4] = Text(menu_strings[f'wcsadmin_github_info_menu updating {state}'])
 
-    if state == GithubStatus.EXTRACTING:
-        wcsadmin_github_info_menu[4].text.tokens['percentage'] = data[0]
+    if state == GithubStatus.DOWNLOADING:
+        wcsadmin_github_info_menu[4].text.tokens['progress'] = f'{round(data[0] / 1024)}KiB' if data[1] is None else f'{round(data[0] / data[1] * 100, 1)}%'
+    elif state == GithubStatus.EXTRACTING:
+        wcsadmin_github_info_menu[4].text.tokens['progress'] = f'{round(data[0] / data[1] * 100, 1)}%'
 
     for index in wcsadmin_github_info_menu._player_pages:
         if wcsadmin_github_info_menu.is_active_menu(index):
