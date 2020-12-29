@@ -152,16 +152,7 @@ class _GithubManager(dict):
     def _check_new_version(self):
         try:
             github = self._connect()
-
             repo = github.get_repo(f'{info.author.replace(" ", "")}/WCS')
-            info_file = repo.get_contents('addons/source-python/plugins/wcs/info.ini')
-
-            for line in info_file.decoded_content.decode('utf8').split('\n'):
-                if line.startswith('version'):
-                    new_version = line.split()[2].strip()[1:-1]
-                    break
-            else:
-                raise ValueError("Unable to locate 'version'.")
 
             if (DATA_PATH / 'metadata.wcs_install').isfile():
                 valid_version = True
@@ -214,6 +205,21 @@ class _GithubManager(dict):
                 for response in (list(response)[:-1] if valid_version else list(response)):
                     commits.append({'date':response.commit.author.date, 'author':response.commit.author.name, 'messages':response.commit.message})
 
+                # Just in case something goes wrong when retrieving the version
+                try:
+                    info_file = repo.get_contents('addons/source-python/plugins/wcs/info.ini')
+
+                    for line in info_file.decoded_content.decode('utf8').split('\n'):
+                        if line.startswith('version'):
+                            new_version = line.split()[2].strip()[1:-1]
+                            break
+                    else:
+                        raise ValueError("Unable to locate 'version'.")
+                except:
+                    except_hooks.print_exception()
+
+                    new_version = f'Unknown (SHA: {sha})'
+
                 _output.put((True, OnGithubNewVersionChecked.manager.notify, new_version, commits))
             else:
                 _output.put((True, OnGithubNewVersionChecked.manager.notify, None, []))
@@ -226,7 +232,6 @@ class _GithubManager(dict):
             _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.PREPARING))
 
             github = self._connect()
-
             repo = github.get_repo(f'{info.author.replace(" ", "")}/WCS')
 
             if (DATA_PATH / 'update_blacklist.txt').isfile():
