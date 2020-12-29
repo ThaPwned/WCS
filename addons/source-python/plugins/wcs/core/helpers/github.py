@@ -537,14 +537,14 @@ class _GithubManager(dict):
 
         self[module][name]['status'] = GithubModuleStatus.UPDATING
 
-        self._start_thread(self._install_module, f'wcs.update.{module}.{name}', (self[module][name]['repository'], module, name, userid))
+        self._start_thread(self._update_module, f'wcs.update.{module}.{name}', (self[module][name]['repository'], module, name, userid))
 
     def uninstall_module(self, module, name, userid=None):
         assert self[module][name]['status'] is GithubModuleStatus.INSTALLED
 
         self[module][name]['status'] = GithubModuleStatus.UNINSTALLING
 
-        self._start_thread(self._install_module, f'wcs.uninstall.{module}.{name}', (self[module][name]['repository'], module, name, userid))
+        self._start_thread(self._uninstall_module, f'wcs.uninstall.{module}.{name}', (self[module][name]['repository'], module, name, userid))
 
     def refresh_commits(self):
         if self._refreshing_commits:
@@ -554,7 +554,7 @@ class _GithubManager(dict):
 
         OnGithubCommitsRefresh.manager.notify()
 
-        self._start_thread(self._install_module, 'wcs.refresh.commits')
+        self._start_thread(self._refresh_commits, 'wcs.refresh.commits')
 github_manager = _GithubManager()
 
 
