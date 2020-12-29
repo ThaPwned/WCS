@@ -97,7 +97,8 @@ class GithubStatus(IntEnum):
     DOWNLOADING = 2
     UNZIPPING = 3
     EXTRACTING = 4
-    FINISHING = 5
+    COPYING = 5
+    FINISHING = 6
 
 
 class GithubModuleStatus(IntEnum):

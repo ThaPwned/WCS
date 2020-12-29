@@ -269,7 +269,7 @@ class _GithubManager(dict):
 
                             ref.extract(member, path=tmpdir)
 
-                        _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.EXTRACTING, 100))
+                        _output.put((OnGithubNewVersionUpdating.manager.notify, GithubStatus.COPYING))
 
                         copy_tree(Path(tmpdir) / unique_name, GAME_PATH)
 
