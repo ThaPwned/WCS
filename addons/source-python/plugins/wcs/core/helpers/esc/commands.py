@@ -267,6 +267,14 @@ elif GAME_NAME == 'csgo':
 
 
 # ============================================================================
+# >> CLASSES
+# ============================================================================
+class Dict(dict):
+    def __missing__(self, key):
+        return '{' + key + '}'
+
+
+# ============================================================================
 # >> HELPER FUNCTIONS
 # ============================================================================
 def validate_userid_after_delay(callback, userid, operator, value, delay, validator=convert_userid_to_player):
@@ -302,7 +310,7 @@ def _format_message(userid, name, args):
             tokens[args[i]] = args[i + 1]
 
         for language, message in text.items():
-            text[language] = Template(message).substitute(tokens)
+            text[language] = Template(message).substitute(tokens).format_map(Dict(tokens))
 
     return players, text
 
