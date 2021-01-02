@@ -21,6 +21,7 @@ from menus.radio import BUTTON_CLOSE_SLOT
 
 # WCS Imports
 #   Constants
+from ..constants import COMMANDS
 from ..constants import GithubStatus
 from ..constants import GithubModuleStatus
 from ..constants.info import info
@@ -613,8 +614,35 @@ wcsadmin_github_info_confirm_menu.extend(
 # ============================================================================
 # >> MENU ENHANCEMENTS
 # ============================================================================
+main_menu[1].text.tokens['command'] = COMMANDS['shopmenu'][0]
+main_menu[2].text.tokens['command'] = COMMANDS['shopinfo'][0]
+main_menu[4].text.tokens['command'] = COMMANDS['showskills'][0]
+main_menu[5].text.tokens['command'] = COMMANDS['resetskills'][0]
+main_menu[6].text.tokens['command'] = COMMANDS['spendskills'][0]
+main_menu[8].text.tokens['command'] = COMMANDS['changerace'][0]
+main_menu[9].text.tokens['command'] = COMMANDS['raceinfo'][0]
+main_menu[11].text.tokens['command'] = COMMANDS['playerinfo'][0]
+
+wcshelp_menu[1].text.tokens['command'] = COMMANDS['wcshelp'][0]
+wcshelp_menu[2].text.tokens['command'] = COMMANDS['changerace'][0]
+wcshelp_menu[3].text.tokens['command'] = COMMANDS['raceinfo'][0]
+wcshelp_menu[4].text.tokens['command'] = COMMANDS['shopmenu'][0]
+wcshelp_menu[5].text.tokens['command'] = COMMANDS['shopinfo'][0]
+wcshelp_menu[6].text.tokens['command'] = COMMANDS['showxp'][0]
+wcshelp_menu[7].text.tokens['command'] = COMMANDS['showskills'][0]
+wcshelp_menu[8].text.tokens['command'] = COMMANDS['resetskills'][0]
+wcshelp_menu[9].text.tokens['command'] = COMMANDS['spendskills'][0]
+wcshelp_menu[10].text.tokens['command'] = COMMANDS['playerinfo'][0]
+wcshelp_menu[11].text.tokens['command'] = COMMANDS['wcsadmin'][0]
+wcshelp_menu[12].text.tokens['command'] = COMMANDS['wcstop'][0]
+wcshelp_menu[13].text.tokens['command'] = COMMANDS['wcsrank'][0]
+
 welcome_menu[3].text.tokens['game'] = 'CS:S' if GAME_NAME == 'cstrike' else 'CS:GO' if GAME_NAME == 'csgo' else GAME_NAME
+welcome_menu[8].text.tokens['command'] = COMMANDS['wcshelp']
+welcome_menu[11].text.tokens['racecommand'] = COMMANDS['raceinfo']
+welcome_menu[11].text.tokens['shopcommand'] = COMMANDS['shopinfo']
 welcome_menu[15].text.tokens['slot'] = BUTTON_CLOSE_SLOT
+
 wcsadmin_github_info_menu[2].text.tokens['version'] = info.version
 
 if BUTTON_BACK == 8:
