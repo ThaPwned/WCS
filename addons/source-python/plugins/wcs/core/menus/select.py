@@ -7,6 +7,8 @@
 #   JSON
 from json import dump
 from json import load
+#   Time
+from time import time
 
 # Source.Python Imports
 #   Menus
@@ -761,6 +763,14 @@ def wcsadmin_management_races_editor_modify_restricted_team_menu_select(menu, cl
 
 @wcsadmin_github_menu.register_select_callback
 def wcsadmin_github_menu_select(menu, client, option):
+    if option.choice_index in (1, 2):
+        now = time()
+
+        if menu._last_update is None or now >= menu._last_update + 60 * 15:
+            github_manager.refresh_modules()
+
+            menu._last_update = now
+
     return option.value
 
 

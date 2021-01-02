@@ -276,8 +276,6 @@ _rank_effect_color = Color(43, 145, 255)
 # >> FUNCTIONS
 # ============================================================================
 def load():
-    github_manager.refresh_modules()
-
     database_manager.connect()
 
     if IS_ESC_SUPPORT_ENABLED:

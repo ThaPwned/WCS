@@ -136,6 +136,7 @@ wcsadmin_github_items_repository_menu.title = menu_strings['wcsadmin_github_item
 wcsadmin_github_info_confirm_commits_menu.title = menu_strings['wcsadmin_github_info_confirm_commits_menu title']
 wcsadmin_github_info_commits_menu.title = menu_strings['wcsadmin_github_info_commits_menu title']
 
+wcsadmin_github_menu._last_update = None
 wcsadmin_github_races_menu._cycle = None
 wcsadmin_github_items_menu._cycle = None
 wcsadmin_github_info_menu._checking_cycle = None
