@@ -374,12 +374,16 @@ def _query_refresh_offline(result):
 
 
 def _query_refresh_ranks(result):
+    players = []
+
     for accountid, name, current_race, total_level in result.fetchall():
         if current_race not in race_manager:
             current_race = race_manager.default_race
 
         if accountid is None:
             accountid = name
+
+        players.append((name, accountid))
 
         rank_manager._data[accountid] = {'name':name, 'current_race':current_race, 'total_level':total_level}
 
@@ -389,6 +393,12 @@ def _query_refresh_ranks(result):
         wcstop_menu.append(option)
 
         rank_manager.append(accountid)
+
+    players.sort(key=lambda x: x[0])
+
+    for name, accountid in players:
+        playerinfo_menu.append(PagedOption(name, accountid))
+        wcsadmin_players_menu.append(PagedOption(name, accountid))
 
 
 def _give_xp_if_set(userid, config, bot_config, message):
@@ -1206,7 +1216,6 @@ def on_player_ready(wcsplayer):
 
 @OnSettingsLoaded
 def on_settings_loaded(settings):
-    database_manager.execute('player offline', callback=_query_refresh_offline)
     database_manager.execute('rank update', callback=_query_refresh_ranks)
 
 
