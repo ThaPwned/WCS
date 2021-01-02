@@ -153,7 +153,7 @@ def parse_ini_races():
                 skills = settings.config['skills'] = {}
 
                 for i, skill_name in enumerate(skillnames):
-                    fixed_skill_name = FIX_NAME.sub('', (skill_name[8:] if skill_name.startswith('wcs_lng_') else skill_name).replace(' ', '_'))
+                    fixed_skill_name = FIX_NAME.sub('', (skill_name[8:] if skill_name.startswith('wcs_lng_') else skill_name).lower().replace(' ', '_'))
 
                     settings.strings[fixed_skill_name] = _esc_strings[fixed_name][fixed_skill_name] if skill_name.startswith('wcs_lng_') else _LanguageString(skill_name)
                     settings.strings[f'{fixed_skill_name} description'] = _esc_strings[fixed_name][f'{fixed_skill_name} description'] if skilldescr[i].startswith('wcs_lng_') else _LanguageString(skilldescr[i].replace(r'\n', ''))
