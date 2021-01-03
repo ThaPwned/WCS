@@ -1306,6 +1306,9 @@ class _Skill(object):
         if data['reason'] is not None:
             return data['reason']
 
+        if not self.level:
+            return SkillReason.LEVEL
+
         if self.wcsplayer.player.team_index < 2:
             return SkillReason.TEAM
 
@@ -1318,9 +1321,6 @@ class _Skill(object):
         if self.cooldown_seconds:
             if self.cooldown > time():
                 return SkillReason.COOLDOWN
-
-        if not self.level:
-            return SkillReason.LEVEL
 
         return SkillReason.ALLOWED
 
