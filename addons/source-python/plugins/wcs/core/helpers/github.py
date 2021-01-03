@@ -242,6 +242,21 @@ class _GithubManager(dict):
             else:
                 blacklist = []
 
+            if (DATA_PATH / 'metadata.wcs_install').isfile():
+                with open(DATA_PATH / 'metadata.wcs_install') as inputfile:
+                    sha = inputfile.read()
+            else:
+                sha = None
+
+            updated_files = []
+
+            most_recent_commit_sha = repo.get_branch('master').commit.sha
+
+            if sha is not None:
+                difference = repo.compare(sha, most_recent_commit_sha)
+
+                updated_files.extend([x.filename for x in difference.files])
+
             _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.CONNECTING))
 
             with urlopen(repo.get_archive_link('zipball', 'master')) as response:
@@ -281,14 +296,14 @@ class _GithubManager(dict):
 
                         files.remove(unique_name)
 
-                        files_count = len(files)
+                        files_count = len(updated_files or files)
 
                         _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.EXTRACTING, 0, files_count))
 
                         with TemporaryDirectory() as tmpdir:
                             next_update = time()
 
-                            for i, member in enumerate(files, 1):
+                            for i, member in enumerate(updated_files or files, 1):
                                 now = time()
 
                                 if now >= next_update:
@@ -301,7 +316,7 @@ class _GithubManager(dict):
                                 if name in blacklist:
                                     continue
 
-                                ref.extract(member, path=tmpdir)
+                                ref.extract(unique_name + name, path=tmpdir)
 
                             _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.COPYING))
 
@@ -309,11 +324,8 @@ class _GithubManager(dict):
 
             _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.FINISHING))
 
-            commits = repo.get_commits()
-            sha = commits[0].sha
-
             with open(DATA_PATH / 'metadata.wcs_install', 'w') as outputfile:
-                outputfile.write(sha)
+                outputfile.write(most_recent_commit_sha)
 
             _output.put((True, OnGithubNewVersionInstalled.manager.notify))
         except:
