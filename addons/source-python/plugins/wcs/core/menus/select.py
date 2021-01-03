@@ -211,16 +211,10 @@ def resetskills_menu_select(menu, client, option):
 
             skills_reset_updated_message.send(client)
         else:
-            unused = 0
-            maximum = 0
-
             for skill in wcsplayer.skills.values():
-                unused += skill.level
                 skill.level = 0
 
-                maximum += skill.config['maximum']
-
-            wcsplayer.unused = min(wcsplayer.unused + unused, maximum)
+            wcsplayer.unused = wcsplayer.level
 
             player = wcsplayer.player
 
