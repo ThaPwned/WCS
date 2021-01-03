@@ -262,6 +262,10 @@ github_mod_update_message = SayText2(chat_strings['github mod update'])
 hinttext_cooldown_message = HintText(menu_strings['hinttext_cooldown'])
 hinttext_cooldown_ready_message = HintText(menu_strings['hinttext_cooldown ready'])
 
+help_text_message.message.tokens['command'] = COMMANDS['wcshelp'][0]
+welcome_text_message.message.tokens['command'] = COMMANDS['wcshelp'][0]
+skills_reset_message.message.tokens['command'] = COMMANDS['resetskills'][0]
+
 _delays = defaultdict(set)
 _melee_weapons = [weapon.basename for weapon in WeaponClassIter('melee')]
 _new_version = None
