@@ -398,7 +398,7 @@ def _query_refresh_ranks(result):
 
         rank_manager.append(accountid)
 
-    players.sort(key=lambda x: x[0])
+    players.sort(key=lambda x: x[0] or '')
 
     for name, accountid in players:
         playerinfo_menu.append(PagedOption(name, accountid))
