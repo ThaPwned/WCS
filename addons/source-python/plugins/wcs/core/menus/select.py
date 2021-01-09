@@ -56,6 +56,9 @@ from . import playerinfo_detail_stats_menu
 from . import wcstop_menu
 from . import wcstop_detail_menu
 from . import levelbank_menu
+from . import welcome_menu
+from . import welcome2_menu
+from . import welcome3_menu
 from . import wcsadmin_menu
 from . import wcsadmin_players_menu
 from . import wcsadmin_players_sub_menu
@@ -400,7 +403,7 @@ def wcstop_detail_menu_select(menu, client, option):
 
 
 @levelbank_menu.register_select_callback
-def levelbank_menu(menu, client, option):
+def levelbank_menu_select(menu, client, option):
     if isinstance(option.value, int):
         wcsplayer = Player(client)
         active_race = wcsplayer.active_race
@@ -421,6 +424,13 @@ def levelbank_menu(menu, client, option):
         return wcsplayer.request_input(_spend_bank_levels, return_menu=menu)
 
     return option.value
+
+
+@welcome_menu.register_select_callback
+@welcome2_menu.register_select_callback
+@welcome3_menu.register_select_callback
+def welcome_menu_select(menu, client, option):
+    return option.value or menu
 
 
 # ============================================================================
@@ -900,7 +910,7 @@ def wcsadmin_github_info_confirm_menu_select(menu, client, option):
 
 
 @wcsadmin_github_info_confirm_commits_menu.register_select_callback
-def wcsadmin_github_info_confirm_commits_menu(menu, client, option):
+def wcsadmin_github_info_confirm_commits_menu_select(menu, client, option):
     return option.value
 
 

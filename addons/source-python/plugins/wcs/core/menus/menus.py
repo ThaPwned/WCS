@@ -62,6 +62,8 @@ from . import wcstop_detail_menu
 from . import levelbank_menu
 from . import wcshelp_menu
 from . import welcome_menu
+from . import welcome2_menu
+from . import welcome3_menu
 from . import input_menu
 from . import wcsadmin_menu
 from . import wcsadmin_players_menu
@@ -333,13 +335,40 @@ welcome_menu.extend(
         Text(menu_strings['welcome_menu line 3']),
         Text(menu_strings['welcome_menu line 4']),
         Text(' '),
+        Text(' '),
+        Text(' '),
+        SimpleOption(BUTTON_NEXT, menu_strings['next'], welcome2_menu),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['welcome_menu line 11']),
+    ]
+)
+
+welcome2_menu.extend(
+    [
+        Text(menu_strings['welcome_menu title']),
+        Text(' '),
         SimpleOption(2, menu_strings['welcome_menu line 5']),
         Text(menu_strings['welcome_menu line 6']),
         Text(menu_strings['welcome_menu line 7']),
         Text(menu_strings['welcome_menu line 8']),
         Text(menu_strings['welcome_menu line 9']),
         Text(' '),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], welcome_menu),
+        SimpleOption(BUTTON_NEXT, menu_strings['next'], welcome3_menu),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['welcome_menu line 11']),
+    ]
+)
+
+welcome3_menu.extend(
+    [
+        Text(menu_strings['welcome_menu title']),
+        Text(' '),
         SimpleOption(3, menu_strings['welcome_menu line 10']),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], welcome2_menu),
         Text(' '),
         SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['welcome_menu line 11']),
     ]
@@ -638,10 +667,12 @@ wcshelp_menu[12].text.tokens['command'] = COMMANDS['wcstop'][0]
 wcshelp_menu[13].text.tokens['command'] = COMMANDS['wcsrank'][0]
 
 welcome_menu[3].text.tokens['game'] = 'CS:S' if GAME_NAME == 'cstrike' else 'CS:GO' if GAME_NAME == 'csgo' else GAME_NAME
-welcome_menu[8].text.tokens['command'] = COMMANDS['wcshelp']
-welcome_menu[11].text.tokens['racecommand'] = COMMANDS['raceinfo']
-welcome_menu[11].text.tokens['shopcommand'] = COMMANDS['shopinfo']
-welcome_menu[15].text.tokens['slot'] = BUTTON_CLOSE_SLOT
+welcome_menu[10].text.tokens['slot'] = BUTTON_CLOSE_SLOT
+welcome2_menu[3].text.tokens['command'] = COMMANDS['wcshelp'][0]
+welcome2_menu[6].text.tokens['racecommand'] = COMMANDS['raceinfo'][0]
+welcome2_menu[6].text.tokens['shopcommand'] = COMMANDS['shopinfo'][0]
+welcome2_menu[10].text.tokens['slot'] = BUTTON_CLOSE_SLOT
+welcome3_menu[10].text.tokens['slot'] = BUTTON_CLOSE_SLOT
 
 wcsadmin_github_info_menu[2].text.tokens['version'] = info.version
 
