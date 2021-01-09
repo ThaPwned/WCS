@@ -18,6 +18,7 @@ from menus import SimpleOption
 from menus import Text
 from menus.radio import BUTTON_BACK
 from menus.radio import BUTTON_CLOSE_SLOT
+from menus.radio import BUTTON_NEXT
 
 # WCS Imports
 #   Constants
