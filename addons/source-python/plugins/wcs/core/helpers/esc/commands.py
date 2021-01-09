@@ -169,8 +169,9 @@ if (TRANSLATION_PATH / 'esc').isdir():
 
 
 _restrictions = WeaponRestrictionHandler()
-_all_weapons = set([x.basename for x in WeaponClassIter('all', 'objective')])
-_all_weapons_but_knife = set([x.basename for x in WeaponClassIter('all', ['melee', 'objective'])])
+
+_all_weapons = set([x.basename for x in WeaponClassIter('all', None if GAME_NAME in ('hl2mp', ) else 'objective')])
+_all_weapons_but_melee = set([x.basename for x in WeaponClassIter('all', 'melee' if GAME_NAME in ('hl2mp', ) else ['melee', 'objective'])])
 
 if (CFG_PATH / 'es_WCSlanguage_db.txt').isfile():
     _languages = KeyValues.load_from_file(CFG_PATH / 'es_WCSlanguage_db.txt').as_dict()
@@ -264,6 +265,9 @@ elif GAME_NAME == 'csgo':
         'localdata.m_Local.m_aimPunchAngleVel',
         'localdata.m_Local.m_viewPunchAngle'
     )
+else:
+    # TODO: I do not know anything about recoils for other games
+    _recoil_cvars_modified.clear()
 
 
 # ============================================================================
@@ -1510,13 +1514,13 @@ def wcs_restrict_command(command_info, player:convert_userid_to_player, weapons:
         return
 
     if weapons[0] == 'all':
-        _restrictions.add_player_restrictions(player, *_all_weapons_but_knife)
+        _restrictions.add_player_restrictions(player, *_all_weapons_but_melee)
         return
 
     if 'only' in weapons:
         weapons.remove('only')
 
-        weapons = _all_weapons_but_knife.difference(weapons)
+        weapons = _all_weapons_but_melee.difference(weapons)
 
         _restrictions.player_restrictions[player.userid].clear()
 
