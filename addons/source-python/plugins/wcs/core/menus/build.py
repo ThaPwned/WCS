@@ -69,6 +69,8 @@ from . import levelbank_menu
 from . import input_menu
 from . import wcsadmin_menu
 from . import wcsadmin_players_menu
+from . import wcsadmin_players_online_menu
+from . import wcsadmin_players_offline_menu
 from . import wcsadmin_players_sub_menu
 from . import wcsadmin_players_sub_xp_menu
 from . import wcsadmin_players_sub_levels_menu
@@ -534,17 +536,9 @@ def raceinfo_race_detail_menu_build(menu, client):
             menu.insert(i, Text(' '))
 
 
-@playerinfo_menu.register_build_callback
-def playerinfo_menu_build(menu, client):
-    stop = False
-
-    for i, option in enumerate(menu):
-        if isinstance(option, Text):
-            if stop:
-                del menu[1:i]
-                break
-
-            stop = True
+@playerinfo_online_menu.register_build_callback
+def playerinfo_online_menu_build(menu, client):
+    menu.clear()
 
     for i, (_, wcsplayer) in enumerate(PlayerReadyIter(), 1):
         menu.insert(i, PagedOption(wcsplayer.name, wcsplayer.accountid))
@@ -696,17 +690,9 @@ def wcsadmin_menu_build(menu, client):
     menu[4].selectable = menu[4].highlight = wcsplayer.privileges.get('wcsadmin_githubaccess', False)
 
 
-@wcsadmin_players_menu.register_build_callback
-def wcsadmin_players_menu_build(menu, client):
-    stop = False
-
-    for i, option in enumerate(menu):
-        if isinstance(option, Text):
-            if stop:
-                del menu[2:i]
-                break
-
-            stop = True
+@wcsadmin_players_online_menu.register_build_callback
+def wcsadmin_players_online_menu_build(menu, client):
+    menu.clear()
 
     for i, (_, wcsplayer) in enumerate(PlayerReadyIter(), 2):
         menu.insert(i, PagedOption(wcsplayer.name, wcsplayer.accountid))

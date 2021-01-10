@@ -51,6 +51,8 @@ from . import raceinfo_skills_menu
 from . import raceinfo_skills_detail_menu
 from . import raceinfo_race_detail_menu
 from . import playerinfo_menu
+from . import playerinfo_online_menu
+from . import playerinfo_offline_menu
 from . import playerinfo_detail_menu
 from . import playerinfo_detail_stats_menu
 from . import wcstop_menu
@@ -61,6 +63,8 @@ from . import welcome2_menu
 from . import welcome3_menu
 from . import wcsadmin_menu
 from . import wcsadmin_players_menu
+from . import wcsadmin_players_online_menu
+from . import wcsadmin_players_offline_menu
 from . import wcsadmin_players_sub_menu
 from . import wcsadmin_players_sub_xp_menu
 from . import wcsadmin_players_sub_levels_menu
@@ -370,16 +374,36 @@ def raceinfo_race_detail_menu_select(menu, client, option):
 
 @playerinfo_menu.register_select_callback
 def playerinfo_menu_select(menu, client, option):
+    return option.value
+
+
+@playerinfo_online_menu.register_select_callback
+def playerinfo_online_menu_select(menu, client, option):
     wcsplayer = Player(client)
 
     wcsplayer.data['_internal_playerinfo'] = option.value
     wcsplayer.data['_internal_playerinfo_name'] = option.text
+    wcsplayer.data['_internal_playerinfo_parent_menu'] = menu
+
+    return playerinfo_detail_menu
+
+
+@playerinfo_offline_menu.register_select_callback
+def playerinfo_offline_menu_select(menu, client, option):
+    wcsplayer = Player(client)
+
+    wcsplayer.data['_internal_playerinfo'] = option.value
+    wcsplayer.data['_internal_playerinfo_name'] = option.text
+    wcsplayer.data['_internal_playerinfo_parent_menu'] = menu
 
     return playerinfo_detail_menu
 
 
 @playerinfo_detail_menu.register_select_callback
 def playerinfo_detail_menu_select(menu, client, option):
+    if option.choice_index == BUTTON_BACK:
+        return Player(client).data.pop('_internal_playerinfo_parent_menu', option.value)
+
     return option.value
 
 
@@ -445,12 +469,33 @@ def wcsadmin_menu_select(menu, client, option):
 def wcsadmin_players_menu_select(menu, client, option):
     wcsplayer = Player(client)
 
-    wcsplayer.data['_internal_wcsadmin_player'] = option.value
-
     if option.value is None:
+        wcsplayer.data['_internal_wcsadmin_player'] = option.value
+
         return wcsadmin_players_sub_menu
 
+    wcsplayer.data['_internal_wcsadmin_player_parent_menu'] = menu
+
+    return option.value
+
+
+@wcsadmin_players_online_menu.register_select_callback
+def wcsadmin_players_online_menu_select(menu, client, option):
+    wcsplayer = Player(client)
+
+    wcsplayer.data['_internal_wcsadmin_player'] = option.value
+    wcsplayer.data['_internal_wcsadmin_player_parent_menu'] = menu
+
+    return wcsadmin_players_sub_menu
+
+
+@wcsadmin_players_offline_menu.register_select_callback
+def wcsadmin_players_offline_menu_select(menu, client, option):
+    wcsplayer = Player(client)
+
+    wcsplayer.data['_internal_wcsadmin_player'] = option.value
     wcsplayer.data['_internal_wcsadmin_player_name'] = option.text
+    wcsplayer.data['_internal_wcsadmin_player_parent_menu'] = menu
 
     return wcsadmin_players_sub_menu
 
@@ -459,6 +504,8 @@ def wcsadmin_players_menu_select(menu, client, option):
 def wcsadmin_players_sub_menu_select(menu, client, option):
     if option.choice_index == 3:
         return Player(client).request_input(_change_race, return_menu=menu)
+    elif option.choice_index == BUTTON_BACK:
+        return Player(client).data.pop('_internal_wcsadmin_player_parent_menu', option.value)
 
     return option.value
 

@@ -55,6 +55,8 @@ from . import raceinfo_skills_menu
 from . import raceinfo_skills_detail_menu
 from . import raceinfo_race_detail_menu
 from . import playerinfo_menu
+from . import playerinfo_online_menu
+from . import playerinfo_offline_menu
 from . import playerinfo_detail_menu
 from . import playerinfo_detail_skills_menu
 from . import playerinfo_detail_stats_menu
@@ -68,6 +70,8 @@ from . import welcome3_menu
 from . import input_menu
 from . import wcsadmin_menu
 from . import wcsadmin_players_menu
+from . import wcsadmin_players_online_menu
+from . import wcsadmin_players_offline_menu
 from . import wcsadmin_players_sub_menu
 from . import wcsadmin_players_sub_xp_menu
 from . import wcsadmin_players_sub_levels_menu
@@ -122,10 +126,12 @@ changerace_search_menu.title = menu_strings['changerace_menu title']
 raceinfo_menu.title = menu_strings['raceinfo_menu title']
 raceinfo_search_menu.title = menu_strings['raceinfo_menu title']
 raceinfo_skills_menu.title = menu_strings['raceinfo_skills_menu title']
-playerinfo_menu.title = menu_strings['playerinfo_menu title']
+playerinfo_online_menu.title = menu_strings['playerinfo_menu title']
+playerinfo_offline_menu.title = menu_strings['playerinfo_menu title']
 playerinfo_detail_skills_menu.title = menu_strings['playerinfo_detail_skills_menu title']
 wcstop_menu.title = menu_strings['wcstop_menu title']
-wcsadmin_players_menu.title = menu_strings['wcsadmin_players_menu title']
+wcsadmin_players_online_menu.title = menu_strings['wcsadmin_players_menu title']
+wcsadmin_players_offline_menu.title = menu_strings['wcsadmin_players_menu title']
 wcsadmin_players_sub_changerace_menu.title = menu_strings['wcsadmin_players_sub_changerace_menu title']
 wcsadmin_management_races_menu.title = menu_strings['wcsadmin_management_races_menu title']
 wcsadmin_management_items_menu.title = menu_strings['wcsadmin_management_items_menu title']
@@ -236,8 +242,18 @@ raceinfo_race_detail_menu.extend(
 
 playerinfo_menu.extend(
     [
-        Text(menu_strings['playerinfo_menu online']),
-        Text(menu_strings['playerinfo_menu offline']),
+        Text(menu_strings['playerinfo_menu title']),
+        Text(' '),
+        SimpleOption(1, menu_strings['playerinfo_menu online'], playerinfo_online_menu),
+        SimpleOption(2, menu_strings['playerinfo_menu offline'], playerinfo_offline_menu),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], main_menu),
+        Text(' '),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -405,9 +421,17 @@ wcsadmin_menu.extend(
 
 wcsadmin_players_menu.extend(
     [
-        PagedOption(menu_strings['wcsadmin_players_menu all']),
-        Text(menu_strings['wcsadmin_players_menu online']),
-        Text(menu_strings['wcsadmin_players_menu offline']),
+        Text(menu_strings['wcsadmin_players_menu title']),
+        Text(' '),
+        SimpleOption(1, menu_strings['wcsadmin_players_menu all']),
+        SimpleOption(2, menu_strings['wcsadmin_players_menu online'], wcsadmin_players_online_menu),
+        SimpleOption(3, menu_strings['wcsadmin_players_menu offline'], wcsadmin_players_offline_menu),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_menu),
+        Text(' '),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -679,6 +703,7 @@ wcsadmin_github_info_menu[2].text.tokens['version'] = info.version
 
 if BUTTON_BACK == 8:
     wcsadmin_menu.insert(-3, Text(' '))
+    wcsadmin_players_menu.insert(-3, Text(' '))
     wcsadmin_players_sub_menu.insert(-3, Text(' '))
     wcsadmin_players_sub_xp_menu.insert(-3, Text(' '))
     wcsadmin_players_sub_levels_menu.insert(-3, Text(' '))

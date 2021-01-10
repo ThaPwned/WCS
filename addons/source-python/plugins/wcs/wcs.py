@@ -161,13 +161,14 @@ from .core.menus import raceinfo_menu
 from .core.menus import raceinfo_search_menu
 from .core.menus import raceinfo_detail_menu
 from .core.menus import playerinfo_menu
+from .core.menus import playerinfo_offline_menu
 from .core.menus import playerinfo_detail_menu
 from .core.menus import wcstop_menu
 from .core.menus import levelbank_menu
 from .core.menus import wcshelp_menu
 from .core.menus import welcome_menu
 from .core.menus import wcsadmin_menu
-from .core.menus import wcsadmin_players_menu
+from .core.menus import wcsadmin_players_offline_menu
 from .core.menus.base import PagedOption
 from .core.menus.build import _get_current_options  # Just to load it
 from .core.menus.close import raceinfo_menu_close  # Just to load it
@@ -354,27 +355,12 @@ def _send_message_and_remove(message, wcsplayer, delay, **kwargs):
 def _query_refresh_offline(result):
     stop = False
 
-    for i, option in enumerate(playerinfo_menu, 1):
-        if isinstance(option, Text):
-            if stop:
-                del playerinfo_menu[i:]
-                break
-
-            stop = True
-
-    stop = False
-
-    for i, option in enumerate(wcsadmin_players_menu, 2):
-        if isinstance(option, Text):
-            if stop:
-                del wcsadmin_players_menu[i:]
-                break
-
-            stop = True
+    playerinfo_offline_menu.clear()
+    wcsadmin_players_offline_menu.clear()
 
     for accountid, name in result.fetchall():
-        playerinfo_menu.append(PagedOption(name, accountid))
-        wcsadmin_players_menu.append(PagedOption(name, accountid))
+        playerinfo_offline_menu.append(PagedOption(name, accountid))
+        wcsadmin_players_offline_menu.append(PagedOption(name, accountid))
 
 
 def _query_refresh_ranks(result):
@@ -401,8 +387,8 @@ def _query_refresh_ranks(result):
     players.sort(key=lambda x: x[0] or '')
 
     for name, accountid in players:
-        playerinfo_menu.append(PagedOption(name, accountid))
-        wcsadmin_players_menu.append(PagedOption(name, accountid))
+        playerinfo_offline_menu.append(PagedOption(name, accountid))
+        wcsadmin_players_offline_menu.append(PagedOption(name, accountid))
 
 
 def _give_xp_if_set(userid, config, bot_config, message):
