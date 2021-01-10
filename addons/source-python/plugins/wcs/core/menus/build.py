@@ -60,6 +60,8 @@ from . import raceinfo_skills_menu
 from . import raceinfo_skills_detail_menu
 from . import raceinfo_race_detail_menu
 from . import playerinfo_menu
+from . import playerinfo_online_menu
+from . import playerinfo_offline_menu
 from . import playerinfo_detail_menu
 from . import playerinfo_detail_skills_menu
 from . import playerinfo_detail_stats_menu
