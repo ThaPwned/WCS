@@ -264,7 +264,7 @@ hinttext_cooldown_ready_message = HintText(menu_strings['hinttext_cooldown ready
 
 help_text_message.message.tokens['command'] = COMMANDS['wcshelp'][0]
 welcome_text_message.message.tokens['command'] = COMMANDS['wcshelp'][0]
-skills_reset_message.message.tokens['command'] = COMMANDS['resetskills'][0]
+skills_reset_message.message.tokens['command'] = COMMANDS['spendskills'][0]
 
 _delays = defaultdict(set)
 _melee_weapons = [weapon.basename for weapon in WeaponClassIter('melee')]
