@@ -4,14 +4,15 @@
 # >> IMPORTS
 # ============================================================================
 # Source.Python Imports
-#   Menus
-from menus import SimpleMenu
-from menus.radio import MAX_ITEM_COUNT
+#   Core
+from core import GAME_NAME
 
 # WCS Imports
 #   Menus
+from .base import MAX_ITEM_COUNT
 from .base import PagedMenu
 from .base import PagedPageCountMenu
+from .base import SimpleMenu
 
 
 # ============================================================================
@@ -24,6 +25,7 @@ __all__ = ()
 # >> GLOBAL VARIABLES
 # ============================================================================
 main_menu = SimpleMenu()
+main2_menu = SimpleMenu()
 shopmenu_menu = PagedPageCountMenu()
 shopinfo_menu = PagedPageCountMenu()
 shopinfo_detail_menu = SimpleMenu()
@@ -113,6 +115,14 @@ wcsadmin_github_items_menu.parent_menu = wcsadmin_github_menu
 wcsadmin_github_items_repository_menu.parent_menu = wcsadmin_github_items_options_menu
 wcsadmin_github_info_confirm_commits_menu.parent_menu = wcsadmin_github_info_confirm_menu
 wcsadmin_github_info_commits_menu.parent_menu = wcsadmin_github_info_menu
+
+
+# ============================================================================
+# >> MENU ENHANCEMENTS
+# ============================================================================
+if GAME_NAME in ('hl2mp', ):
+    changerace_menu.parent_menu = main2_menu
+    raceinfo_menu.parent_menu = main2_menu
 
 
 # ============================================================================

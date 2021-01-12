@@ -40,6 +40,7 @@ from ..listeners import OnGithubNewVersionUpdating
 from ..listeners import OnPlayerQuery
 #   Menus
 from . import main_menu
+from . import main2_menu
 from . import shopmenu_menu
 from . import shopinfo_menu
 from . import shopinfo_detail_menu
@@ -98,7 +99,13 @@ from . import wcsadmin_github_info_menu
 from . import wcsadmin_github_info_confirm_menu
 from . import wcsadmin_github_info_confirm_commits_menu
 from . import wcsadmin_github_info_commits_menu
+from .base import BUTTON_BACK
+from .base import BUTTON_NEXT
+from .base import BUTTON_CLOSE_SLOT
 from .base import PagedMenu
+from .base import PagedOption
+from .base import SimpleOption
+from .base import Text
 from .select import _request_required
 from .select import _request_maximum
 from .select import _request_team_limit
@@ -156,24 +163,53 @@ wcsadmin_github_info_menu._installing_cycle = None
 # ============================================================================
 # >> MENU FILLER
 # ============================================================================
-main_menu.extend(
-    [
-        Text(menu_strings['main_menu title']),
-        SimpleOption(1, menu_strings['main_menu line 1'], shopmenu_menu),
-        SimpleOption(2, menu_strings['main_menu line 2'], shopinfo_menu),
-        Text('-------------------'),
-        SimpleOption(3, menu_strings['main_menu line 3'], showskills_menu),
-        SimpleOption(4, menu_strings['main_menu line 4'], resetskills_menu),
-        SimpleOption(5, menu_strings['main_menu line 5'], spendskills_menu),
-        Text('-------------------'),
-        SimpleOption(6, menu_strings['main_menu line 6'], changerace_menu),
-        SimpleOption(7, menu_strings['main_menu line 7'], raceinfo_menu),
-        Text('-------------------'),
-        SimpleOption(8, menu_strings['main_menu line 8'], playerinfo_menu),
-        Text('-------------------'),
-        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
-    ]
-)
+if GAME_NAME in ('hl2mp', ):
+    main_menu.extend(
+        [
+            SimpleOption(1, menu_strings['main_menu line 1'], shopmenu_menu),
+            SimpleOption(2, menu_strings['main_menu line 2'], shopinfo_menu),
+            SimpleOption(3, menu_strings['main_menu line 3'], showskills_menu),
+            SimpleOption(4, menu_strings['main_menu line 4'], resetskills_menu),
+            SimpleOption(5, menu_strings['main_menu line 5'], spendskills_menu),
+            SimpleOption(6, '', main_menu),
+            SimpleOption(7, menu_strings['next'], main2_menu),
+            SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
+        ]
+    )
+    main_menu.title = menu_strings['main_menu title']
+
+    main2_menu.extend(
+        [
+            SimpleOption(1, menu_strings['main_menu line 6'], changerace_menu),
+            SimpleOption(2, menu_strings['main_menu line 7'], raceinfo_menu),
+            SimpleOption(3, menu_strings['main_menu line 8'], playerinfo_menu),
+            SimpleOption(4, '', main2_menu),
+            SimpleOption(5, '', main2_menu),
+            SimpleOption(6, menu_strings['back'], main_menu),
+            SimpleOption(7, '', main2_menu),
+            SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
+        ]
+    )
+    main2_menu.title = menu_strings['main_menu title']
+else:
+    main_menu.extend(
+        [
+            Text(menu_strings['main_menu title']),
+            SimpleOption(1, menu_strings['main_menu line 1'], shopmenu_menu),
+            SimpleOption(2, menu_strings['main_menu line 2'], shopinfo_menu),
+            Text('-------------------'),
+            SimpleOption(3, menu_strings['main_menu line 3'], showskills_menu),
+            SimpleOption(4, menu_strings['main_menu line 4'], resetskills_menu),
+            SimpleOption(5, menu_strings['main_menu line 5'], spendskills_menu),
+            Text('-------------------'),
+            SimpleOption(6, menu_strings['main_menu line 6'], changerace_menu),
+            SimpleOption(7, menu_strings['main_menu line 7'], raceinfo_menu),
+            Text('-------------------'),
+            SimpleOption(8, menu_strings['main_menu line 8'], playerinfo_menu),
+            Text('-------------------'),
+            SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
+        ]
+    )
 
 shopinfo_detail_menu.extend(
     [
@@ -668,15 +704,6 @@ wcsadmin_github_info_confirm_menu.extend(
 # ============================================================================
 # >> MENU ENHANCEMENTS
 # ============================================================================
-main_menu[1].text.tokens['command'] = COMMANDS['shopmenu'][0]
-main_menu[2].text.tokens['command'] = COMMANDS['shopinfo'][0]
-main_menu[4].text.tokens['command'] = COMMANDS['showskills'][0]
-main_menu[5].text.tokens['command'] = COMMANDS['resetskills'][0]
-main_menu[6].text.tokens['command'] = COMMANDS['spendskills'][0]
-main_menu[8].text.tokens['command'] = COMMANDS['changerace'][0]
-main_menu[9].text.tokens['command'] = COMMANDS['raceinfo'][0]
-main_menu[11].text.tokens['command'] = COMMANDS['playerinfo'][0]
-
 wcshelp_menu[1].text.tokens['command'] = COMMANDS['wcshelp'][0]
 wcshelp_menu[2].text.tokens['command'] = COMMANDS['changerace'][0]
 wcshelp_menu[3].text.tokens['command'] = COMMANDS['raceinfo'][0]
@@ -723,6 +750,26 @@ for i in range(2, 7):
     wcsadmin_players_sub_xp_menu[i].text.tokens['value'] = wcsadmin_players_sub_xp_menu[i].value
     wcsadmin_players_sub_levels_menu[i].text.tokens['value'] = wcsadmin_players_sub_levels_menu[i].value
     wcsadmin_players_sub_bank_levels_menu[i].text.tokens['value'] = wcsadmin_players_sub_bank_levels_menu[i].value
+
+
+if GAME_NAME in ('hl2mp', ):
+    main_menu[0].text.tokens['command'] = COMMANDS['shopmenu'][0]
+    main_menu[1].text.tokens['command'] = COMMANDS['shopinfo'][0]
+    main_menu[2].text.tokens['command'] = COMMANDS['showskills'][0]
+    main_menu[3].text.tokens['command'] = COMMANDS['resetskills'][0]
+    main_menu[4].text.tokens['command'] = COMMANDS['spendskills'][0]
+    main2_menu[0].text.tokens['command'] = COMMANDS['changerace'][0]
+    main2_menu[1].text.tokens['command'] = COMMANDS['raceinfo'][0]
+    main2_menu[2].text.tokens['command'] = COMMANDS['playerinfo'][0]
+else:
+    main_menu[1].text.tokens['command'] = COMMANDS['shopmenu'][0]
+    main_menu[2].text.tokens['command'] = COMMANDS['shopinfo'][0]
+    main_menu[4].text.tokens['command'] = COMMANDS['showskills'][0]
+    main_menu[5].text.tokens['command'] = COMMANDS['resetskills'][0]
+    main_menu[6].text.tokens['command'] = COMMANDS['spendskills'][0]
+    main_menu[8].text.tokens['command'] = COMMANDS['changerace'][0]
+    main_menu[9].text.tokens['command'] = COMMANDS['raceinfo'][0]
+    main_menu[11].text.tokens['command'] = COMMANDS['playerinfo'][0]
 
 
 # ============================================================================

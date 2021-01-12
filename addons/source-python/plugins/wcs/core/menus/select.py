@@ -37,6 +37,7 @@ from ..helpers.github import github_manager
 from ..helpers.overwrites import SayText2
 #   Menus
 from . import main_menu
+from . import main2_menu
 from . import shopmenu_menu
 from . import shopinfo_menu
 from . import shopinfo_detail_menu
@@ -91,6 +92,12 @@ from . import wcsadmin_github_info_menu
 from . import wcsadmin_github_info_confirm_menu
 from . import wcsadmin_github_info_confirm_commits_menu
 from . import wcsadmin_github_info_commits_menu
+from .base import BUTTON_BACK
+from .base import MAX_ITEM_COUNT
+from .base import PagedMenu
+from .base import PagedOption
+from .base import SimpleMenu
+from .base import Text
 #   Modules
 from ..modules.items.manager import item_manager
 from ..modules.races.manager import race_manager
@@ -146,6 +153,7 @@ github_uninstalling_message = SayText2(chat_strings['github uninstalling'])
 # >> SELECT CALLBACKS
 # ============================================================================
 @main_menu.register_select_callback
+@main2_menu.register_select_callback
 def main_menu_select(menu, client, option):
     if option.value is changerace_menu:
         if not cfg_changerace_next_round.get_int():

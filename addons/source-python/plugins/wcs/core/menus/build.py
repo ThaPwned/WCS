@@ -17,15 +17,12 @@ from time import localtime
 from time import strftime
 
 # Source.Python Imports
+#   Core
+from core import GAME_NAME
 #   Engines
 from engines.server import global_vars
 #   Hooks
 from hooks.exceptions import except_hooks
-#   Menus
-from menus import PagedOption
-from menus import SimpleOption
-from menus import Text
-from menus.radio import MAX_ITEM_COUNT
 #   Players
 from players.helpers import get_client_language
 #   Translations
@@ -48,6 +45,7 @@ from ..listeners import OnIsRaceUsableText
 #   Menus
 from . import _get_current_options
 from . import main_menu
+from . import main2_menu
 from . import shopmenu_menu
 from . import shopinfo_detail_menu
 from . import showskills_menu
@@ -95,6 +93,10 @@ from . import wcsadmin_github_items_options_menu
 from . import wcsadmin_github_items_repository_menu
 from . import wcsadmin_github_info_menu
 from . import wcsadmin_github_info_commits_menu
+from .base import MAX_ITEM_COUNT
+from .base import PagedOption
+from .base import SimpleOption
+from .base import Text
 #   Modules
 from ..modules.items.manager import item_manager
 from ..modules.races.manager import race_manager
@@ -118,16 +120,29 @@ __all__ = ()
 # >> BUILD CALLBACKS
 # ============================================================================
 @main_menu.register_build_callback
+@main2_menu.register_build_callback
 def main_menu_build(menu, client):
     wcsplayer = Player(client)
 
-    menu[1].selectable = menu[1].highlight = wcsplayer.ready and bool(item_manager)
-    menu[2].selectable = menu[2].highlight = bool(item_manager)
-    menu[4].selectable = menu[4].highlight = wcsplayer.ready
-    menu[5].selectable = menu[5].highlight = wcsplayer.ready
-    menu[6].selectable = menu[6].highlight = wcsplayer.ready and wcsplayer.unused > 0
-    menu[8].selectable = menu[8].highlight = wcsplayer.ready and bool(race_manager) and (len(race_manager) > 1 or None not in race_manager)
-    menu[9].selectable = menu[9].highlight = bool(race_manager) and (len(race_manager) > 1 or None not in race_manager)
+    if GAME_NAME in ('hl2mp', ):
+        if menu is main_menu:
+            menu[0].selectable = menu[0].highlight = wcsplayer.ready and bool(item_manager)
+            menu[1].selectable = menu[1].highlight = bool(item_manager)
+            menu[2].selectable = menu[2].highlight = wcsplayer.ready
+            menu[3].selectable = menu[3].highlight = wcsplayer.ready
+            menu[4].selectable = menu[4].highlight = wcsplayer.ready
+        else:
+            menu[0].selectable = menu[0].highlight = wcsplayer.ready and wcsplayer.unused > 0
+            menu[1].selectable = menu[1].highlight = wcsplayer.ready and bool(race_manager) and (len(race_manager) > 1 or None not in race_manager)
+            menu[2].selectable = menu[2].highlight = bool(race_manager) and (len(race_manager) > 1 or None not in race_manager)
+    else:
+        menu[1].selectable = menu[1].highlight = wcsplayer.ready and bool(item_manager)
+        menu[2].selectable = menu[2].highlight = bool(item_manager)
+        menu[4].selectable = menu[4].highlight = wcsplayer.ready
+        menu[5].selectable = menu[5].highlight = wcsplayer.ready
+        menu[6].selectable = menu[6].highlight = wcsplayer.ready and wcsplayer.unused > 0
+        menu[8].selectable = menu[8].highlight = wcsplayer.ready and bool(race_manager) and (len(race_manager) > 1 or None not in race_manager)
+        menu[9].selectable = menu[9].highlight = bool(race_manager) and (len(race_manager) > 1 or None not in race_manager)
 
 
 @shopmenu_menu.register_build_callback

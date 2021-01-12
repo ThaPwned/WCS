@@ -35,7 +35,7 @@ from hooks.exceptions import except_hooks
 #   Listeners
 from listeners import OnLevelInit
 #   Menus
-from menus import PagedOption
+from ..menus.base import PagedOption
 #   Plugins
 from plugins.manager import PluginManager
 #   Translations

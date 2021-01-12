@@ -55,8 +55,6 @@ from listeners.tick import RepeatStatus
 #   Mathlib
 from mathlib import QAngle
 from mathlib import Vector
-#   Menus
-from menus import Text
 #   Messages
 from messages import HintText
 #   Players
@@ -353,8 +351,6 @@ def _send_message_and_remove(message, wcsplayer, delay, **kwargs):
 
 
 def _query_refresh_offline(result):
-    stop = False
-
     playerinfo_offline_menu.clear()
     wcsadmin_players_offline_menu.clear()
 

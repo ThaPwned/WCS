@@ -48,7 +48,7 @@ from listeners.tick import RepeatStatus
 #   Memory
 from memory import make_object
 #   Menus
-from menus import SimpleMenu
+from ..menus.base import SimpleMenu
 #   Players
 from players.dictionary import PlayerDictionary
 from players.entity import Player as _Player
