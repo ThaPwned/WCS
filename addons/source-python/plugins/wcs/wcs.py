@@ -828,6 +828,9 @@ def player_death(event):
 @Event('player_say')
 def player_say(event):
     userid = event['userid']
+    if userid == 0:
+        return # The server is not a player :)
+        
     wcsplayer = Player.from_userid(userid)
 
     if wcsplayer.ready:
