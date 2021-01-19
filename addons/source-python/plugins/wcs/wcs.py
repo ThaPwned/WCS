@@ -991,6 +991,14 @@ def on_player_delete(wcsplayer):
         with FakeEvent('disconnectcmd', userid=wcsplayer.userid) as event:
             wcsplayer.execute(event.name, event)
 
+        # Remove the player from the counter tracking the team limit for races
+        team = wcsplayer.player.team
+        if team >= 2:
+            key = f'_internal_{wcsplayer.current_race}_limit_allowed'
+            team_data[team][key].remove(wcsplayer.userid)
+            if not team_data[team][key]:
+                del team_data[team][key]
+
         tick = cfg_rested_xp_online_tick.get_int()
 
         if tick > 0:
