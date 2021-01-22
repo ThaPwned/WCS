@@ -247,6 +247,9 @@ def resetskills_menu_select(menu, client, option):
 
 @spendskills_menu.register_select_callback
 def spendskills_menu_select(menu, client, option):
+    if option.value is None:
+        return
+
     race, skill = option.value
 
     wcsplayer = Player(client)
