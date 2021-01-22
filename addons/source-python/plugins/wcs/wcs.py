@@ -405,6 +405,12 @@ def _give_xp_if_set(userid, config, bot_config, message):
         value = config.get_int()
 
     if value:
+        active_race = wcsplayer.active_race
+        maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
+
+        if maximum_race_level and active_race.level >= maximum_race_level:
+            return
+
         if wcsplayer.fake_client:
             wcsplayer.xp += value
         else:

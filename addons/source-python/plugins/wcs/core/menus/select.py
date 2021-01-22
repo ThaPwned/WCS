@@ -529,6 +529,11 @@ def wcsadmin_players_sub_xp_menu_select(menu, client, option):
                 active_race = wcstarget.active_race
                 old_level = active_race.level
 
+                maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
+
+                if maximum_race_level and old_level >= maximum_race_level:
+                    continue
+
                 active_race.xp += option.value
 
                 if wcstarget is wcsplayer:
@@ -544,6 +549,11 @@ def wcsadmin_players_sub_xp_menu_select(menu, client, option):
             wcstarget = Player.from_accountid(accountid)
             active_race = wcstarget.active_race
             old_level = active_race.level
+
+            maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
+
+            if maximum_race_level and old_level >= maximum_race_level:
+                return menu
 
             active_race.xp += option.value
 
@@ -573,6 +583,11 @@ def wcsadmin_players_sub_levels_menu_select(menu, client, option):
 
         if accountid is None:
             for _, wcstarget in PlayerReadyIter():
+                maximum_race_level = wcsplayer.active_race.settings.config.get('maximum_race_level', 0)
+
+                if maximum_race_level and wcsplayer.level >= maximum_race_level:
+                    continue
+
                 wcstarget.level += option.value
 
                 if wcstarget is wcsplayer:
@@ -583,6 +598,11 @@ def wcsadmin_players_sub_levels_menu_select(menu, client, option):
             admin_gain_levels_all_message.send(wcsplayer.index, value=option.value)
         else:
             wcstarget = Player.from_accountid(accountid)
+
+            maximum_race_level = wcsplayer.active_race.settings.config.get('maximum_race_level', 0)
+
+            if maximum_race_level and wcsplayer.level >= maximum_race_level:
+                return menu
 
             wcstarget.level += option.value
 
