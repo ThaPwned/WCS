@@ -614,18 +614,12 @@ def player_spawn(event):
             if not wcsplayer.fake_client:
                 if cfg_resetskills_next_round.get_int():
                     if wcsplayer.data.pop('_internal_reset_skills', False):
-                        unused = 0
-                        maximum = 0
-
                         for skill in wcsplayer.skills.values():
-                            unused += skill.level
                             skill.level = 0
 
-                            maximum += skill.config['maximum']
+                        wcsplayer.unused = wcsplayer.level
 
-                        unused = wcsplayer.unused = min(wcsplayer.unused + unused, maximum)
-
-                        skills_reset_message.send(wcsplayer.index, unused=unused)
+                        skills_reset_message.send(wcsplayer.index, unused=wcsplayer.unused)
 
                 if cfg_changerace_next_round.get_int():
                     new_race = wcsplayer.data.pop('_internal_race_change', None)
