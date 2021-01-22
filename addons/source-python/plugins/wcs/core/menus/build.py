@@ -568,14 +568,14 @@ def playerinfo_detail_menu_build(menu, client):
         menu[6].text.tokens['status'] = menu_strings['online' if wcstarget.online else 'offline']
     else:
         menu[0].text.tokens['name'] = wcsplayer.data['_internal_playerinfo_name']
-        menu[1].text.tokens['race'] = menu_strings['loading']
-        menu[2].text.tokens['xp'] = menu_strings['loading']
-        menu[2].text.tokens['required'] = menu_strings['loading']
-        menu[2].text.tokens['rested_xp'] = menu_strings['loading']
-        menu[3].text.tokens['level'] = menu_strings['loading']
-        menu[3].text.tokens['total_level'] = menu_strings['loading']
-        menu[5].text.tokens['value'] = menu_strings['loading']
-        menu[6].text.tokens['status'] = menu_strings['loading']
+        menu[1].text.tokens['race'] = -1
+        menu[2].text.tokens['xp'] = -1
+        menu[2].text.tokens['required'] = -1
+        menu[2].text.tokens['rested_xp'] = -1
+        menu[3].text.tokens['level'] = -1
+        menu[3].text.tokens['total_level'] = -1
+        menu[5].text.tokens['value'] = -1
+        menu[6].text.tokens['status'] = -1
 
     menu[4].text.tokens['rank'] = wcstarget.rank
     menu[4].text.tokens['total_rank'] = len(rank_manager)
@@ -619,11 +619,12 @@ def playerinfo_detail_stats_menu_build(menu, client):
         menu[6].text.tokens['value'] = round(100 - player.color.a / 2.55, 1)
     else:
         menu[0].text.tokens['name'] = wcsplayer.data['_internal_playerinfo_name']
-        menu[2].text.tokens['value'] = menu_strings['loading']
-        menu[3].text.tokens['value'] = menu_strings['loading']
-        menu[4].text.tokens['value'] = menu_strings['loading']
-        menu[5].text.tokens['value'] = menu_strings['loading']
-        menu[6].text.tokens['value'] = menu_strings['loading']
+        menu[2].text.tokens['value'] = -1
+        menu[3].text.tokens['value'] = -1
+        menu[4].text.tokens['value'] = -1
+        menu[5].text.tokens['value'] = -1
+        menu[6].text.tokens['value'] = -1
+
 
 @wcstop_menu.register_build_callback
 def wcstop_menu_build(menu, client):
