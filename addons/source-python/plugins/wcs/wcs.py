@@ -597,7 +597,8 @@ def player_team(event):
                     force_change_team_message.send(wcsplayer.index, old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
                 else:
                     force_change_team_limit_message.send(wcsplayer.index, count=len(team_data[team][key]), old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
-        elif oldteam >= 2:
+        
+        if oldteam >= 2:
             team_data[oldteam][key].remove(userid)
 
             if not team_data[oldteam][key]:
