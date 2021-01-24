@@ -536,31 +536,40 @@ def player_team(event):
 
         key = f'_internal_{wcsplayer.current_race}_limit_allowed'
 
+        # Remove the reservation from the old team
+        if oldteam >= 2:
+            team_data[oldteam][key].remove(userid)
+
+            if not team_data[oldteam][key]:
+                del team_data[oldteam][key]
+
         if team >= 2:
+            # Start by adding the reservation to the new team (even if we shouldn't be allowed to be this race now)
+            if key not in team_data[team]:
+                team_data[team][key] = []
+            if userid not in team_data[team][key]:
+                team_data[team][key].append(userid)
+
             reason = RaceReason.ALLOWED
 
+            # Is the race not allowed on this team?
             restrictteam = wcsplayer.active_race.settings.config.get('restrictteam')
-
             if restrictteam:
                 if not restrictteam == team:
                     reason = RaceReason.TEAM
 
+            # Are there too many players with this race on this team
             if reason is RaceReason.ALLOWED:
                 teamlimit = wcsplayer.active_race.settings.config.get('teamlimit')
 
                 if teamlimit:
                     limit = team_data[team].get(key, [])
 
-                    if teamlimit <= len(limit) and userid not in limit:
+                    # If there are now too many players with this race (fx. limit+1 if counting the switching player)
+                    if len(limit) > teamlimit and userid not in limit:
                         reason = RaceReason.TEAM_LIMIT
 
-            if reason is RaceReason.ALLOWED:
-                if key not in team_data[team]:
-                    team_data[team][key] = []
-
-                if userid not in team_data[team][key]:
-                    team_data[team][key].append(userid)
-            else:
+            if reason is not RaceReason.ALLOWED:
                 usable_races = wcsplayer.available_races
 
                 for name in usable_races.copy():
@@ -598,11 +607,7 @@ def player_team(event):
                 else:
                     force_change_team_limit_message.send(wcsplayer.index, count=len(team_data[team][key]), old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
         
-        if oldteam >= 2:
-            team_data[oldteam][key].remove(userid)
 
-            if not team_data[oldteam][key]:
-                del team_data[oldteam][key]
 
 
 @Event('player_spawn')
