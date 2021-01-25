@@ -24,6 +24,8 @@ from warnings import warn
 #   Commands
 from commands import CommandReturn
 from commands.say import SayFilter
+#   Core
+from core import GAME_NAME
 #   CVars
 from cvars import ConVar
 #   Engines
@@ -1309,7 +1311,7 @@ class _Skill(object):
         if not self.level:
             return SkillReason.LEVEL
 
-        if self.wcsplayer.player.team_index < 2:
+        if self.wcsplayer.player.team_index < 2 and GAME_NAME not in ('hl2mp', ):
             return SkillReason.TEAM
 
         if self.wcsplayer.player.dead:

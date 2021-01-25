@@ -2093,6 +2093,10 @@ def wcs_dbgmsg_command(command_info, level:int, *message:str):
 # ============================================================================
 @PreEvent('player_hurt')
 def pre_player_hurt(event):
+    # TODO: Find a solution for games with no dmg_health
+    if event.is_empty('dmg_health'):
+        return
+
     if event['attacker']:
         wcsplayer = WCSPlayer.from_userid(event['userid'])
 

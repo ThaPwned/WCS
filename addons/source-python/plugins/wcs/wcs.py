@@ -29,6 +29,7 @@ from commands.typed import TypedClientCommand
 #   Colors
 from colors import Color
 #   Core
+from core import GAME_NAME
 from core import SOURCE_ENGINE_BRANCH
 from core import OutputReturn
 #   CVars
@@ -269,6 +270,7 @@ _delays = defaultdict(set)
 _melee_weapons = [weapon.basename for weapon in WeaponClassIter('melee')]
 _new_version = None
 _pre_ffa_enabled = {}
+_block_player_hurt = False
 
 _effect_angle = QAngle(0, 0, 0)
 _level_effect_color = Color(252, 232, 131)
@@ -554,6 +556,7 @@ def player_team(event):
 
             # Is the race not allowed on this team?
             restrictteam = wcsplayer.active_race.settings.config.get('restrictteam')
+
             if restrictteam:
                 if not restrictteam == team:
                     reason = RaceReason.TEAM
@@ -606,8 +609,6 @@ def player_team(event):
                     force_change_team_message.send(wcsplayer.index, old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
                 else:
                     force_change_team_limit_message.send(wcsplayer.index, count=len(team_data[team][key]), old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
-        
-
 
 
 @Event('player_spawn')
@@ -616,7 +617,7 @@ def player_spawn(event):
     wcsplayer = Player.from_userid(userid)
 
     if wcsplayer.ready:
-        if wcsplayer.player.team_index >= 2:
+        if wcsplayer.player.team_index >= 2 or GAME_NAME in ('hl2mp', ):
             if not wcsplayer.fake_client:
                 if cfg_resetskills_next_round.get_int():
                     if wcsplayer.data.pop('_internal_reset_skills', False):
@@ -654,6 +655,12 @@ def player_spawn(event):
 
 @Event('player_hurt')
 def player_hurt(event):
+    global _block_player_hurt
+
+    if _block_player_hurt:
+        _block_player_hurt = False
+        return
+
     attacker = event['attacker']
 
     if attacker:
@@ -684,6 +691,9 @@ def player_hurt(event):
 
 @PreEvent('player_hurt')
 def pre_player_hurt(event):
+    if _block_player_hurt:
+        return
+
     attacker = event['attacker']
 
     if attacker:
@@ -741,7 +751,7 @@ def player_death(event):
                     if not maximum_race_level or active_race.level < maximum_race_level:
                         value = kill_xp = (cfg_kill_bot_xp if wcsvictim.fake_client else cfg_kill_xp).get_int()
 
-                        if event['headshot']:
+                        if not event.is_empty('headshot') and event['headshot']:
                             headshot_xp = (cfg_headshot_bot_xp if wcsvictim.fake_client else cfg_headshot_xp).get_int()
 
                             if headshot_xp:
@@ -834,9 +844,10 @@ def player_death(event):
 @Event('player_say')
 def player_say(event):
     userid = event['userid']
+
     if userid == 0:
-        return # The server is not a player :)
-        
+        return  # The server is not a player :)
+
     wcsplayer = Player.from_userid(userid)
 
     if wcsplayer.ready:
@@ -999,9 +1010,12 @@ def on_player_delete(wcsplayer):
 
         # Remove the player from the counter tracking the team limit for races
         team = wcsplayer.player.team
+
         if team >= 2:
             key = f'_internal_{wcsplayer.current_race}_limit_allowed'
+
             team_data[team][key].remove(wcsplayer.userid)
+
             if not team_data[team][key]:
                 del team_data[team][key]
 
@@ -1168,7 +1182,7 @@ def on_player_rank_update(wcsplayer, old, new):
 
 @OnPlayerReady
 def on_player_ready(wcsplayer):
-    if wcsplayer.player.team_index >= 2:
+    if wcsplayer.player.team_index >= 2 or GAME_NAME in ('hl2mp', ):
         if not wcsplayer.fake_client:
             if cfg_spawn_text.get_int():
                 if wcsplayer.total_level <= cfg_disable_text_on_level.get_int():
@@ -1265,6 +1279,28 @@ def on_take_damage_alive(wcsvictim, wcsattacker, info):
                         if wcsattacker.ready:
                             with FakeEvent('pre_take_damage_hurt', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon_name, info=info) as event:
                                 wcsattacker.notify(event)
+
+    # TODO: This is ugly and need to be improved...
+    if GAME_NAME in ('hl2mp', ):
+        global _block_player_hurt
+
+        event_args = {}
+        event_args['userid'] = wcsvictim.userid
+        event_args['attacker'] = 0 if wcsattacker is None else wcsattacker.userid
+        event_args['health'] = wcsvictim.player.health - info.damage
+
+        try:
+            event_args['weapon'] = Entity(info.weapon).class_name
+        except ValueError:
+            event_args['weapon'] = Entity(info.inflictor).class_name
+
+        _block_player_hurt = False
+
+        with FakeEvent('player_hurt', **event_args) as event:
+            pre_player_hurt(event)
+            player_hurt(event)
+
+        _block_player_hurt = True
 
 
 # ============================================================================
