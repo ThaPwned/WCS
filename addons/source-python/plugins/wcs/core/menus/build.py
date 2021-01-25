@@ -580,7 +580,7 @@ def playerinfo_detail_menu_build(menu, client):
         menu[3].text.tokens['level'] = active_race.level
         menu[3].text.tokens['total_level'] = wcstarget.total_level
         menu[5].text.tokens['value'] = strftime(TIME_FORMAT, localtime(wcstarget._lastconnect))
-        menu[6].text.tokens['status'] = menu_strings['yes' if wcstarget.online else 'no']
+        menu[6].text.tokens['status'] = menu_strings['online' if wcstarget.online else 'offline']
     else:
         menu[0].text.tokens['name'] = wcsplayer.data['_internal_playerinfo_name']
         menu[1].text.tokens['race'] = -1
