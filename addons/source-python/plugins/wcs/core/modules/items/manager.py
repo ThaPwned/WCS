@@ -116,6 +116,8 @@ class _ItemManager(_BaseManager):
         return self._load(name, 'items', ITEM_PATH, ITEM_PATH_ES, OnPluginItemLoad)
 
     def load_all(self):
+        self._move_misplaced_files('items', ITEM_PATH, ITEM_PATH_ES)
+
         config = self._get_or_create_config('items', ITEM_PATH, ITEM_PATH_ES)
 
         for category, value in config.get('maxitems', {}).items():

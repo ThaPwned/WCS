@@ -197,6 +197,8 @@ class _RaceManager(_BaseManager):
         return self._load(name, 'races', RACE_PATH, RACE_PATH_ES, OnPluginRaceLoad)
 
     def load_all(self):
+        self._move_misplaced_files('races', RACE_PATH, RACE_PATH_ES)
+
         config = self._get_or_create_config('races', RACE_PATH, RACE_PATH_ES)
 
         self._load_categories_and_values('races', config, RACE_PATH, RACE_PATH_ES)

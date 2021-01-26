@@ -143,6 +143,20 @@ class _BaseManager(dict):
 
         return config
 
+    def _move_misplaced_files(self, module, path, path_es):
+        if IS_ESC_SUPPORT_ENABLED:
+            for directory in path.listdir():
+                name = directory.name
+                new_path = path_es / name
+
+                if (directory / f'{name}.py').isfile():
+                    new_path.makedirs_p()
+                    (directory / f'{name}.py').move(new_path / f'{name}.py')
+
+                if (directory / f'es_{name}.txt').isfile():
+                    new_path.makedirs_p()
+                    (directory / f'es_{name}.txt').move(new_path / f'es_{name}.txt')
+
     def _get_value_module_type(self, name, path, path_es):
         if (path / name / '__init__.py').isfile():
             return ModuleType.SP
