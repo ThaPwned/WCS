@@ -804,6 +804,52 @@ def wcsadmin_management_races_editor_menu_select(menu, client, option):
     return option.value
 
 
+@wcsadmin_management_items_editor_menu.register_select_callback
+def wcsadmin_management_items_editor_menu_select(menu, client, option):
+    wcsplayer = Player(client)
+
+    if option.choice_index == 1:
+        value = wcsplayer.data['_internal_wcsadmin_editor_value']
+
+        if value.startswith('_'):
+            new_value = value[1:]
+        else:
+            new_value = '_' + value
+
+        with open(CFG_PATH / 'items.json') as inputfile:
+            data = load(inputfile)
+
+        for i, name in enumerate(data['items']):
+            if name == value:
+                data['items'].pop(i)
+                data['items'].insert(i, new_value)
+                break
+
+        with open(CFG_PATH / 'items.json', 'w') as outputfile:
+            dump(data, outputfile, indent=4)
+
+        wcsplayer.data['_internal_wcsadmin_editor_value'] = new_value
+
+        return menu
+    elif option.choice_index == 2:
+        value = wcsplayer.data['_internal_wcsadmin_editor_value']
+
+        with open(CFG_PATH / 'items.json') as inputfile:
+            data = load(inputfile)
+
+        for i, name in enumerate(data['items']):
+            if name == value:
+                data['items'].pop(i)
+                break
+
+        with open(CFG_PATH / 'items.json', 'w') as outputfile:
+            dump(data, outputfile, indent=4)
+
+        return wcsadmin_management_items_menu
+
+    return option.value
+
+
 @wcsadmin_management_races_editor_modify_menu.register_select_callback
 def wcsadmin_management_races_editor_modify_menu_select(menu, client, option):
     if callable(option.value):
@@ -940,7 +986,7 @@ def wcsadmin_github_items_options_menu_select(menu, client, option):
             github_uninstalling_message.send(client, name=name)
 
             github_manager.uninstall_module('items', name, userid_from_index(client))
-    elif isinstance(option.value, SimpleMenu):
+    elif isinstance(option.value, (SimpleMenu, PagedMenu)):
         return option.value
 
     return menu
