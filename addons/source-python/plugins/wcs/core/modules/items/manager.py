@@ -130,7 +130,4 @@ class _ItemManager(_BaseManager):
             if category not in self._category_max_items:
                 warn(f'The category "{category}" was not found in items.json under "maxitems" - setting it to 1')
                 self._category_max_items[category] = 1
-
-    def unload(self, name):
-        self._unload(name, 'items')
 item_manager = _ItemManager()

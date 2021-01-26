@@ -214,7 +214,7 @@ class _BaseManager(dict):
     def load_all(self):
         raise NotImplementedError()
 
-    def unload(self, name, module):
+    def unload(self, name):
         if self[name].type is ModuleType.SP:
             module_name = f'wcs.modules.{self._module_name}.{name}'
 
