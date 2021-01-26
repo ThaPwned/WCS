@@ -889,7 +889,7 @@ def wcsadmin_github_races_options_menu_select(menu, client, option):
             github_uninstalling_message.send(client, name=name)
 
             github_manager.uninstall_module('races', name, userid_from_index(client))
-    elif isinstance(option.value, SimpleMenu):
+    elif isinstance(option.value, (SimpleMenu, PagedMenu)):
         return option.value
 
     return menu
