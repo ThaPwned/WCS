@@ -88,22 +88,22 @@ class _BaseManager(dict):
 
         self._refresh_config = set()
 
-    def _load_categories_and_values(self, module, config, path, path_es):
+    def _load_categories_and_values(self, config):
         value_categories = OrderedDict()
 
         for category, data in config['categories'].items():
             if not category.startswith('_'):
                 for name in data:
                     if not name.startswith('_'):
-                        if self._is_valid_value_file(name, path, path_es):
+                        if self._is_valid_value_file(name):
                             if name not in value_categories:
                                 value_categories[name] = []
 
                             value_categories[name].append(category)
 
-        for name in config[module]:
+        for name in config[self._module_name]:
             if not name.startswith('_'):
-                if self._is_valid_value_file(name, path, path_es):
+                if self._is_valid_value_file(name):
                     if name not in value_categories:
                         value_categories[name] = []
 
@@ -119,35 +119,35 @@ class _BaseManager(dict):
                 for category in categories:
                     setting.add_to_category(category)
 
-    def _get_or_create_config(self, module, path, path_es):
-        if (CFG_PATH / f'{module}.json').isfile():
-            with open(CFG_PATH / f'{module}.json') as inputfile:
+    def _get_or_create_config(self):
+        if (CFG_PATH / f'{self._module_name}.json').isfile():
+            with open(CFG_PATH / f'{self._module_name}.json') as inputfile:
                 config = json_load(inputfile)
 
             if 'categories' not in config:
                 config['categories'] = {}
-            if module not in config:
-                config[module] = []
+            if self._module_name not in config:
+                config[self._module_name] = []
         else:
-            config = {'categories':{}, module:[]}
+            config = {'categories':{}, self._module_name:[]}
 
-            if module == 'items':
+            if self._module_name == 'items':
                 config['maxitems'] = {}
 
-            for name in set(x.name for x in (path.listdir() + (path_es.listdir() if IS_ESC_SUPPORT_ENABLED else []))):
-                if self._is_valid_config_files(name, path):
-                    config[module].append(name)
+            for name in set(x.name for x in (self._path.listdir() + (self._es_path.listdir() if IS_ESC_SUPPORT_ENABLED else []))):
+                if self._is_valid_config_files(name):
+                    config[self._module_name].append(name)
 
-            with open(CFG_PATH / f'{module}.json', 'w') as outputfile:
+            with open(CFG_PATH / f'{self._module_name}.json', 'w') as outputfile:
                 json_dump(config, outputfile, indent=4)
 
         return config
 
-    def _move_misplaced_files(self, module, path, path_es):
+    def _move_misplaced_files(self):
         if IS_ESC_SUPPORT_ENABLED:
-            for directory in path.listdir():
+            for directory in self._path.listdir():
                 name = directory.name
-                new_path = path_es / name
+                new_path = self._es_path / name
 
                 if (directory / f'{name}.py').isfile():
                     new_path.makedirs_p()
@@ -157,12 +157,12 @@ class _BaseManager(dict):
                     new_path.makedirs_p()
                     (directory / f'es_{name}.txt').move(new_path / f'es_{name}.txt')
 
-    def _get_value_module_type(self, name, path, path_es):
-        if (path / name / '__init__.py').isfile():
+    def _get_value_module_type(self, name):
+        if (self._path / name / '__init__.py').isfile():
             return ModuleType.SP
 
         if IS_ESC_SUPPORT_ENABLED:
-            path_es = path_es / name
+            path_es = self._es_path / name
 
             if (path_es / f'{name}.py').isfile():
                 return ModuleType.ESP
@@ -172,65 +172,59 @@ class _BaseManager(dict):
 
         return None
 
-    def _is_valid_value_file(self, name, path, path_es):
-        return self._get_value_module_type(name, path, path_es) is not None
+    def _is_valid_value_file(self, name):
+        return self._get_value_module_type(name) is not None
 
-    def _is_valid_config_files(self, name, path):
-        path = path / name
+    def _is_valid_config_files(self, name):
+        path = self._path / name
 
         return (path / 'config.json').isfile() and (path / 'strings.ini').isfile()
 
-    def _load(self, name, module, path, path_es, listener):
+    def load(self, name):
         assert name not in self, name
 
         try:
-            instance = self.instance(name)
+            instance = self._instance(name)
         except:
             warn(f'Unable to load {name}.')
 
             raise
 
-        instance.type = self._get_value_module_type(name, path, path_es)
+        instance.type = self._get_value_module_type(name)
 
         if instance.type is None:
-            raise FileNotFoundError(ENOENT, strerror(ENOENT), path / name / '__init__.py')
+            raise FileNotFoundError(ENOENT, strerror(ENOENT), self._path / name / '__init__.py')
 
         self[name] = instance
 
         if instance.type is ModuleType.SP:
             try:
-                self[name].module = import_module(f'wcs.modules.{module}.{name}')
+                self[name].module = import_module(f'wcs.modules.{self._module_name}.{name}')
             except:
                 del self[name]
 
                 raise
         else:
-            es.load(f'wcs/modules/{module}/{name}')
+            es.load(f'wcs/modules/{self._module_name}/{name}')
 
-        listener.manager.notify(name, instance)
+        self._listener.manager.notify(name, instance)
 
         return instance
 
-    def _unload(self, name, module):
+    def load_all(self):
+        raise NotImplementedError()
+
+    def unload(self, name, module):
         if self[name].type is ModuleType.SP:
-            module_name = f'wcs.modules.{module}.{name}'
+            module_name = f'wcs.modules.{self._module_name}.{name}'
 
             _remove_unload_instances(module_name)
 
             del modules[module_name]
         else:
-            es.unload(f'wcs/modules/{module}/{name}')
+            es.unload(f'wcs/modules/{self._module_name}/{name}')
 
         del self[name]
-
-    def load(self, name):
-        raise NotImplementedError()
-
-    def load_all(self):
-        raise NotImplementedError()
-
-    def unload(self, name):
-        raise NotImplementedError()
 
     def unload_all(self):
         for x in [*self]:
@@ -240,7 +234,23 @@ class _BaseManager(dict):
         return self[name.rsplit('.', 1)[1]]
 
     @property
-    def instance(self):
+    def _instance(self):
+        raise NotImplementedError()
+
+    @property
+    def _module_name(self):
+        raise NotImplementedError()
+
+    @property
+    def _path(self):
+        raise NotImplementedError()
+
+    @property
+    def _es_path(self):
+        raise NotImplementedError()
+
+    @property
+    def _listener(self):
         raise NotImplementedError()
 
 
@@ -307,19 +317,19 @@ class _BaseSetting(object):
         container._category_menus[category].append(PagedOption(self.strings['name'], self.name))
         container._info_category_menus[category].append(PagedOption(self.strings['name'], self.name))
 
-    def execute(self, name, module, callbacks, args):
+    def execute(self, name, *args):
         if self.type is ModuleType.SP:
-            callback = callbacks.get(self.name, {}).get(name, None)
+            callback = self._events.get(self.name, {}).get(name, None)
 
             if callback is not None:
                 callback(*args)
         elif self.type is ModuleType.ESP:
-            callback = es.addons.Blocks.get(f'wcs/modules/{module}/{self.name}/{name}')
+            callback = es.addons.Blocks.get(f'wcs/modules/{self._module_name}/{self.name}/{name}')
 
             if callback is not None:
                 callback(*args)
         elif self.type is ModuleType.ESS:
-            addon = esc.addons.get(f'wcs/modules/{module}/{self.name}')
+            addon = esc.addons.get(f'wcs/modules/{self._module_name}/{self.name}')
 
             if addon is not None:
                 executor = addon.blocks.get(name)
@@ -381,6 +391,14 @@ class _BaseSetting(object):
         raise NotImplementedError()
 
     def usable_by(self, wcsplayer):
+        raise NotImplementedError()
+
+    @property
+    def _module_name(self):
+        raise NotImplementedError()
+
+    @property
+    def _events(self):
         raise NotImplementedError()
 
 

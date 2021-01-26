@@ -70,6 +70,9 @@ class _FakeRace(_BaseSetting):
 
 
 class RaceSetting(_BaseSetting):
+    _module_name = 'races'
+    _events = _callbacks
+
     def __init__(self, name):
         super().__init__(name, RACE_PATH)
 
@@ -90,9 +93,6 @@ class RaceSetting(_BaseSetting):
 
             if isinstance(config.get('event'), str):
                 config['event'] = [config['event']]
-
-    def execute(self, name, *args):
-        super().execute(name, 'races', _callbacks, args)
 
     def usable_by(self, wcsplayer):
         data = {'reason':None}
@@ -186,22 +186,23 @@ class RaceSetting(_BaseSetting):
 
 
 class _RaceManager(_BaseManager):
-    instance = RaceSetting
+    _instance = RaceSetting
+    _module_name = 'races'
+    _path = RACE_PATH
+    _es_path = RACE_PATH_ES
+    _listener = OnPluginRaceLoad
 
     def __init__(self):
         super().__init__()
 
         self._default_race = None
 
-    def load(self, name):
-        return self._load(name, 'races', RACE_PATH, RACE_PATH_ES, OnPluginRaceLoad)
-
     def load_all(self):
-        self._move_misplaced_files('races', RACE_PATH, RACE_PATH_ES)
+        self._move_misplaced_files()
 
-        config = self._get_or_create_config('races', RACE_PATH, RACE_PATH_ES)
+        config = self._get_or_create_config()
 
-        self._load_categories_and_values('races', config, RACE_PATH, RACE_PATH_ES)
+        self._load_categories_and_values(config)
 
         default_race = cfg_default_race.get_string()
 
@@ -216,9 +217,6 @@ class _RaceManager(_BaseManager):
             self[None] = _FakeRace()
 
             warn(f'No races found (ESC: {IS_ESC_SUPPORT_ENABLED}) - limited access.')
-
-    def unload(self, name):
-        self._unload(name, 'races')
 
     def unload_all(self):
         if None in self:
