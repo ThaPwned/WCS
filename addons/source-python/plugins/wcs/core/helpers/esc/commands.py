@@ -307,6 +307,8 @@ def _format_message(userid, name, args):
     if text is None:
         return tuple(), None
 
+    text = text.copy()  # Make sure we do not modify the original strings
+
     if args:
         tokens = {}
 
