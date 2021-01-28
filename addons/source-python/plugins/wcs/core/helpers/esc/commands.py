@@ -80,6 +80,7 @@ from players.dictionary import PlayerDictionary
 from players.entity import Player
 from players.helpers import index_from_userid
 #   Translations
+from translations.manager import language_manager
 from translations.strings import LangStrings
 #   Weapons
 from weapons.dictionary import WeaponDictionary
@@ -1424,7 +1425,18 @@ def wcs_xtell_command(command_info, userid:str, name:str, *args:str):
     players, message = _format_message(userid, name, args)
 
     for player in players:
-        SayText2(message[message.get(player.language, 'en')]).send(player.index)
+        # Try to get the text in the player's language
+        text = message.get(language_manager.get_language(player.language))
+
+        if text is None:
+            # Try to get the text in the server's default language
+            text = message.get(language_manager.default)
+
+            if text is None:
+                # Just get any text. I don't care if it's in Na'vi
+                text = message[list(message)[0]]
+
+        SayText2(text).send(player.index)
 
 
 @TypedServerCommand('wcs_xcentertell')
@@ -1432,7 +1444,18 @@ def wcs_xcentertell_command(command_info, userid:str, name:str, *args:str):
     players, message = _format_message(userid, name, args)
 
     for player in players:
-        HudMsg(message[message.get(player.language, 'en')], y=0.2).send(player.index)
+        # Try to get the text in the player's language
+        text = message.get(language_manager.get_language(player.language))
+
+        if text is None:
+            # Try to get the text in the server's default language
+            text = message.get(language_manager.default)
+
+            if text is None:
+                # Just get any text. I don't care if it's in Na'vi
+                text = message[list(message)[0]]
+
+        HudMsg(text, y=0.2).send(player.index)
 
 
 @TypedServerCommand('wcs_centermsg')
