@@ -35,6 +35,7 @@ from core import OutputReturn
 #   CVars
 from cvars import cvar
 #   Engines
+from engines.precache import Model
 from engines.server import global_vars
 #   Entities
 from entities.constants import MoveType
@@ -265,6 +266,11 @@ hinttext_cooldown_ready_message = HintText(menu_strings['hinttext_cooldown ready
 help_text_message.message.tokens['command'] = COMMANDS['wcshelp'][0]
 welcome_text_message.message.tokens['command'] = COMMANDS['wcshelp'][0]
 skills_reset_message.message.tokens['command'] = COMMANDS['spendskills'][0]
+
+# "combinemuzzle1" is no where to be found but it's still complaining about late precache
+_combinemuzzle1_model = Model('effects/combinemuzzle1.vmt', True)
+_combinemuzzle2_model = Model('effects/combinemuzzle2.vmt', True)
+_yellowflare_model = Model('effects/yellowflare.vmt', True)
 
 _delays = defaultdict(set)
 _melee_weapons = [weapon.basename for weapon in WeaponClassIter('melee')]
@@ -1079,7 +1085,7 @@ def on_player_level_up(wcsplayer, race, old_level):
                 entity.render_color = _level_effect_color
                 entity.render_mode = RenderMode.NONE
                 entity.render_amt = 200
-                entity.smoke_material = 'effects/combinemuzzle2.vmt'
+                entity.smoke_material = _combinemuzzle2_model.path
                 entity.angles = _effect_angle
                 entity.twist = 15
 
@@ -1165,7 +1171,7 @@ def on_player_rank_update(wcsplayer, old, new):
                     entity.render_color = _rank_effect_color
                     entity.render_mode = RenderMode.NONE
                     entity.render_amt = 200
-                    entity.smoke_material = 'effects/yellowflare.vmt'
+                    entity.smoke_material = _yellowflare_model.path
                     entity.angles = _effect_angle
                     entity.twist = 0
 
