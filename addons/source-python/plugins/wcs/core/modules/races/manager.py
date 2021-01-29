@@ -94,6 +94,11 @@ class RaceSetting(_BaseSetting):
             if isinstance(config.get('event'), str):
                 config['event'] = [config['event']]
 
+        # Did we not find a shortname in the strings?
+        if 'shortname' not in self.strings:
+            # Then we just use the race's name instead
+            self.strings['shortname'] = self.strings['name']
+
     def usable_by(self, wcsplayer):
         data = {'reason':None}
 

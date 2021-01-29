@@ -90,6 +90,7 @@ from .core.config import cfg_rank_gain_effect
 from .core.config import cfg_spawn_text
 from .core.config import cfg_hinttext_cooldown
 from .core.config import cfg_ffa_enabled
+from .core.config import cfg_race_clan_tag
 from .core.config import cfg_changerace_next_round
 from .core.config import cfg_resetskills_next_round
 from .core.config import cfg_disable_text_on_level
@@ -1016,6 +1017,13 @@ def on_player_change_race(wcsplayer, old, new):
             for event in _events[new]['events']:
                 event.register()
 
+    # Is the current game CSS or CSGO?
+    if GAME_NAME in ('cstrike', 'csgo'):
+        # Are we allowed to change the clan tag?
+        if cfg_race_clan_tag.get_int():
+            # Change the clan tag to the player's current race
+            wcsplayer.player.clan_tag = wcsplayer.active_race.settings.strings['shortname'].get_string()
+
 
 @OnPlayerDelete
 def on_player_delete(wcsplayer):
@@ -1210,6 +1218,13 @@ def on_player_ready(wcsplayer):
         wcsplayer.execute('readycmd', define=True)
 
     wcsplayer.data['_internal_rested_xp'] = time()
+
+    # Is the current game CSS or CSGO?
+    if GAME_NAME in ('cstrike', 'csgo'):
+        # Are we allowed to change the clan tag?
+        if cfg_race_clan_tag.get_int():
+            # Change the clan tag to the player's current race
+            wcsplayer.player.clan_tag = wcsplayer.active_race.settings.strings['shortname'].get_string()
 
     if not wcsplayer.fake_client:
         if wcsplayer.total_level <= cfg_disable_text_on_level.get_int():
