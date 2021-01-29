@@ -258,6 +258,8 @@ admin_gain_levels_all_message = SayText2(chat_strings['admin gain levels all'])
 admin_gain_levels_receiver_message = SayText2(chat_strings['admin gain levels receiver'])
 admin_gain_levels_sender_message = SayText2(chat_strings['admin gain levels sender'])
 admin_gain_levels_self_message = SayText2(chat_strings['admin gain levels self'])
+github_new_version_message = SayText2(chat_strings['github new version'])
+github_no_new_version_message = SayText2(chat_strings['github no new version'])
 github_mod_update_message = SayText2(chat_strings['github mod update'])
 
 hinttext_cooldown_message = HintText(menu_strings['hinttext_cooldown'])
@@ -977,6 +979,13 @@ def on_github_new_version_checked(version, commits):
     global _new_version
 
     _new_version = version
+
+    for _, wcsplayer in PlayerReadyIter():
+        if wcsplayer.privileges.get('wcsadmin'):
+            if _new_version is None:
+                github_no_new_version_message.send(wcsplayer.index)
+            else:
+                github_new_version_message.send(wcsplayer.index, new=version)
 
 
 @OnGithubNewVersionInstalled
