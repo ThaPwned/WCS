@@ -13,6 +13,7 @@ from github import Github
 #   IO
 from io import BytesIO
 #   JSON
+from json import JSONDecodeError
 from json import dump
 from json import load
 #   Path
@@ -159,8 +160,16 @@ class _GithubManager(dict):
             if (DATA_PATH / 'metadata.wcs_install').isfile():
                 valid_version = True
 
-                with open(DATA_PATH / 'metadata.wcs_install') as inputfile:
-                    sha = inputfile.read()
+                # Update the metadata file to use JSON instead of just holding the SHA value
+                try:
+                    with open(DATA_PATH / 'metadata.wcs_install') as inputfile:
+                        sha = load(inputfile)['sha']
+                except JSONDecodeError:
+                    with open(DATA_PATH / 'metadata.wcs_install') as inputfile:
+                        sha = inputfile.read()
+
+                    with open(DATA_PATH / 'metadata.wcs_install', 'w') as outputfile:
+                        dump({'sha':sha}, outputfile, indent=4)
             else:
                 if (PLUGIN_PATH / 'info.ini').isfile():
                     with open(PLUGIN_PATH / 'info.ini') as inputfile:
@@ -243,17 +252,23 @@ class _GithubManager(dict):
                 blacklist = []
 
             if (DATA_PATH / 'metadata.wcs_install').isfile():
-                with open(DATA_PATH / 'metadata.wcs_install') as inputfile:
-                    sha = inputfile.read()
+                try:
+                    with open(DATA_PATH / 'metadata.wcs_install') as inputfile:
+                        metadata = load(inputfile)
+                except JSONDecodeError:
+                    with open(DATA_PATH / 'metadata.wcs_install') as inputfile:
+                        sha = inputfile.read()
+
+                    metadata = {'sha':sha}
             else:
-                sha = None
+                metadata = {}
 
             updated_files = []
 
             most_recent_commit_sha = repo.get_branch('master').commit.sha
 
-            if sha is not None:
-                difference = repo.compare(sha, most_recent_commit_sha)
+            if metadata.get('sha') is not None:
+                difference = repo.compare(metadata['sha'], most_recent_commit_sha)
 
                 updated_files.extend([x.filename for x in difference.files])
 
@@ -324,8 +339,10 @@ class _GithubManager(dict):
 
             _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.FINISHING))
 
+            metadata['sha'] = most_recent_commit_sha
+
             with open(DATA_PATH / 'metadata.wcs_install', 'w') as outputfile:
-                outputfile.write(most_recent_commit_sha)
+                dump(metadata, outputfile, indent=4)
 
             _output.put((True, OnGithubNewVersionInstalled.manager.notify))
         except:
@@ -351,15 +368,27 @@ class _GithubManager(dict):
                         modules_left[module].append(content.name)
 
                         if module not in self or content.name not in self[module]:
-                            wcs_install_path = path / content.name / '.wcs_install'
+                            wcs_install_path_old = path / content.name / '.wcs_install'
+                            wcs_install_path = path / content.name / 'metadata.wcs_install'
+
+                            # Update the metadata file to use JSON as well as storing last updated and repository
+                            if wcs_install_path_old.isfile():
+                                with open(wcs_install_path_old) as inputfile:
+                                    repository_installed = inputfile.read()
+
+                                with open(wcs_install_path, 'w') as outputfile:
+                                    dump({'last_updated':wcs_install_path_old.mtime, 'repository':repository_installed}, outputfile, indent=4)
+
+                                wcs_install_path_old.remove()
 
                             if wcs_install_path.isfile():
                                 status = GithubModuleStatus.INSTALLED
 
-                                last_updated = wcs_install_path.mtime
-
                                 with open(wcs_install_path) as inputfile:
-                                    repository_installed = inputfile.read()
+                                    data = load(inputfile)
+
+                                last_updated = data['last_updated']
+                                repository_installed = data['repository']
                             else:
                                 status = GithubModuleStatus.UNINSTALLED
 
@@ -402,13 +431,14 @@ class _GithubManager(dict):
 
             self._download_module(repo, f'{module}/{name}')
 
-            _path = MODULE_PATH / module / name / '.wcs_install'
+            metadata_path = MODULE_PATH / module / name / 'metadata.wcs_install'
+            last_updated = time()
 
-            with open(_path, 'w') as outputfile:
-                outputfile.write(repository)
+            with open(metadata_path, 'w') as outputfile:
+                dump({'last_updated':last_updated, 'repository':repository}, outputfile, indent=4)
 
             self[module][name]['status'] = GithubModuleStatus.INSTALLED
-            self[module][name]['last_updated'] = _path.mtime
+            self[module][name]['last_updated'] = last_updated
             self[module][name]['repository'] = repository
 
             _output.put((True, OnGithubModuleInstalled.manager.notify, repository, module, name, userid))
@@ -461,13 +491,19 @@ class _GithubManager(dict):
                     with open(config_path, 'w') as outputfile:
                         dump(container, outputfile, indent=4)
 
-            _path = MODULE_PATH / module / name / '.wcs_install'
+            metadata_path = MODULE_PATH / module / name / 'metadata.wcs_install'
+            last_updated = time()
 
-            # Update the installation file, so we know it's been updated
-            _path.utime(None)
+            with open(metadata_path) as inputfile:
+                data = load(inputfile)
+
+            data['last_updated'] = last_updated
+
+            with open(metadata_path, 'w') as outputfile:
+                dump(data, outputfile, indent=4)
 
             self[module][name]['status'] = GithubModuleStatus.INSTALLED
-            self[module][name]['last_updated'] = _path.mtime
+            self[module][name]['last_updated'] = last_updated
 
             _output.put((True, OnGithubModuleUpdated.manager.notify, repository, module, name, userid))
         except:
