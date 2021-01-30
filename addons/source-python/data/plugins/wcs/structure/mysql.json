@@ -10,31 +10,31 @@
     "player offline": "SELECT IFNULL(accountid, name), name FROM players ORDER BY name ASC",
     "player get": "SELECT id, name, current_race, lastconnect, bank_level, rested_xp FROM players WHERE accountid = %s",
     "player get bot": "SELECT id, name, current_race, lastconnect, bank_level, rested_xp FROM players WHERE accountid IS NULL AND name = %s",
-    "player insert": "INSERT INTO players (accountid, name, current_race, lastconnect, bank_level, rested_xp) VALUES (%s, %s, %s, %s, %s, %s)",
+    "player insert": "INSERT IGNORE INTO players (accountid, name, current_race, lastconnect, bank_level, rested_xp) VALUES (%s, %s, %s, %s, %s, %s)",
     "player update": "UPDATE players SET name = %s, current_race = %s, lastconnect = %s, bank_level = %s, rested_xp = %s WHERE id = %s",
 
     "race get": "SELECT name, xp, level, unused FROM races WHERE playerid = %s",
-    "race insert": "INSERT INTO races (name, playerid) VALUES (%s, %s)",
+    "race insert": "INSERT IGNORE INTO races (name, playerid) VALUES (%s, %s)",
     "race update": "UPDATE races SET xp = CASE {} ELSE xp END, level = CASE {} ELSE level END, unused = CASE {} ELSE unused END WHERE playerid = %s",
     "race join": "WHEN `name` = '{}' THEN {}",
 
     "skill get": "SELECT name, race, level FROM skills WHERE playerid = %s",
-    "skill insert": "INSERT INTO skills (name, race, playerid) VALUES (%s, %s, %s)",
+    "skill insert": "INSERT IGNORE INTO skills (name, race, playerid) VALUES (%s, %s, %s)",
     "skill update": "UPDATE skills SET level = CASE {} ELSE level END WHERE playerid = %s",
     "skill join": "WHEN race = '{}' AND `name` = '{}' THEN {}",
 
     "stat get": "SELECT `key`, value FROM stats WHERE playerid = %s",
-    "stat insert": "INSERT INTO stats (key, value, playerid) VALUES (%s, %s, %s)",
+    "stat insert": "INSERT IGNORE INTO stats (key, value, playerid) VALUES (%s, %s, %s)",
     "stat update": "UPDATE stats SET value = CASE {} ELSE value END WHERE playerid = %s",
     "stat join": "WHEN `key` = '{}' THEN {}",
 
     "stat module get": "SELECT owner, `key`, value FROM stats_{} WHERE playerid = %s",
-    "stat module insert": "INSERT INTO stats_{} (owner, `key`, value, playerid) VALUES ('%s', '%s', %s, %s)",
+    "stat module insert": "INSERT IGNORE INTO stats_{} (owner, `key`, value, playerid) VALUES ('%s', '%s', %s, %s)",
     "stat module update": "UPDATE stats_{} SET value = CASE {} ELSE value END WHERE playerid = %s",
     "stat module join": "WHEN owner = '{}' AND `key` = '{}' THEN {}",
 
     "setting get": "SELECT setting, value FROM settings",
-    "setting insert": "INSERT INTO settings (setting, value) VALUES (%s, %s)",
+    "setting insert": "INSERT IGNORE INTO settings (setting, value) VALUES (%s, %s)",
     "setting update": "UPDATE settings SET value = %s WHERE setting = '{}'",
 
     "rank update": "SELECT IFNULL(p.accountid, p.name), p.name, p.current_race, IFNULL(SUM(r.level), 1) AS total_level FROM players p LEFT JOIN races r on r.playerid = p.id GROUP BY p.id ORDER BY total_level DESC",

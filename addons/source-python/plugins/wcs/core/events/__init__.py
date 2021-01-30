@@ -141,7 +141,7 @@ class FakeEvent(object):
     def get_float(self, key_name, default_value=0.0):
         return self._variables.get(key_name, default_value)
 
-    def get_str(self, key_name, default_value=''):
+    def get_string(self, key_name, default_value=''):
         return self._variables.get(key_name, default_value)
 
     def set_bool(self, key_name, value):
@@ -156,7 +156,7 @@ class FakeEvent(object):
         assert isinstance(value, float)
         self._variables[key_name] = value
 
-    def set_str(self, key_name, value):
+    def set_string(self, key_name, value):
         assert isinstance(value, str)
         self._variables[key_name] = value
 

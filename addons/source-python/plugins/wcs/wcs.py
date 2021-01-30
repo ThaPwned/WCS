@@ -29,11 +29,13 @@ from commands.typed import TypedClientCommand
 #   Colors
 from colors import Color
 #   Core
+from core import GAME_NAME
 from core import SOURCE_ENGINE_BRANCH
 from core import OutputReturn
 #   CVars
 from cvars import cvar
 #   Engines
+from engines.precache import Model
 from engines.server import global_vars
 #   Entities
 from entities.constants import MoveType
@@ -88,6 +90,7 @@ from .core.config import cfg_rank_gain_effect
 from .core.config import cfg_spawn_text
 from .core.config import cfg_hinttext_cooldown
 from .core.config import cfg_ffa_enabled
+from .core.config import cfg_race_clan_tag
 from .core.config import cfg_changerace_next_round
 from .core.config import cfg_resetskills_next_round
 from .core.config import cfg_disable_text_on_level
@@ -256,6 +259,8 @@ admin_gain_levels_all_message = SayText2(chat_strings['admin gain levels all'])
 admin_gain_levels_receiver_message = SayText2(chat_strings['admin gain levels receiver'])
 admin_gain_levels_sender_message = SayText2(chat_strings['admin gain levels sender'])
 admin_gain_levels_self_message = SayText2(chat_strings['admin gain levels self'])
+github_new_version_message = SayText2(chat_strings['github new version'])
+github_no_new_version_message = SayText2(chat_strings['github no new version'])
 github_mod_update_message = SayText2(chat_strings['github mod update'])
 
 hinttext_cooldown_message = HintText(menu_strings['hinttext_cooldown'])
@@ -265,10 +270,16 @@ help_text_message.message.tokens['command'] = COMMANDS['wcshelp'][0]
 welcome_text_message.message.tokens['command'] = COMMANDS['wcshelp'][0]
 skills_reset_message.message.tokens['command'] = COMMANDS['spendskills'][0]
 
+# "combinemuzzle1" is no where to be found but it's still complaining about late precache
+_combinemuzzle1_model = Model('effects/combinemuzzle1.vmt', True)
+_combinemuzzle2_model = Model('effects/combinemuzzle2.vmt', True)
+_yellowflare_model = Model('effects/yellowflare.vmt', True)
+
 _delays = defaultdict(set)
 _melee_weapons = [weapon.basename for weapon in WeaponClassIter('melee')]
 _new_version = None
 _pre_ffa_enabled = {}
+_block_player_hurt = False
 
 _effect_angle = QAngle(0, 0, 0)
 _level_effect_color = Color(252, 232, 131)
@@ -554,6 +565,7 @@ def player_team(event):
 
             # Is the race not allowed on this team?
             restrictteam = wcsplayer.active_race.settings.config.get('restrictteam')
+
             if restrictteam:
                 if not restrictteam == team:
                     reason = RaceReason.TEAM
@@ -606,8 +618,6 @@ def player_team(event):
                     force_change_team_message.send(wcsplayer.index, old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
                 else:
                     force_change_team_limit_message.send(wcsplayer.index, count=len(team_data[team][key]), old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
-        
-
 
 
 @Event('player_spawn')
@@ -616,7 +626,7 @@ def player_spawn(event):
     wcsplayer = Player.from_userid(userid)
 
     if wcsplayer.ready:
-        if wcsplayer.player.team_index >= 2:
+        if wcsplayer.player.team_index >= 2 or GAME_NAME in ('hl2mp', ):
             if not wcsplayer.fake_client:
                 if cfg_resetskills_next_round.get_int():
                     if wcsplayer.data.pop('_internal_reset_skills', False):
@@ -654,6 +664,12 @@ def player_spawn(event):
 
 @Event('player_hurt')
 def player_hurt(event):
+    global _block_player_hurt
+
+    if _block_player_hurt:
+        _block_player_hurt = False
+        return
+
     attacker = event['attacker']
 
     if attacker:
@@ -684,6 +700,9 @@ def player_hurt(event):
 
 @PreEvent('player_hurt')
 def pre_player_hurt(event):
+    if _block_player_hurt:
+        return
+
     attacker = event['attacker']
 
     if attacker:
@@ -741,7 +760,7 @@ def player_death(event):
                     if not maximum_race_level or active_race.level < maximum_race_level:
                         value = kill_xp = (cfg_kill_bot_xp if wcsvictim.fake_client else cfg_kill_xp).get_int()
 
-                        if event['headshot']:
+                        if not event.is_empty('headshot') and event['headshot']:
                             headshot_xp = (cfg_headshot_bot_xp if wcsvictim.fake_client else cfg_headshot_xp).get_int()
 
                             if headshot_xp:
@@ -834,9 +853,10 @@ def player_death(event):
 @Event('player_say')
 def player_say(event):
     userid = event['userid']
+
     if userid == 0:
-        return # The server is not a player :)
-        
+        return  # The server is not a player :)
+
     wcsplayer = Player.from_userid(userid)
 
     if wcsplayer.ready:
@@ -961,6 +981,13 @@ def on_github_new_version_checked(version, commits):
 
     _new_version = version
 
+    for _, wcsplayer in PlayerReadyIter():
+        if wcsplayer.privileges.get('wcsadmin'):
+            if _new_version is None:
+                github_no_new_version_message.send(wcsplayer.index)
+            else:
+                github_new_version_message.send(wcsplayer.index, new=version)
+
 
 @OnGithubNewVersionInstalled
 def on_github_new_version_installed():
@@ -990,6 +1017,13 @@ def on_player_change_race(wcsplayer, old, new):
             for event in _events[new]['events']:
                 event.register()
 
+    # Is the current game CSS or CSGO?
+    if GAME_NAME in ('cstrike', 'csgo'):
+        # Are we allowed to change the clan tag?
+        if cfg_race_clan_tag.get_int():
+            # Change the clan tag to the player's current race
+            wcsplayer.player.clan_tag = wcsplayer.active_race.settings.strings['shortname'].get_string()
+
 
 @OnPlayerDelete
 def on_player_delete(wcsplayer):
@@ -999,9 +1033,12 @@ def on_player_delete(wcsplayer):
 
         # Remove the player from the counter tracking the team limit for races
         team = wcsplayer.player.team
+
         if team >= 2:
             key = f'_internal_{wcsplayer.current_race}_limit_allowed'
+
             team_data[team][key].remove(wcsplayer.userid)
+
             if not team_data[team][key]:
                 del team_data[team][key]
 
@@ -1065,7 +1102,7 @@ def on_player_level_up(wcsplayer, race, old_level):
                 entity.render_color = _level_effect_color
                 entity.render_mode = RenderMode.NONE
                 entity.render_amt = 200
-                entity.smoke_material = 'effects/combinemuzzle2.vmt'
+                entity.smoke_material = _combinemuzzle2_model.path
                 entity.angles = _effect_angle
                 entity.twist = 15
 
@@ -1151,7 +1188,7 @@ def on_player_rank_update(wcsplayer, old, new):
                     entity.render_color = _rank_effect_color
                     entity.render_mode = RenderMode.NONE
                     entity.render_amt = 200
-                    entity.smoke_material = 'effects/yellowflare.vmt'
+                    entity.smoke_material = _yellowflare_model.path
                     entity.angles = _effect_angle
                     entity.twist = 0
 
@@ -1168,7 +1205,7 @@ def on_player_rank_update(wcsplayer, old, new):
 
 @OnPlayerReady
 def on_player_ready(wcsplayer):
-    if wcsplayer.player.team_index >= 2:
+    if wcsplayer.player.team_index >= 2 or GAME_NAME in ('hl2mp', ):
         if not wcsplayer.fake_client:
             if cfg_spawn_text.get_int():
                 if wcsplayer.total_level <= cfg_disable_text_on_level.get_int():
@@ -1181,6 +1218,13 @@ def on_player_ready(wcsplayer):
         wcsplayer.execute('readycmd', define=True)
 
     wcsplayer.data['_internal_rested_xp'] = time()
+
+    # Is the current game CSS or CSGO?
+    if GAME_NAME in ('cstrike', 'csgo'):
+        # Are we allowed to change the clan tag?
+        if cfg_race_clan_tag.get_int():
+            # Change the clan tag to the player's current race
+            wcsplayer.player.clan_tag = wcsplayer.active_race.settings.strings['shortname'].get_string()
 
     if not wcsplayer.fake_client:
         if wcsplayer.total_level <= cfg_disable_text_on_level.get_int():
@@ -1265,6 +1309,28 @@ def on_take_damage_alive(wcsvictim, wcsattacker, info):
                         if wcsattacker.ready:
                             with FakeEvent('pre_take_damage_hurt', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon_name, info=info) as event:
                                 wcsattacker.notify(event)
+
+    # TODO: This is ugly and need to be improved...
+    if GAME_NAME in ('hl2mp', ):
+        global _block_player_hurt
+
+        event_args = {}
+        event_args['userid'] = wcsvictim.userid
+        event_args['attacker'] = 0 if wcsattacker is None else wcsattacker.userid
+        event_args['health'] = wcsvictim.player.health - info.damage
+
+        try:
+            event_args['weapon'] = Entity(info.weapon).class_name
+        except ValueError:
+            event_args['weapon'] = Entity(info.inflictor).class_name
+
+        _block_player_hurt = False
+
+        with FakeEvent('player_hurt', **event_args) as event:
+            pre_player_hurt(event)
+            player_hurt(event)
+
+        _block_player_hurt = True
 
 
 # ============================================================================

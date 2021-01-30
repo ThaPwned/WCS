@@ -576,7 +576,7 @@ def playerinfo_detail_menu_build(menu, client):
         menu[1].text.tokens['race'] = active_race.settings.strings['name']
         menu[2].text.tokens['xp'] = active_race.xp
         menu[2].text.tokens['required'] = active_race.required_xp
-        menu[2].text.tokens['rested_xp'] = wcsplayer.rested_xp
+        menu[2].text.tokens['rested_xp'] = wcstarget.rested_xp
         menu[3].text.tokens['level'] = active_race.level
         menu[3].text.tokens['total_level'] = wcstarget.total_level
         menu[5].text.tokens['value'] = strftime(TIME_FORMAT, localtime(wcstarget._lastconnect))

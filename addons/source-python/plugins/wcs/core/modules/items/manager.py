@@ -36,14 +36,14 @@ __all__ = (
 # >> CLASSES
 # ============================================================================
 class ItemSetting(_BaseSetting):
+    _module_name = 'items'
+    _events = _callbacks
+
     def __init__(self, name):
         super().__init__(name, ITEM_PATH)
 
         if isinstance(self.config.get('event'), str):
             self.config['event'] = [self.config['event']]
-
-    def execute(self, name, *args):
-        super().execute(name, 'items', _callbacks, args)
 
     def usable_by(self, wcsplayer):
         data = {'reason':None}
@@ -104,7 +104,11 @@ class ItemSetting(_BaseSetting):
 
 
 class _ItemManager(_BaseManager):
-    instance = ItemSetting
+    _instance = ItemSetting
+    _module_name = 'items'
+    _path = ITEM_PATH
+    _es_path = ITEM_PATH_ES
+    _listener = OnPluginItemLoad
 
     def __init__(self):
         super().__init__()
@@ -112,22 +116,18 @@ class _ItemManager(_BaseManager):
         self._category_max_items = {}
         self._round_restart = False
 
-    def load(self, name):
-        return self._load(name, 'items', ITEM_PATH, ITEM_PATH_ES, OnPluginItemLoad)
-
     def load_all(self):
-        config = self._get_or_create_config('items', ITEM_PATH, ITEM_PATH_ES)
+        self._move_misplaced_files()
+
+        config = self._get_or_create_config()
 
         for category, value in config.get('maxitems', {}).items():
             self._category_max_items[category] = value
 
-        self._load_categories_and_values('items', config, ITEM_PATH, ITEM_PATH_ES)
+        self._load_categories_and_values(config)
 
         for category in self._info_category_menus:
             if category not in self._category_max_items:
                 warn(f'The category "{category}" was not found in items.json under "maxitems" - setting it to 1')
                 self._category_max_items[category] = 1
-
-    def unload(self, name):
-        self._unload(name, 'items')
 item_manager = _ItemManager()

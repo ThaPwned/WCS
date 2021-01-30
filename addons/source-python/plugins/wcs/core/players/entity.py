@@ -24,6 +24,8 @@ from warnings import warn
 #   Commands
 from commands import CommandReturn
 from commands.say import SayFilter
+#   Core
+from core import GAME_NAME
 #   CVars
 from cvars import ConVar
 #   Engines
@@ -48,7 +50,8 @@ from listeners.tick import RepeatStatus
 #   Memory
 from memory import make_object
 #   Menus
-from ..menus.base import SimpleMenu
+from menus.base import _BaseMenu
+from menus.base import _PagedMenuBase
 #   Players
 from players.dictionary import PlayerDictionary
 from players.entity import Player as _Player
@@ -665,7 +668,7 @@ class Player(object, metaclass=_PlayerMeta):
         except:
             except_hooks.print_exception()
         else:
-            if isinstance(accepted, SimpleMenu):
+            if isinstance(accepted, (_BaseMenu, _PagedMenuBase)):
                 accepted.send(self.index)
 
                 self.data['_internal_input_menu'] = None
@@ -1309,7 +1312,7 @@ class _Skill(object):
         if not self.level:
             return SkillReason.LEVEL
 
-        if self.wcsplayer.player.team_index < 2:
+        if self.wcsplayer.player.team_index < 2 and GAME_NAME not in ('hl2mp', ):
             return SkillReason.TEAM
 
         if self.wcsplayer.player.dead:

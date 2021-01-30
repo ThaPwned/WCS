@@ -22,6 +22,7 @@ __all__ = (
     'cfg_bonus_bot_xp',
     'cfg_bonus_xp_level_cap',
     'cfg_default_race',
+    'cfg_race_clan_tag',
     'cfg_disable_text_on_level',
     'cfg_headshot_xp',
     'cfg_headshot_bot_xp',
@@ -105,6 +106,7 @@ with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as co
     cfg_resetskills_next_round = config.cvar('resetskills_next_round', '0', config_strings['resetskills_next_round'])
     cfg_disable_text_on_level = config.cvar('disable_text_on_level', '20', config_strings['disable_text_on_level'])
     cfg_default_race = config.cvar('default_race', '', config_strings['default_race'])
+    cfg_race_clan_tag = config.cvar('race_clan_tag', '1', config_strings['race_clan_tag'])
     cfg_top_announcement_enable = config.cvar('top_announcement_enable', '1', config_strings['top_announcement_enable'])
     cfg_top_public_announcement = config.cvar('top_public_announcement', '1', config_strings['top_public_announcement'])
     cfg_top_min_rank_announcement = config.cvar('top_min_rank_announcement', '10', config_strings['top_min_rank_announcement'])
