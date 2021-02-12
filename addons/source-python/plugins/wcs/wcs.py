@@ -829,15 +829,19 @@ def player_death(event):
             if item.settings.config['duration'] == 1:
                 item.count = 0
 
+        # Is the victim a bot?
         if wcsvictim.fake_client:
+            # Is the variable 'wcs_bot_random_race' enabled?
             if cfg_bot_random_race.get_int():
-                usable_races = wcsvictim.available_races
+                # Gets the key as well as removes it from the dict (whether or not it should ignore random bot races)
+                if not wcsvictim.data.pop('_internal_ignore_bot_random_race', False):
+                    usable_races = wcsvictim.available_races
 
-                if wcsvictim.current_race in usable_races:
-                    usable_races.remove(wcsvictim.current_race)
+                    if wcsvictim.current_race in usable_races:
+                        usable_races.remove(wcsvictim.current_race)
 
-                if usable_races:
-                    wcsvictim.current_race = choice(usable_races)
+                    if usable_races:
+                        wcsvictim.current_race = choice(usable_races)
 
     if not event.is_empty('assister'):
         assister = event['assister']
