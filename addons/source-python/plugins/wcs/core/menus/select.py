@@ -648,7 +648,7 @@ def wcsadmin_players_sub_changerace_menu_select(menu, client, option):
 
         active_race = wcstarget.active_race
 
-        xp_required_message.send(wcsplayer.index, name=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
+        xp_required_message.send(wcstarget.index, name=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
 
     return menu.parent_menu
 
