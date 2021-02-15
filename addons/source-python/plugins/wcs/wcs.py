@@ -323,6 +323,14 @@ def unload():
     emulate_manager.stop()
 
     for _, wcsplayer in PlayerReadyIter():
+        # Retrieve the player's original clan tag
+        clan_tag = wcsplayer.data.pop('_internal_clan_tag', None)
+
+        # Did they have a clan tag stored?
+        if clan_tag is not None:
+            # Restore the clan tag to what it was previously (add 4 spaces to fix a display issue)
+            wcsplayer.player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + clan_tag
+
         OnPlayerDelete.manager.notify(wcsplayer)
 
     for _, wcsplayer in PlayerReadyIter():
@@ -507,6 +515,14 @@ def _toggle_ffa(enable):
         _pre_ffa_enabled.clear()
 
 
+def _update_player_clan_tag(wcsplayer, delay):
+    # Change the clan tag to the player's current race (add 4 spaces to fix a display issue)
+    wcsplayer.player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + wcsplayer.active_race.settings.strings['shortname'].get_string()
+
+    # Remove the delay from the container
+    _delays[wcsplayer].remove(delay)
+
+
 # ============================================================================
 # >> EVENTS
 # ============================================================================
@@ -618,6 +634,11 @@ def player_team(event):
                     force_change_team_message.send(wcsplayer.index, old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
                 else:
                     force_change_team_limit_message.send(wcsplayer.index, count=len(team_data[team][key]), old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
+
+        # Update the clan tag 0.2 seconds later otherwise it won't be set
+        delay = Delay(0.2, _update_player_clan_tag, (wcsplayer, ))
+        delay.args += (delay, )
+        _delays[wcsplayer].add(delay)
 
 
 @Event('player_spawn')
@@ -829,15 +850,19 @@ def player_death(event):
             if item.settings.config['duration'] == 1:
                 item.count = 0
 
+        # Is the victim a bot?
         if wcsvictim.fake_client:
+            # Is the variable 'wcs_bot_random_race' enabled?
             if cfg_bot_random_race.get_int():
-                usable_races = wcsvictim.available_races
+                # Gets the key as well as removes it from the dict (whether or not it should ignore random bot races)
+                if not wcsvictim.data.pop('_internal_ignore_bot_random_race', False):
+                    usable_races = wcsvictim.available_races
 
-                if wcsvictim.current_race in usable_races:
-                    usable_races.remove(wcsvictim.current_race)
+                    if wcsvictim.current_race in usable_races:
+                        usable_races.remove(wcsvictim.current_race)
 
-                if usable_races:
-                    wcsvictim.current_race = choice(usable_races)
+                    if usable_races:
+                        wcsvictim.current_race = choice(usable_races)
 
     if not event.is_empty('assister'):
         assister = event['assister']
@@ -907,9 +932,35 @@ def player_jump(event):
 # ============================================================================
 @OnConVarChanged
 def on_con_var_changed(convar, old_value):
+    # Is the variable that was changed 'wcs_ffa_enabled'?
     if convar.name == cfg_ffa_enabled.name:
         # This has to be delayed by a tick otherwise it'll crash the server
         Delay(0, _toggle_ffa, (convar.get_int(), ))
+    # Is the variable that was changed 'wcs_race_clan_tag'?
+    elif convar.name == cfg_race_clan_tag.name:
+        # Is the current game CSS or CSGO?
+        if GAME_NAME in ('cstrike', 'csgo'):
+            # Is the variable set to enabled, and it's not already enabled?
+            if old_value == '0' and cfg_race_clan_tag.get_float():
+                # Loop through all players who's ready
+                for player, wcsplayer in PlayerReadyIter():
+                    # Store the original clan tag for later
+                    wcsplayer.data['_internal_clan_tag'] = player.clan_tag
+
+                    # Change the clan tag to the player's current race (add 4 spaces to fix a display issue)
+                    player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + wcsplayer.active_race.settings.strings['shortname'].get_string()
+            # Is the variable set to disabled, and it's not already disabled?
+            elif old_value != '0' and not cfg_race_clan_tag.get_float():
+                # Loop through all players who's ready
+                for player, wcsplayer in PlayerReadyIter():
+                    # Retrieve the player's original clan tag
+                    clan_tag = wcsplayer.data.pop('_internal_clan_tag', None)
+
+                    # Did they have a clan tag stored?
+                    if clan_tag is not None:
+                        # Restore the clan tag to what it was previously (add 4 spaces to fix a display issue)
+                        player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + clan_tag
+
 
 
 @OnLevelInit
@@ -1021,8 +1072,8 @@ def on_player_change_race(wcsplayer, old, new):
     if GAME_NAME in ('cstrike', 'csgo'):
         # Are we allowed to change the clan tag?
         if cfg_race_clan_tag.get_int():
-            # Change the clan tag to the player's current race
-            wcsplayer.player.clan_tag = wcsplayer.active_race.settings.strings['shortname'].get_string()
+            # Change the clan tag to the player's current race (add 4 spaces to fix a display issue)
+            wcsplayer.player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + wcsplayer.active_race.settings.strings['shortname'].get_string()
 
 
 @OnPlayerDelete
@@ -1031,16 +1082,31 @@ def on_player_delete(wcsplayer):
         with FakeEvent('disconnectcmd', userid=wcsplayer.userid) as event:
             wcsplayer.execute(event.name, event)
 
-        # Remove the player from the counter tracking the team limit for races
-        team = wcsplayer.player.team
-
-        if team >= 2:
+        try:
+            # Try to get the player's team
+            team = wcsplayer.player.team
+        except ValueError:
             key = f'_internal_{wcsplayer.current_race}_limit_allowed'
 
-            team_data[team][key].remove(wcsplayer.userid)
+            # Let's just search for the player and remove them
+            for team in team_data:
+                if key in team_data[team]:
+                    if wcsplayer.userid in team_data[team][key]:
+                        team_data[team][key].remove(wcsplayer.userid)
 
-            if not team_data[team][key]:
-                del team_data[team][key]
+                        if not team_data[team][key]:
+                            del team_data[team][key]
+
+                        break
+        else:
+            # Remove the player from the counter tracking the team limit for races
+            if team >= 2:
+                key = f'_internal_{wcsplayer.current_race}_limit_allowed'
+
+                team_data[team][key].remove(wcsplayer.userid)
+
+                if not team_data[team][key]:
+                    del team_data[team][key]
 
         tick = cfg_rested_xp_online_tick.get_int()
 
@@ -1223,8 +1289,11 @@ def on_player_ready(wcsplayer):
     if GAME_NAME in ('cstrike', 'csgo'):
         # Are we allowed to change the clan tag?
         if cfg_race_clan_tag.get_int():
-            # Change the clan tag to the player's current race
-            wcsplayer.player.clan_tag = wcsplayer.active_race.settings.strings['shortname'].get_string()
+            # Store the original clan tag for later
+            wcsplayer.data['_internal_clan_tag'] = wcsplayer.player.clan_tag
+
+            # Change the clan tag to the player's current race (add 4 spaces to fix a display issue)
+            wcsplayer.player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + wcsplayer.active_race.settings.strings['shortname'].get_string()
 
     if not wcsplayer.fake_client:
         if wcsplayer.total_level <= cfg_disable_text_on_level.get_int():

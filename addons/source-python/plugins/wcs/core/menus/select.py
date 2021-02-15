@@ -26,6 +26,7 @@ from players.helpers import userid_from_index
 #   Config
 from ..config import cfg_changerace_next_round
 from ..config import cfg_resetskills_next_round
+from ..config import cfg_bot_random_race
 #   Constants
 from ..constants import GithubModuleStatus
 from ..constants import ItemReason
@@ -636,6 +637,13 @@ def wcsadmin_players_sub_changerace_menu_select(menu, client, option):
         player = wcstarget.player
 
         if not player.dead:
+            # Is the target a bot?
+            if wcstarget.fake_client:
+                # Is the variable 'wcs_bot_random_race' enabled?
+                if cfg_bot_random_race.get_int():
+                    # Set a key, so the bot doesn't change to a random race next time they die
+                    wcstarget.data['_internal_ignore_bot_random_race'] = True
+
             player.godmode = False
 
             player.client_command('kill', True)
@@ -648,7 +656,7 @@ def wcsadmin_players_sub_changerace_menu_select(menu, client, option):
 
         active_race = wcstarget.active_race
 
-        xp_required_message.send(wcsplayer.index, name=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
+        xp_required_message.send(wcstarget.index, name=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
 
     return menu.parent_menu
 
