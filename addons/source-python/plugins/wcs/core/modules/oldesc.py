@@ -197,7 +197,7 @@ def parse_ini_races():
 
                 settings.strings['name'] = _esc_strings[fixed_name]['name'] if name.startswith('wcs_lng_') else _LanguageString(name)
                 settings.strings['description'] = _esc_strings[fixed_name][data['desc'][8:]] if data['desc'].startswith('wcs_lng_') else _LanguageString(data['desc'].replace(r'\n', ''))
-                settings.strings['shortname'] = settings.strings['name'] if data.get('shortname') is None else _esc_strings[fixed_name][data['shortname'][8:]] if data['shortname'].startswith('wcs_lng_') else data['shortname']
+                settings.strings['shortname'] = settings.strings['name'] if data.get('shortname') is None else _esc_strings[fixed_name][data['shortname'][8:]] if data['shortname'].startswith('wcs_lng_') else _LanguageString(data['shortname'])
 
                 categories = (data['category'].split('|') if data['category'] and not data['category'] == '0' else []) if 'category' in data else []
 

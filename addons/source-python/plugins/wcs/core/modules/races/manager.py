@@ -12,6 +12,8 @@ from warnings import warn
 # Source.Python Imports
 #   Engines
 from engines.server import global_vars
+#   Translations
+from translations.strings import TranslationStrings
 
 # WCS Imports
 #   Config
@@ -47,6 +49,11 @@ __all__ = (
 # ============================================================================
 # >> CLASSES
 # ============================================================================
+class _LanguageString(str):
+    def get_string(self, *args, **kwargs):
+        return self
+
+
 class _FakeRace(_BaseSetting):
     def __init__(self):
         self.name = 'none'
@@ -55,7 +62,7 @@ class _FakeRace(_BaseSetting):
 
         self.config = {'required': 0, 'maximum': 0, 'restrictbot': 0, 'restrictmap': [], 'restrictitem': [], 'restrictweapon': [], 'restrictteam': 0, 'teamlimit': 0, 'author': 'Tha Pwned', 'allowonly': [], 'skills': {}}
 
-        self.strings = {'name':'None', 'description':'Add some races'}
+        self.strings = {'name':_LanguageString('None'), 'description':_LanguageString('Add some races'), 'shortname':_LanguageString('None')}
 
         self.config['categories'] = []
 
