@@ -29,11 +29,13 @@ from commands.typed import TypedClientCommand
 #   Colors
 from colors import Color
 #   Core
+from core import GAME_NAME
 from core import SOURCE_ENGINE_BRANCH
 from core import OutputReturn
 #   CVars
 from cvars import cvar
 #   Engines
+from engines.precache import Model
 from engines.server import global_vars
 #   Entities
 from entities.constants import MoveType
@@ -55,8 +57,6 @@ from listeners.tick import RepeatStatus
 #   Mathlib
 from mathlib import QAngle
 from mathlib import Vector
-#   Menus
-from menus import Text
 #   Messages
 from messages import HintText
 #   Players
@@ -90,6 +90,7 @@ from .core.config import cfg_rank_gain_effect
 from .core.config import cfg_spawn_text
 from .core.config import cfg_hinttext_cooldown
 from .core.config import cfg_ffa_enabled
+from .core.config import cfg_race_clan_tag
 from .core.config import cfg_changerace_next_round
 from .core.config import cfg_resetskills_next_round
 from .core.config import cfg_disable_text_on_level
@@ -161,13 +162,14 @@ from .core.menus import raceinfo_menu
 from .core.menus import raceinfo_search_menu
 from .core.menus import raceinfo_detail_menu
 from .core.menus import playerinfo_menu
+from .core.menus import playerinfo_offline_menu
 from .core.menus import playerinfo_detail_menu
 from .core.menus import wcstop_menu
 from .core.menus import levelbank_menu
 from .core.menus import wcshelp_menu
 from .core.menus import welcome_menu
 from .core.menus import wcsadmin_menu
-from .core.menus import wcsadmin_players_menu
+from .core.menus import wcsadmin_players_offline_menu
 from .core.menus.base import PagedOption
 from .core.menus.build import _get_current_options  # Just to load it
 from .core.menus.close import raceinfo_menu_close  # Just to load it
@@ -257,15 +259,27 @@ admin_gain_levels_all_message = SayText2(chat_strings['admin gain levels all'])
 admin_gain_levels_receiver_message = SayText2(chat_strings['admin gain levels receiver'])
 admin_gain_levels_sender_message = SayText2(chat_strings['admin gain levels sender'])
 admin_gain_levels_self_message = SayText2(chat_strings['admin gain levels self'])
+github_new_version_message = SayText2(chat_strings['github new version'])
+github_no_new_version_message = SayText2(chat_strings['github no new version'])
 github_mod_update_message = SayText2(chat_strings['github mod update'])
 
 hinttext_cooldown_message = HintText(menu_strings['hinttext_cooldown'])
 hinttext_cooldown_ready_message = HintText(menu_strings['hinttext_cooldown ready'])
 
+help_text_message.message.tokens['command'] = COMMANDS['wcshelp'][0]
+welcome_text_message.message.tokens['command'] = COMMANDS['wcshelp'][0]
+skills_reset_message.message.tokens['command'] = COMMANDS['spendskills'][0]
+
+# "combinemuzzle1" is no where to be found but it's still complaining about late precache
+_combinemuzzle1_model = Model('effects/combinemuzzle1.vmt', True)
+_combinemuzzle2_model = Model('effects/combinemuzzle2.vmt', True)
+_yellowflare_model = Model('effects/yellowflare.vmt', True)
+
 _delays = defaultdict(set)
 _melee_weapons = [weapon.basename for weapon in WeaponClassIter('melee')]
 _new_version = None
 _pre_ffa_enabled = {}
+_block_player_hurt = False
 
 _effect_angle = QAngle(0, 0, 0)
 _level_effect_color = Color(252, 232, 131)
@@ -276,8 +290,6 @@ _rank_effect_color = Color(43, 145, 255)
 # >> FUNCTIONS
 # ============================================================================
 def load():
-    github_manager.refresh_modules()
-
     database_manager.connect()
 
     if IS_ESC_SUPPORT_ENABLED:
@@ -311,6 +323,14 @@ def unload():
     emulate_manager.stop()
 
     for _, wcsplayer in PlayerReadyIter():
+        # Retrieve the player's original clan tag
+        clan_tag = wcsplayer.data.pop('_internal_clan_tag', None)
+
+        # Did they have a clan tag stored?
+        if clan_tag is not None:
+            # Restore the clan tag to what it was previously (add 4 spaces to fix a display issue)
+            wcsplayer.player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + clan_tag
+
         OnPlayerDelete.manager.notify(wcsplayer)
 
     for _, wcsplayer in PlayerReadyIter():
@@ -350,38 +370,25 @@ def _send_message_and_remove(message, wcsplayer, delay, **kwargs):
 
 
 def _query_refresh_offline(result):
-    stop = False
-
-    for i, option in enumerate(playerinfo_menu, 1):
-        if isinstance(option, Text):
-            if stop:
-                del playerinfo_menu[i:]
-                break
-
-            stop = True
-
-    stop = False
-
-    for i, option in enumerate(wcsadmin_players_menu, 2):
-        if isinstance(option, Text):
-            if stop:
-                del wcsadmin_players_menu[i:]
-                break
-
-            stop = True
+    playerinfo_offline_menu.clear()
+    wcsadmin_players_offline_menu.clear()
 
     for accountid, name in result.fetchall():
-        playerinfo_menu.append(PagedOption(name, accountid))
-        wcsadmin_players_menu.append(PagedOption(name, accountid))
+        playerinfo_offline_menu.append(PagedOption(name, accountid))
+        wcsadmin_players_offline_menu.append(PagedOption(name, accountid))
 
 
 def _query_refresh_ranks(result):
+    players = []
+
     for accountid, name, current_race, total_level in result.fetchall():
         if current_race not in race_manager:
             current_race = race_manager.default_race
 
         if accountid is None:
             accountid = name
+
+        players.append((name, accountid))
 
         rank_manager._data[accountid] = {'name':name, 'current_race':current_race, 'total_level':total_level}
 
@@ -391,6 +398,12 @@ def _query_refresh_ranks(result):
         wcstop_menu.append(option)
 
         rank_manager.append(accountid)
+
+    players.sort(key=lambda x: x[0] or '')
+
+    for name, accountid in players:
+        playerinfo_offline_menu.append(PagedOption(name, accountid))
+        wcsadmin_players_offline_menu.append(PagedOption(name, accountid))
 
 
 def _give_xp_if_set(userid, config, bot_config, message):
@@ -411,6 +424,12 @@ def _give_xp_if_set(userid, config, bot_config, message):
         value = config.get_int()
 
     if value:
+        active_race = wcsplayer.active_race
+        maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
+
+        if maximum_race_level and active_race.level >= maximum_race_level:
+            return
+
         if wcsplayer.fake_client:
             wcsplayer.xp += value
         else:
@@ -496,6 +515,14 @@ def _toggle_ffa(enable):
         _pre_ffa_enabled.clear()
 
 
+def _update_player_clan_tag(wcsplayer, delay):
+    # Change the clan tag to the player's current race (add 4 spaces to fix a display issue)
+    wcsplayer.player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + wcsplayer.active_race.settings.strings['shortname'].get_string()
+
+    # Remove the delay from the container
+    _delays[wcsplayer].remove(delay)
+
+
 # ============================================================================
 # >> EVENTS
 # ============================================================================
@@ -536,31 +563,41 @@ def player_team(event):
 
         key = f'_internal_{wcsplayer.current_race}_limit_allowed'
 
+        # Remove the reservation from the old team
+        if oldteam >= 2:
+            team_data[oldteam][key].remove(userid)
+
+            if not team_data[oldteam][key]:
+                del team_data[oldteam][key]
+
         if team >= 2:
+            # Start by adding the reservation to the new team (even if we shouldn't be allowed to be this race now)
+            if key not in team_data[team]:
+                team_data[team][key] = []
+            if userid not in team_data[team][key]:
+                team_data[team][key].append(userid)
+
             reason = RaceReason.ALLOWED
 
+            # Is the race not allowed on this team?
             restrictteam = wcsplayer.active_race.settings.config.get('restrictteam')
 
             if restrictteam:
                 if not restrictteam == team:
                     reason = RaceReason.TEAM
 
+            # Are there too many players with this race on this team
             if reason is RaceReason.ALLOWED:
                 teamlimit = wcsplayer.active_race.settings.config.get('teamlimit')
 
                 if teamlimit:
                     limit = team_data[team].get(key, [])
 
-                    if teamlimit <= len(limit) and userid not in limit:
+                    # If there are now too many players with this race (fx. limit+1 if counting the switching player)
+                    if len(limit) > teamlimit and userid not in limit:
                         reason = RaceReason.TEAM_LIMIT
 
-            if reason is RaceReason.ALLOWED:
-                if key not in team_data[team]:
-                    team_data[team][key] = []
-
-                if userid not in team_data[team][key]:
-                    team_data[team][key].append(userid)
-            else:
+            if reason is not RaceReason.ALLOWED:
                 usable_races = wcsplayer.available_races
 
                 for name in usable_races.copy():
@@ -597,11 +634,11 @@ def player_team(event):
                     force_change_team_message.send(wcsplayer.index, old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
                 else:
                     force_change_team_limit_message.send(wcsplayer.index, count=len(team_data[team][key]), old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
-        elif oldteam >= 2:
-            team_data[oldteam][key].remove(userid)
 
-            if not team_data[oldteam][key]:
-                del team_data[oldteam][key]
+        # Update the clan tag 0.2 seconds later otherwise it won't be set
+        delay = Delay(0.2, _update_player_clan_tag, (wcsplayer, ))
+        delay.args += (delay, )
+        _delays[wcsplayer].add(delay)
 
 
 @Event('player_spawn')
@@ -610,22 +647,16 @@ def player_spawn(event):
     wcsplayer = Player.from_userid(userid)
 
     if wcsplayer.ready:
-        if wcsplayer.player.team_index >= 2:
+        if wcsplayer.player.team_index >= 2 or GAME_NAME in ('hl2mp', ):
             if not wcsplayer.fake_client:
                 if cfg_resetskills_next_round.get_int():
                     if wcsplayer.data.pop('_internal_reset_skills', False):
-                        unused = 0
-                        maximum = 0
-
                         for skill in wcsplayer.skills.values():
-                            unused += skill.level
                             skill.level = 0
 
-                            maximum += skill.config['maximum']
+                        wcsplayer.unused = wcsplayer.level
 
-                        unused = wcsplayer.unused = min(wcsplayer.unused + unused, maximum)
-
-                        skills_reset_message.send(wcsplayer.index, unused=unused)
+                        skills_reset_message.send(wcsplayer.index, unused=wcsplayer.unused)
 
                 if cfg_changerace_next_round.get_int():
                     new_race = wcsplayer.data.pop('_internal_race_change', None)
@@ -654,6 +685,12 @@ def player_spawn(event):
 
 @Event('player_hurt')
 def player_hurt(event):
+    global _block_player_hurt
+
+    if _block_player_hurt:
+        _block_player_hurt = False
+        return
+
     attacker = event['attacker']
 
     if attacker:
@@ -684,6 +721,9 @@ def player_hurt(event):
 
 @PreEvent('player_hurt')
 def pre_player_hurt(event):
+    if _block_player_hurt:
+        return
+
     attacker = event['attacker']
 
     if attacker:
@@ -741,7 +781,7 @@ def player_death(event):
                     if not maximum_race_level or active_race.level < maximum_race_level:
                         value = kill_xp = (cfg_kill_bot_xp if wcsvictim.fake_client else cfg_kill_xp).get_int()
 
-                        if event['headshot']:
+                        if not event.is_empty('headshot') and event['headshot']:
                             headshot_xp = (cfg_headshot_bot_xp if wcsvictim.fake_client else cfg_headshot_xp).get_int()
 
                             if headshot_xp:
@@ -810,15 +850,19 @@ def player_death(event):
             if item.settings.config['duration'] == 1:
                 item.count = 0
 
+        # Is the victim a bot?
         if wcsvictim.fake_client:
+            # Is the variable 'wcs_bot_random_race' enabled?
             if cfg_bot_random_race.get_int():
-                usable_races = wcsvictim.available_races
+                # Gets the key as well as removes it from the dict (whether or not it should ignore random bot races)
+                if not wcsvictim.data.pop('_internal_ignore_bot_random_race', False):
+                    usable_races = wcsvictim.available_races
 
-                if wcsvictim.current_race in usable_races:
-                    usable_races.remove(wcsvictim.current_race)
+                    if wcsvictim.current_race in usable_races:
+                        usable_races.remove(wcsvictim.current_race)
 
-                if usable_races:
-                    wcsvictim.current_race = choice(usable_races)
+                    if usable_races:
+                        wcsvictim.current_race = choice(usable_races)
 
     if not event.is_empty('assister'):
         assister = event['assister']
@@ -834,6 +878,10 @@ def player_death(event):
 @Event('player_say')
 def player_say(event):
     userid = event['userid']
+
+    if userid == 0:
+        return  # The server is not a player :)
+
     wcsplayer = Player.from_userid(userid)
 
     if wcsplayer.ready:
@@ -884,9 +932,35 @@ def player_jump(event):
 # ============================================================================
 @OnConVarChanged
 def on_con_var_changed(convar, old_value):
+    # Is the variable that was changed 'wcs_ffa_enabled'?
     if convar.name == cfg_ffa_enabled.name:
         # This has to be delayed by a tick otherwise it'll crash the server
         Delay(0, _toggle_ffa, (convar.get_int(), ))
+    # Is the variable that was changed 'wcs_race_clan_tag'?
+    elif convar.name == cfg_race_clan_tag.name:
+        # Is the current game CSS or CSGO?
+        if GAME_NAME in ('cstrike', 'csgo'):
+            # Is the variable set to enabled, and it's not already enabled?
+            if old_value == '0' and cfg_race_clan_tag.get_float():
+                # Loop through all players who's ready
+                for player, wcsplayer in PlayerReadyIter():
+                    # Store the original clan tag for later
+                    wcsplayer.data['_internal_clan_tag'] = player.clan_tag
+
+                    # Change the clan tag to the player's current race (add 4 spaces to fix a display issue)
+                    player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + wcsplayer.active_race.settings.strings['shortname'].get_string()
+            # Is the variable set to disabled, and it's not already disabled?
+            elif old_value != '0' and not cfg_race_clan_tag.get_float():
+                # Loop through all players who's ready
+                for player, wcsplayer in PlayerReadyIter():
+                    # Retrieve the player's original clan tag
+                    clan_tag = wcsplayer.data.pop('_internal_clan_tag', None)
+
+                    # Did they have a clan tag stored?
+                    if clan_tag is not None:
+                        # Restore the clan tag to what it was previously (add 4 spaces to fix a display issue)
+                        player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + clan_tag
+
 
 
 @OnLevelInit
@@ -958,6 +1032,13 @@ def on_github_new_version_checked(version, commits):
 
     _new_version = version
 
+    for _, wcsplayer in PlayerReadyIter():
+        if wcsplayer.privileges.get('wcsadmin'):
+            if _new_version is None:
+                github_no_new_version_message.send(wcsplayer.index)
+            else:
+                github_new_version_message.send(wcsplayer.index, new=version)
+
 
 @OnGithubNewVersionInstalled
 def on_github_new_version_installed():
@@ -987,12 +1068,45 @@ def on_player_change_race(wcsplayer, old, new):
             for event in _events[new]['events']:
                 event.register()
 
+    # Is the current game CSS or CSGO?
+    if GAME_NAME in ('cstrike', 'csgo'):
+        # Are we allowed to change the clan tag?
+        if cfg_race_clan_tag.get_int():
+            # Change the clan tag to the player's current race (add 4 spaces to fix a display issue)
+            wcsplayer.player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + wcsplayer.active_race.settings.strings['shortname'].get_string()
+
 
 @OnPlayerDelete
 def on_player_delete(wcsplayer):
     if wcsplayer.ready:
         with FakeEvent('disconnectcmd', userid=wcsplayer.userid) as event:
             wcsplayer.execute(event.name, event)
+
+        try:
+            # Try to get the player's team
+            team = wcsplayer.player.team
+        except ValueError:
+            key = f'_internal_{wcsplayer.current_race}_limit_allowed'
+
+            # Let's just search for the player and remove them
+            for team in team_data:
+                if key in team_data[team]:
+                    if wcsplayer.userid in team_data[team][key]:
+                        team_data[team][key].remove(wcsplayer.userid)
+
+                        if not team_data[team][key]:
+                            del team_data[team][key]
+
+                        break
+        else:
+            # Remove the player from the counter tracking the team limit for races
+            if team >= 2:
+                key = f'_internal_{wcsplayer.current_race}_limit_allowed'
+
+                team_data[team][key].remove(wcsplayer.userid)
+
+                if not team_data[team][key]:
+                    del team_data[team][key]
 
         tick = cfg_rested_xp_online_tick.get_int()
 
@@ -1054,7 +1168,7 @@ def on_player_level_up(wcsplayer, race, old_level):
                 entity.render_color = _level_effect_color
                 entity.render_mode = RenderMode.NONE
                 entity.render_amt = 200
-                entity.smoke_material = 'effects/combinemuzzle2.vmt'
+                entity.smoke_material = _combinemuzzle2_model.path
                 entity.angles = _effect_angle
                 entity.twist = 15
 
@@ -1140,7 +1254,7 @@ def on_player_rank_update(wcsplayer, old, new):
                     entity.render_color = _rank_effect_color
                     entity.render_mode = RenderMode.NONE
                     entity.render_amt = 200
-                    entity.smoke_material = 'effects/yellowflare.vmt'
+                    entity.smoke_material = _yellowflare_model.path
                     entity.angles = _effect_angle
                     entity.twist = 0
 
@@ -1157,7 +1271,7 @@ def on_player_rank_update(wcsplayer, old, new):
 
 @OnPlayerReady
 def on_player_ready(wcsplayer):
-    if wcsplayer.player.team_index >= 2:
+    if wcsplayer.player.team_index >= 2 or GAME_NAME in ('hl2mp', ):
         if not wcsplayer.fake_client:
             if cfg_spawn_text.get_int():
                 if wcsplayer.total_level <= cfg_disable_text_on_level.get_int():
@@ -1170,6 +1284,16 @@ def on_player_ready(wcsplayer):
         wcsplayer.execute('readycmd', define=True)
 
     wcsplayer.data['_internal_rested_xp'] = time()
+
+    # Is the current game CSS or CSGO?
+    if GAME_NAME in ('cstrike', 'csgo'):
+        # Are we allowed to change the clan tag?
+        if cfg_race_clan_tag.get_int():
+            # Store the original clan tag for later
+            wcsplayer.data['_internal_clan_tag'] = wcsplayer.player.clan_tag
+
+            # Change the clan tag to the player's current race (add 4 spaces to fix a display issue)
+            wcsplayer.player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + wcsplayer.active_race.settings.strings['shortname'].get_string()
 
     if not wcsplayer.fake_client:
         if wcsplayer.total_level <= cfg_disable_text_on_level.get_int():
@@ -1208,8 +1332,10 @@ def on_player_ready(wcsplayer):
 
 @OnSettingsLoaded
 def on_settings_loaded(settings):
-    database_manager.execute('player offline', callback=_query_refresh_offline)
-    database_manager.execute('rank update', callback=_query_refresh_ranks)
+    # TODO: Please, PLEASE, tell me why this is near instant with "blocking=True"
+    #       Without it, it takes 15+ seconds to complete for some servers
+    #       (the location it takes this long is "self.cur.fetchall()" in thread.py)
+    database_manager.execute('rank update', callback=_query_refresh_ranks, blocking=True)
 
 
 @OnTakeDamageAlive
@@ -1252,6 +1378,28 @@ def on_take_damage_alive(wcsvictim, wcsattacker, info):
                         if wcsattacker.ready:
                             with FakeEvent('pre_take_damage_hurt', userid=wcsvictim.userid, attacker=wcsattacker.userid, weapon=weapon_name, info=info) as event:
                                 wcsattacker.notify(event)
+
+    # TODO: This is ugly and need to be improved...
+    if GAME_NAME in ('hl2mp', ):
+        global _block_player_hurt
+
+        event_args = {}
+        event_args['userid'] = wcsvictim.userid
+        event_args['attacker'] = 0 if wcsattacker is None else wcsattacker.userid
+        event_args['health'] = wcsvictim.player.health - info.damage
+
+        try:
+            event_args['weapon'] = Entity(info.weapon).class_name
+        except ValueError:
+            event_args['weapon'] = Entity(info.inflictor).class_name
+
+        _block_player_hurt = False
+
+        with FakeEvent('player_hurt', **event_args) as event:
+            pre_player_hurt(event)
+            player_hurt(event)
+
+        _block_player_hurt = True
 
 
 # ============================================================================
@@ -1718,20 +1866,21 @@ def hinttext_repeat():
 
         for i, skill in enumerate(wcsplayer.active_race.skills.values()):
             if 'player_ability' in skill.config['event'] or 'player_ultimate' in skill.config['event']:
-                if skill.cooldown_seconds:
-                    if skill.cooldown > now:
-                        messages.append(menu_strings['hinttext_cooldown'].get_string(language, name=wcsplayer.active_race.settings.strings[skill.name], seconds=skill.cooldown - now))
+                if skill.level > 0:
+                    if skill.cooldown_seconds:
+                        if skill.cooldown > now:
+                            messages.append(menu_strings['hinttext_cooldown'].get_string(language, name=wcsplayer.active_race.settings.strings[skill.name], seconds=skill.cooldown - now))
 
-                        wcsplayer.data[f'_internal_hinttext_cooldown_showing_{i}'] = True
-                        wcsplayer.data[f'_internal_hinttext_cooldown_duration_{i}'] = None
-                    elif wcsplayer.data.get(f'_internal_hinttext_cooldown_showing_{i}', False):
-                        if wcsplayer.data[f'_internal_hinttext_cooldown_duration_{i}'] is None:
-                            wcsplayer.data[f'_internal_hinttext_cooldown_duration_{i}'] = now + 3
+                            wcsplayer.data[f'_internal_hinttext_cooldown_showing_{i}'] = True
+                            wcsplayer.data[f'_internal_hinttext_cooldown_duration_{i}'] = None
+                        elif wcsplayer.data.get(f'_internal_hinttext_cooldown_showing_{i}', False):
+                            if wcsplayer.data[f'_internal_hinttext_cooldown_duration_{i}'] is None:
+                                wcsplayer.data[f'_internal_hinttext_cooldown_duration_{i}'] = now + 3
 
-                        if wcsplayer.data[f'_internal_hinttext_cooldown_duration_{i}'] > now:
-                            messages.append(menu_strings['hinttext_cooldown ready'].get_string(language, name=wcsplayer.active_race.settings.strings[skill.name]))
-                        else:
-                            wcsplayer.data[f'_internal_hinttext_cooldown_showing_{i}'] = False
+                            if wcsplayer.data[f'_internal_hinttext_cooldown_duration_{i}'] > now:
+                                messages.append(menu_strings['hinttext_cooldown ready'].get_string(language, name=wcsplayer.active_race.settings.strings[skill.name]))
+                            else:
+                                wcsplayer.data[f'_internal_hinttext_cooldown_showing_{i}'] = False
 
         if messages:
             HintText('\n'.join(messages)).send(wcsplayer.index)

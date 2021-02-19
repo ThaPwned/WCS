@@ -17,15 +17,12 @@ from time import localtime
 from time import strftime
 
 # Source.Python Imports
+#   Core
+from core import GAME_NAME
 #   Engines
 from engines.server import global_vars
 #   Hooks
 from hooks.exceptions import except_hooks
-#   Menus
-from menus import PagedOption
-from menus import SimpleOption
-from menus import Text
-from menus.radio import MAX_ITEM_COUNT
 #   Players
 from players.helpers import get_client_language
 #   Translations
@@ -34,7 +31,7 @@ from translations.strings import TranslationStrings
 # WCS Imports
 #   Constants
 from ..constants import TIME_FORMAT
-from ..constants import GithubStatus
+from ..constants import GithubModuleStatus
 from ..constants import ItemReason
 from ..constants import RaceReason
 from ..constants.paths import CFG_PATH
@@ -48,6 +45,7 @@ from ..listeners import OnIsRaceUsableText
 #   Menus
 from . import _get_current_options
 from . import main_menu
+from . import main2_menu
 from . import shopmenu_menu
 from . import shopinfo_detail_menu
 from . import showskills_menu
@@ -60,6 +58,8 @@ from . import raceinfo_skills_menu
 from . import raceinfo_skills_detail_menu
 from . import raceinfo_race_detail_menu
 from . import playerinfo_menu
+from . import playerinfo_online_menu
+from . import playerinfo_offline_menu
 from . import playerinfo_detail_menu
 from . import playerinfo_detail_skills_menu
 from . import playerinfo_detail_stats_menu
@@ -69,6 +69,8 @@ from . import levelbank_menu
 from . import input_menu
 from . import wcsadmin_menu
 from . import wcsadmin_players_menu
+from . import wcsadmin_players_online_menu
+from . import wcsadmin_players_offline_menu
 from . import wcsadmin_players_sub_menu
 from . import wcsadmin_players_sub_xp_menu
 from . import wcsadmin_players_sub_levels_menu
@@ -91,6 +93,10 @@ from . import wcsadmin_github_items_options_menu
 from . import wcsadmin_github_items_repository_menu
 from . import wcsadmin_github_info_menu
 from . import wcsadmin_github_info_commits_menu
+from .base import MAX_ITEM_COUNT
+from .base import PagedOption
+from .base import SimpleOption
+from .base import Text
 #   Modules
 from ..modules.items.manager import item_manager
 from ..modules.races.manager import race_manager
@@ -114,16 +120,29 @@ __all__ = ()
 # >> BUILD CALLBACKS
 # ============================================================================
 @main_menu.register_build_callback
+@main2_menu.register_build_callback
 def main_menu_build(menu, client):
     wcsplayer = Player(client)
 
-    menu[1].selectable = menu[1].highlight = wcsplayer.ready and bool(item_manager)
-    menu[2].selectable = menu[2].highlight = bool(item_manager)
-    menu[4].selectable = menu[4].highlight = wcsplayer.ready
-    menu[5].selectable = menu[5].highlight = wcsplayer.ready
-    menu[6].selectable = menu[6].highlight = wcsplayer.ready and wcsplayer.unused > 0
-    menu[8].selectable = menu[8].highlight = wcsplayer.ready and bool(race_manager) and (len(race_manager) > 1 or None not in race_manager)
-    menu[9].selectable = menu[9].highlight = bool(race_manager) and (len(race_manager) > 1 or None not in race_manager)
+    if GAME_NAME in ('hl2mp', ):
+        if menu is main_menu:
+            menu[0].selectable = menu[0].highlight = wcsplayer.ready and bool(item_manager)
+            menu[1].selectable = menu[1].highlight = bool(item_manager)
+            menu[2].selectable = menu[2].highlight = wcsplayer.ready
+            menu[3].selectable = menu[3].highlight = wcsplayer.ready
+            menu[4].selectable = menu[4].highlight = wcsplayer.ready
+        else:
+            menu[0].selectable = menu[0].highlight = wcsplayer.ready and wcsplayer.unused > 0
+            menu[1].selectable = menu[1].highlight = wcsplayer.ready and bool(race_manager) and (len(race_manager) > 1 or None not in race_manager)
+            menu[2].selectable = menu[2].highlight = bool(race_manager) and (len(race_manager) > 1 or None not in race_manager)
+    else:
+        menu[1].selectable = menu[1].highlight = wcsplayer.ready and bool(item_manager)
+        menu[2].selectable = menu[2].highlight = bool(item_manager)
+        menu[4].selectable = menu[4].highlight = wcsplayer.ready
+        menu[5].selectable = menu[5].highlight = wcsplayer.ready
+        menu[6].selectable = menu[6].highlight = wcsplayer.ready and wcsplayer.unused > 0
+        menu[8].selectable = menu[8].highlight = wcsplayer.ready and bool(race_manager) and (len(race_manager) > 1 or None not in race_manager)
+        menu[9].selectable = menu[9].highlight = bool(race_manager) and (len(race_manager) > 1 or None not in race_manager)
 
 
 @shopmenu_menu.register_build_callback
@@ -534,17 +553,9 @@ def raceinfo_race_detail_menu_build(menu, client):
             menu.insert(i, Text(' '))
 
 
-@playerinfo_menu.register_build_callback
-def playerinfo_menu_build(menu, client):
-    stop = False
-
-    for i, option in enumerate(menu):
-        if isinstance(option, Text):
-            if stop:
-                del menu[1:i]
-                break
-
-            stop = True
+@playerinfo_online_menu.register_build_callback
+def playerinfo_online_menu_build(menu, client):
+    menu.clear()
 
     for i, (_, wcsplayer) in enumerate(PlayerReadyIter(), 1):
         menu.insert(i, PagedOption(wcsplayer.name, wcsplayer.accountid))
@@ -565,11 +576,11 @@ def playerinfo_detail_menu_build(menu, client):
         menu[1].text.tokens['race'] = active_race.settings.strings['name']
         menu[2].text.tokens['xp'] = active_race.xp
         menu[2].text.tokens['required'] = active_race.required_xp
-        menu[2].text.tokens['rested_xp'] = wcsplayer.rested_xp
+        menu[2].text.tokens['rested_xp'] = wcstarget.rested_xp
         menu[3].text.tokens['level'] = active_race.level
         menu[3].text.tokens['total_level'] = wcstarget.total_level
         menu[5].text.tokens['value'] = strftime(TIME_FORMAT, localtime(wcstarget._lastconnect))
-        menu[6].text.tokens['status'] = menu_strings['yes' if wcstarget.online else 'no']
+        menu[6].text.tokens['status'] = menu_strings['online' if wcstarget.online else 'offline']
     else:
         menu[0].text.tokens['name'] = wcsplayer.data['_internal_playerinfo_name']
         menu[1].text.tokens['race'] = -1
@@ -696,17 +707,9 @@ def wcsadmin_menu_build(menu, client):
     menu[4].selectable = menu[4].highlight = wcsplayer.privileges.get('wcsadmin_githubaccess', False)
 
 
-@wcsadmin_players_menu.register_build_callback
-def wcsadmin_players_menu_build(menu, client):
-    stop = False
-
-    for i, option in enumerate(menu):
-        if isinstance(option, Text):
-            if stop:
-                del menu[2:i]
-                break
-
-            stop = True
+@wcsadmin_players_online_menu.register_build_callback
+def wcsadmin_players_online_menu_build(menu, client):
+    menu.clear()
 
     for i, (_, wcsplayer) in enumerate(PlayerReadyIter(), 2):
         menu.insert(i, PagedOption(wcsplayer.name, wcsplayer.accountid))
@@ -964,13 +967,13 @@ def wcsadmin_github_races_options_menu_build(menu, client):
 
     menu[0].text.tokens['name'] = name
 
-    menu[2].selectable = menu[2].highlight = status is GithubStatus.UNINSTALLED
-    menu[3].selectable = menu[3].highlight = status is GithubStatus.INSTALLED
-    menu[4].selectable = menu[4].highlight = status is GithubStatus.INSTALLED
+    menu[2].selectable = menu[2].highlight = status is GithubModuleStatus.UNINSTALLED
+    menu[3].selectable = menu[3].highlight = status is GithubModuleStatus.INSTALLED
+    menu[4].selectable = menu[4].highlight = status is GithubModuleStatus.INSTALLED
 
     menu[5].text = menu_strings[f'wcsadmin_github_options_menu status {status.value}']
 
-    if status is not GithubStatus.UNINSTALLED and not GithubStatus.INSTALLED:
+    if status is not GithubModuleStatus.UNINSTALLED and not GithubModuleStatus.INSTALLED:
         cycle = wcsplayer.data.get('_internal_wcsadmin_github_cycle', 0)
 
         menu[5].text.tokens['cycle'] = '.' * (cycle % 3 + 1)
@@ -1026,13 +1029,13 @@ def wcsadmin_github_items_options_menu_build(menu, client):
 
     menu[0].text.tokens['name'] = name
 
-    menu[2].selectable = menu[2].highlight = status is GithubStatus.UNINSTALLED
-    menu[3].selectable = menu[3].highlight = status is GithubStatus.INSTALLED
-    menu[4].selectable = menu[4].highlight = status is GithubStatus.INSTALLED
+    menu[2].selectable = menu[2].highlight = status is GithubModuleStatus.UNINSTALLED
+    menu[3].selectable = menu[3].highlight = status is GithubModuleStatus.INSTALLED
+    menu[4].selectable = menu[4].highlight = status is GithubModuleStatus.INSTALLED
 
     menu[5].text = menu_strings[f'wcsadmin_github_options_menu status {status.value}']
 
-    if status is not GithubStatus.UNINSTALLED and not GithubStatus.INSTALLED:
+    if status is not GithubModuleStatus.UNINSTALLED and not GithubModuleStatus.INSTALLED:
         cycle = wcsplayer.data.get('_internal_wcsadmin_github_cycle', 0)
 
         menu[5].text.tokens['cycle'] = '.' * (cycle % 3 + 1)
@@ -1085,10 +1088,13 @@ def wcsadmin_github_info_menu_build(menu, client):
 
         menu._checking_cycle += 1
 
-    if menu._installing_cycle is not None:
-        menu[4].text.tokens['cycle'] = '.' * (menu._installing_cycle % 3 + 1)
+    try:
+        if menu._installing_cycle is not None:
+            menu[4].text.tokens['cycle'] = '.' * (menu._installing_cycle % 3 + 1)
 
-        menu._installing_cycle += 1
+            menu._installing_cycle += 1
+    except:
+        pass
 
 
 @wcsadmin_github_info_commits_menu.register_build_callback

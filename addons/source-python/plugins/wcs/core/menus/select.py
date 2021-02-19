@@ -7,6 +7,8 @@
 #   JSON
 from json import dump
 from json import load
+#   Time
+from time import time
 
 # Source.Python Imports
 #   Menus
@@ -24,8 +26,9 @@ from players.helpers import userid_from_index
 #   Config
 from ..config import cfg_changerace_next_round
 from ..config import cfg_resetskills_next_round
+from ..config import cfg_bot_random_race
 #   Constants
-from ..constants import GithubStatus
+from ..constants import GithubModuleStatus
 from ..constants import ItemReason
 from ..constants import RaceReason
 from ..constants.paths import CFG_PATH
@@ -35,6 +38,7 @@ from ..helpers.github import github_manager
 from ..helpers.overwrites import SayText2
 #   Menus
 from . import main_menu
+from . import main2_menu
 from . import shopmenu_menu
 from . import shopinfo_menu
 from . import shopinfo_detail_menu
@@ -49,13 +53,20 @@ from . import raceinfo_skills_menu
 from . import raceinfo_skills_detail_menu
 from . import raceinfo_race_detail_menu
 from . import playerinfo_menu
+from . import playerinfo_online_menu
+from . import playerinfo_offline_menu
 from . import playerinfo_detail_menu
 from . import playerinfo_detail_stats_menu
 from . import wcstop_menu
 from . import wcstop_detail_menu
 from . import levelbank_menu
+from . import welcome_menu
+from . import welcome2_menu
+from . import welcome3_menu
 from . import wcsadmin_menu
 from . import wcsadmin_players_menu
+from . import wcsadmin_players_online_menu
+from . import wcsadmin_players_offline_menu
 from . import wcsadmin_players_sub_menu
 from . import wcsadmin_players_sub_xp_menu
 from . import wcsadmin_players_sub_levels_menu
@@ -82,6 +93,12 @@ from . import wcsadmin_github_info_menu
 from . import wcsadmin_github_info_confirm_menu
 from . import wcsadmin_github_info_confirm_commits_menu
 from . import wcsadmin_github_info_commits_menu
+from .base import BUTTON_BACK
+from .base import MAX_ITEM_COUNT
+from .base import PagedMenu
+from .base import PagedOption
+from .base import SimpleMenu
+from .base import Text
 #   Modules
 from ..modules.items.manager import item_manager
 from ..modules.races.manager import race_manager
@@ -137,6 +154,7 @@ github_uninstalling_message = SayText2(chat_strings['github uninstalling'])
 # >> SELECT CALLBACKS
 # ============================================================================
 @main_menu.register_select_callback
+@main2_menu.register_select_callback
 def main_menu_select(menu, client, option):
     if option.value is changerace_menu:
         if not cfg_changerace_next_round.get_int():
@@ -209,16 +227,10 @@ def resetskills_menu_select(menu, client, option):
 
             skills_reset_updated_message.send(client)
         else:
-            unused = 0
-            maximum = 0
-
             for skill in wcsplayer.skills.values():
-                unused += skill.level
                 skill.level = 0
 
-                maximum += skill.config['maximum']
-
-            wcsplayer.unused = min(wcsplayer.unused + unused, maximum)
+            wcsplayer.unused = wcsplayer.level
 
             player = wcsplayer.player
 
@@ -236,6 +248,9 @@ def resetskills_menu_select(menu, client, option):
 
 @spendskills_menu.register_select_callback
 def spendskills_menu_select(menu, client, option):
+    if option.value is None:
+        return
+
     race, skill = option.value
 
     wcsplayer = Player(client)
@@ -371,16 +386,36 @@ def raceinfo_race_detail_menu_select(menu, client, option):
 
 @playerinfo_menu.register_select_callback
 def playerinfo_menu_select(menu, client, option):
+    return option.value
+
+
+@playerinfo_online_menu.register_select_callback
+def playerinfo_online_menu_select(menu, client, option):
     wcsplayer = Player(client)
 
     wcsplayer.data['_internal_playerinfo'] = option.value
     wcsplayer.data['_internal_playerinfo_name'] = option.text
+    wcsplayer.data['_internal_playerinfo_parent_menu'] = menu
+
+    return playerinfo_detail_menu
+
+
+@playerinfo_offline_menu.register_select_callback
+def playerinfo_offline_menu_select(menu, client, option):
+    wcsplayer = Player(client)
+
+    wcsplayer.data['_internal_playerinfo'] = option.value
+    wcsplayer.data['_internal_playerinfo_name'] = option.text
+    wcsplayer.data['_internal_playerinfo_parent_menu'] = menu
 
     return playerinfo_detail_menu
 
 
 @playerinfo_detail_menu.register_select_callback
 def playerinfo_detail_menu_select(menu, client, option):
+    if option.choice_index == BUTTON_BACK:
+        return Player(client).data.pop('_internal_playerinfo_parent_menu', option.value)
+
     return option.value
 
 
@@ -404,7 +439,7 @@ def wcstop_detail_menu_select(menu, client, option):
 
 
 @levelbank_menu.register_select_callback
-def levelbank_menu(menu, client, option):
+def levelbank_menu_select(menu, client, option):
     if isinstance(option.value, int):
         wcsplayer = Player(client)
         active_race = wcsplayer.active_race
@@ -427,6 +462,13 @@ def levelbank_menu(menu, client, option):
     return option.value
 
 
+@welcome_menu.register_select_callback
+@welcome2_menu.register_select_callback
+@welcome3_menu.register_select_callback
+def welcome_menu_select(menu, client, option):
+    return option.value or menu
+
+
 # ============================================================================
 # >> ADMIN SELECT CALLBACKS
 # ============================================================================
@@ -439,12 +481,33 @@ def wcsadmin_menu_select(menu, client, option):
 def wcsadmin_players_menu_select(menu, client, option):
     wcsplayer = Player(client)
 
-    wcsplayer.data['_internal_wcsadmin_player'] = option.value
-
     if option.value is None:
+        wcsplayer.data['_internal_wcsadmin_player'] = option.value
+
         return wcsadmin_players_sub_menu
 
+    wcsplayer.data['_internal_wcsadmin_player_parent_menu'] = menu
+
+    return option.value
+
+
+@wcsadmin_players_online_menu.register_select_callback
+def wcsadmin_players_online_menu_select(menu, client, option):
+    wcsplayer = Player(client)
+
+    wcsplayer.data['_internal_wcsadmin_player'] = option.value
+    wcsplayer.data['_internal_wcsadmin_player_parent_menu'] = menu
+
+    return wcsadmin_players_sub_menu
+
+
+@wcsadmin_players_offline_menu.register_select_callback
+def wcsadmin_players_offline_menu_select(menu, client, option):
+    wcsplayer = Player(client)
+
+    wcsplayer.data['_internal_wcsadmin_player'] = option.value
     wcsplayer.data['_internal_wcsadmin_player_name'] = option.text
+    wcsplayer.data['_internal_wcsadmin_player_parent_menu'] = menu
 
     return wcsadmin_players_sub_menu
 
@@ -453,6 +516,8 @@ def wcsadmin_players_menu_select(menu, client, option):
 def wcsadmin_players_sub_menu_select(menu, client, option):
     if option.choice_index == 3:
         return Player(client).request_input(_change_race, return_menu=menu)
+    elif option.choice_index == BUTTON_BACK:
+        return Player(client).data.pop('_internal_wcsadmin_player_parent_menu', option.value)
 
     return option.value
 
@@ -467,6 +532,11 @@ def wcsadmin_players_sub_xp_menu_select(menu, client, option):
             for _, wcstarget in PlayerReadyIter():
                 active_race = wcstarget.active_race
                 old_level = active_race.level
+
+                maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
+
+                if maximum_race_level and old_level >= maximum_race_level:
+                    continue
 
                 active_race.xp += option.value
 
@@ -483,6 +553,11 @@ def wcsadmin_players_sub_xp_menu_select(menu, client, option):
             wcstarget = Player.from_accountid(accountid)
             active_race = wcstarget.active_race
             old_level = active_race.level
+
+            maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
+
+            if maximum_race_level and old_level >= maximum_race_level:
+                return menu
 
             active_race.xp += option.value
 
@@ -512,6 +587,11 @@ def wcsadmin_players_sub_levels_menu_select(menu, client, option):
 
         if accountid is None:
             for _, wcstarget in PlayerReadyIter():
+                maximum_race_level = wcsplayer.active_race.settings.config.get('maximum_race_level', 0)
+
+                if maximum_race_level and wcsplayer.level >= maximum_race_level:
+                    continue
+
                 wcstarget.level += option.value
 
                 if wcstarget is wcsplayer:
@@ -522,6 +602,11 @@ def wcsadmin_players_sub_levels_menu_select(menu, client, option):
             admin_gain_levels_all_message.send(wcsplayer.index, value=option.value)
         else:
             wcstarget = Player.from_accountid(accountid)
+
+            maximum_race_level = wcsplayer.active_race.settings.config.get('maximum_race_level', 0)
+
+            if maximum_race_level and wcsplayer.level >= maximum_race_level:
+                return menu
 
             wcstarget.level += option.value
 
@@ -552,6 +637,13 @@ def wcsadmin_players_sub_changerace_menu_select(menu, client, option):
         player = wcstarget.player
 
         if not player.dead:
+            # Is the target a bot?
+            if wcstarget.fake_client:
+                # Is the variable 'wcs_bot_random_race' enabled?
+                if cfg_bot_random_race.get_int():
+                    # Set a key, so the bot doesn't change to a random race next time they die
+                    wcstarget.data['_internal_ignore_bot_random_race'] = True
+
             player.godmode = False
 
             player.client_command('kill', True)
@@ -564,7 +656,7 @@ def wcsadmin_players_sub_changerace_menu_select(menu, client, option):
 
         active_race = wcstarget.active_race
 
-        xp_required_message.send(wcsplayer.index, name=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
+        xp_required_message.send(wcstarget.index, name=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
 
     return menu.parent_menu
 
@@ -720,6 +812,52 @@ def wcsadmin_management_races_editor_menu_select(menu, client, option):
     return option.value
 
 
+@wcsadmin_management_items_editor_menu.register_select_callback
+def wcsadmin_management_items_editor_menu_select(menu, client, option):
+    wcsplayer = Player(client)
+
+    if option.choice_index == 1:
+        value = wcsplayer.data['_internal_wcsadmin_editor_value']
+
+        if value.startswith('_'):
+            new_value = value[1:]
+        else:
+            new_value = '_' + value
+
+        with open(CFG_PATH / 'items.json') as inputfile:
+            data = load(inputfile)
+
+        for i, name in enumerate(data['items']):
+            if name == value:
+                data['items'].pop(i)
+                data['items'].insert(i, new_value)
+                break
+
+        with open(CFG_PATH / 'items.json', 'w') as outputfile:
+            dump(data, outputfile, indent=4)
+
+        wcsplayer.data['_internal_wcsadmin_editor_value'] = new_value
+
+        return menu
+    elif option.choice_index == 2:
+        value = wcsplayer.data['_internal_wcsadmin_editor_value']
+
+        with open(CFG_PATH / 'items.json') as inputfile:
+            data = load(inputfile)
+
+        for i, name in enumerate(data['items']):
+            if name == value:
+                data['items'].pop(i)
+                break
+
+        with open(CFG_PATH / 'items.json', 'w') as outputfile:
+            dump(data, outputfile, indent=4)
+
+        return wcsadmin_management_items_menu
+
+    return option.value
+
+
 @wcsadmin_management_races_editor_modify_menu.register_select_callback
 def wcsadmin_management_races_editor_modify_menu_select(menu, client, option):
     if callable(option.value):
@@ -761,6 +899,14 @@ def wcsadmin_management_races_editor_modify_restricted_team_menu_select(menu, cl
 
 @wcsadmin_github_menu.register_select_callback
 def wcsadmin_github_menu_select(menu, client, option):
+    if option.choice_index in (1, 2):
+        now = time()
+
+        if menu._last_update is None or now >= menu._last_update + 60 * 15:
+            github_manager.refresh_modules()
+
+            menu._last_update = now
+
     return option.value
 
 
@@ -777,19 +923,19 @@ def wcsadmin_github_races_menu_select(menu, client, option):
 def wcsadmin_github_races_options_menu_select(menu, client, option):
     wcsplayer = Player(client)
 
-    if isinstance(option.value, GithubStatus):
+    if isinstance(option.value, GithubModuleStatus):
         wcsplayer.data['_internal_wcsadmin_github_cycle'] = 0
 
         name = wcsplayer.data['_internal_wcsadmin_github_name']
 
-        if option.value is GithubStatus.INSTALLING:
+        if option.value is GithubModuleStatus.INSTALLING:
             if len(github_manager['races'][name]['repositories']) > 1:
                 return wcsadmin_github_races_repository_menu
             else:
                 github_installing_message.send(client, name=name)
 
                 github_manager.install_module(list(github_manager['races'][name]['repositories'])[0], 'races', name, userid_from_index(client))
-        elif option.value is GithubStatus.UPDATING:
+        elif option.value is GithubModuleStatus.UPDATING:
             github_updating_message.send(client, name=name)
 
             github_manager.update_module('races', name, userid_from_index(client))
@@ -797,7 +943,7 @@ def wcsadmin_github_races_options_menu_select(menu, client, option):
             github_uninstalling_message.send(client, name=name)
 
             github_manager.uninstall_module('races', name, userid_from_index(client))
-    elif isinstance(option.value, SimpleMenu):
+    elif isinstance(option.value, (SimpleMenu, PagedMenu)):
         return option.value
 
     return menu
@@ -828,19 +974,19 @@ def wcsadmin_github_items_menu_select(menu, client, option):
 def wcsadmin_github_items_options_menu_select(menu, client, option):
     wcsplayer = Player(client)
 
-    if isinstance(option.value, GithubStatus):
+    if isinstance(option.value, GithubModuleStatus):
         wcsplayer.data['_internal_wcsadmin_github_cycle'] = 0
 
         name = wcsplayer.data['_internal_wcsadmin_github_name']
 
-        if option.value is GithubStatus.INSTALLING:
+        if option.value is GithubModuleStatus.INSTALLING:
             if len(github_manager['items'][name]['repositories']) > 1:
                 return wcsadmin_github_items_repository_menu
             else:
                 github_installing_message.send(client, name=name)
 
                 github_manager.install_module(list(github_manager['items'][name]['repositories'])[0], 'items', name, userid_from_index(client))
-        elif option.value is GithubStatus.UPDATING:
+        elif option.value is GithubModuleStatus.UPDATING:
             github_updating_message.send(client, name=name)
 
             github_manager.update_module('items', name, userid_from_index(client))
@@ -848,7 +994,7 @@ def wcsadmin_github_items_options_menu_select(menu, client, option):
             github_uninstalling_message.send(client, name=name)
 
             github_manager.uninstall_module('items', name, userid_from_index(client))
-    elif isinstance(option.value, SimpleMenu):
+    elif isinstance(option.value, (SimpleMenu, PagedMenu)):
         return option.value
 
     return menu
@@ -896,7 +1042,7 @@ def wcsadmin_github_info_confirm_menu_select(menu, client, option):
 
 
 @wcsadmin_github_info_confirm_commits_menu.register_select_callback
-def wcsadmin_github_info_confirm_commits_menu(menu, client, option):
+def wcsadmin_github_info_confirm_commits_menu_select(menu, client, option):
     return option.value
 
 

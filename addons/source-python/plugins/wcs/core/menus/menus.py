@@ -18,10 +18,13 @@ from menus import SimpleOption
 from menus import Text
 from menus.radio import BUTTON_BACK
 from menus.radio import BUTTON_CLOSE_SLOT
+from menus.radio import BUTTON_NEXT
 
 # WCS Imports
 #   Constants
+from ..constants import COMMANDS
 from ..constants import GithubStatus
+from ..constants import GithubModuleStatus
 from ..constants.info import info
 #   Listeners
 from ..listeners import OnGithubCommitsRefresh
@@ -33,9 +36,11 @@ from ..listeners import OnGithubModulesRefresh
 from ..listeners import OnGithubModulesRefreshed
 from ..listeners import OnGithubNewVersionChecked
 from ..listeners import OnGithubNewVersionInstalled
+from ..listeners import OnGithubNewVersionUpdating
 from ..listeners import OnPlayerQuery
 #   Menus
 from . import main_menu
+from . import main2_menu
 from . import shopmenu_menu
 from . import shopinfo_menu
 from . import shopinfo_detail_menu
@@ -51,6 +56,8 @@ from . import raceinfo_skills_menu
 from . import raceinfo_skills_detail_menu
 from . import raceinfo_race_detail_menu
 from . import playerinfo_menu
+from . import playerinfo_online_menu
+from . import playerinfo_offline_menu
 from . import playerinfo_detail_menu
 from . import playerinfo_detail_skills_menu
 from . import playerinfo_detail_stats_menu
@@ -59,9 +66,13 @@ from . import wcstop_detail_menu
 from . import levelbank_menu
 from . import wcshelp_menu
 from . import welcome_menu
+from . import welcome2_menu
+from . import welcome3_menu
 from . import input_menu
 from . import wcsadmin_menu
 from . import wcsadmin_players_menu
+from . import wcsadmin_players_online_menu
+from . import wcsadmin_players_offline_menu
 from . import wcsadmin_players_sub_menu
 from . import wcsadmin_players_sub_xp_menu
 from . import wcsadmin_players_sub_levels_menu
@@ -88,7 +99,13 @@ from . import wcsadmin_github_info_menu
 from . import wcsadmin_github_info_confirm_menu
 from . import wcsadmin_github_info_confirm_commits_menu
 from . import wcsadmin_github_info_commits_menu
+from .base import BUTTON_BACK
+from .base import BUTTON_NEXT
+from .base import BUTTON_CLOSE_SLOT
 from .base import PagedMenu
+from .base import PagedOption
+from .base import SimpleOption
+from .base import Text
 from .select import _request_required
 from .select import _request_maximum
 from .select import _request_team_limit
@@ -116,10 +133,12 @@ changerace_search_menu.title = menu_strings['changerace_menu title']
 raceinfo_menu.title = menu_strings['raceinfo_menu title']
 raceinfo_search_menu.title = menu_strings['raceinfo_menu title']
 raceinfo_skills_menu.title = menu_strings['raceinfo_skills_menu title']
-playerinfo_menu.title = menu_strings['playerinfo_menu title']
+playerinfo_online_menu.title = menu_strings['playerinfo_menu title']
+playerinfo_offline_menu.title = menu_strings['playerinfo_menu title']
 playerinfo_detail_skills_menu.title = menu_strings['playerinfo_detail_skills_menu title']
 wcstop_menu.title = menu_strings['wcstop_menu title']
-wcsadmin_players_menu.title = menu_strings['wcsadmin_players_menu title']
+wcsadmin_players_online_menu.title = menu_strings['wcsadmin_players_menu title']
+wcsadmin_players_offline_menu.title = menu_strings['wcsadmin_players_menu title']
 wcsadmin_players_sub_changerace_menu.title = menu_strings['wcsadmin_players_sub_changerace_menu title']
 wcsadmin_management_races_menu.title = menu_strings['wcsadmin_management_races_menu title']
 wcsadmin_management_items_menu.title = menu_strings['wcsadmin_management_items_menu title']
@@ -134,6 +153,7 @@ wcsadmin_github_items_repository_menu.title = menu_strings['wcsadmin_github_item
 wcsadmin_github_info_confirm_commits_menu.title = menu_strings['wcsadmin_github_info_confirm_commits_menu title']
 wcsadmin_github_info_commits_menu.title = menu_strings['wcsadmin_github_info_commits_menu title']
 
+wcsadmin_github_menu._last_update = None
 wcsadmin_github_races_menu._cycle = None
 wcsadmin_github_items_menu._cycle = None
 wcsadmin_github_info_menu._checking_cycle = None
@@ -143,24 +163,53 @@ wcsadmin_github_info_menu._installing_cycle = None
 # ============================================================================
 # >> MENU FILLER
 # ============================================================================
-main_menu.extend(
-    [
-        Text(menu_strings['main_menu title']),
-        SimpleOption(1, menu_strings['main_menu line 1'], shopmenu_menu),
-        SimpleOption(2, menu_strings['main_menu line 2'], shopinfo_menu),
-        Text('-------------------'),
-        SimpleOption(3, menu_strings['main_menu line 3'], showskills_menu),
-        SimpleOption(4, menu_strings['main_menu line 4'], resetskills_menu),
-        SimpleOption(5, menu_strings['main_menu line 5'], spendskills_menu),
-        Text('-------------------'),
-        SimpleOption(6, menu_strings['main_menu line 6'], changerace_menu),
-        SimpleOption(7, menu_strings['main_menu line 7'], raceinfo_menu),
-        Text('-------------------'),
-        SimpleOption(8, menu_strings['main_menu line 8'], playerinfo_menu),
-        Text('-------------------'),
-        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
-    ]
-)
+if GAME_NAME in ('hl2mp', ):
+    main_menu.extend(
+        [
+            SimpleOption(1, menu_strings['main_menu line 1'], shopmenu_menu),
+            SimpleOption(2, menu_strings['main_menu line 2'], shopinfo_menu),
+            SimpleOption(3, menu_strings['main_menu line 3'], showskills_menu),
+            SimpleOption(4, menu_strings['main_menu line 4'], resetskills_menu),
+            SimpleOption(5, menu_strings['main_menu line 5'], spendskills_menu),
+            SimpleOption(6, '', main_menu),
+            SimpleOption(7, menu_strings['next'], main2_menu),
+            SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
+        ]
+    )
+    main_menu.title = menu_strings['main_menu title']
+
+    main2_menu.extend(
+        [
+            SimpleOption(1, menu_strings['main_menu line 6'], changerace_menu),
+            SimpleOption(2, menu_strings['main_menu line 7'], raceinfo_menu),
+            SimpleOption(3, menu_strings['main_menu line 8'], playerinfo_menu),
+            SimpleOption(4, '', main2_menu),
+            SimpleOption(5, '', main2_menu),
+            SimpleOption(6, menu_strings['back'], main_menu),
+            SimpleOption(7, '', main2_menu),
+            SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
+        ]
+    )
+    main2_menu.title = menu_strings['main_menu title']
+else:
+    main_menu.extend(
+        [
+            Text(menu_strings['main_menu title']),
+            SimpleOption(1, menu_strings['main_menu line 1'], shopmenu_menu),
+            SimpleOption(2, menu_strings['main_menu line 2'], shopinfo_menu),
+            Text('-------------------'),
+            SimpleOption(3, menu_strings['main_menu line 3'], showskills_menu),
+            SimpleOption(4, menu_strings['main_menu line 4'], resetskills_menu),
+            SimpleOption(5, menu_strings['main_menu line 5'], spendskills_menu),
+            Text('-------------------'),
+            SimpleOption(6, menu_strings['main_menu line 6'], changerace_menu),
+            SimpleOption(7, menu_strings['main_menu line 7'], raceinfo_menu),
+            Text('-------------------'),
+            SimpleOption(8, menu_strings['main_menu line 8'], playerinfo_menu),
+            Text('-------------------'),
+            SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
+        ]
+    )
 
 shopinfo_detail_menu.extend(
     [
@@ -229,8 +278,18 @@ raceinfo_race_detail_menu.extend(
 
 playerinfo_menu.extend(
     [
-        Text(menu_strings['playerinfo_menu online']),
-        Text(menu_strings['playerinfo_menu offline']),
+        Text(menu_strings['playerinfo_menu title']),
+        Text(' '),
+        SimpleOption(1, menu_strings['playerinfo_menu online'], playerinfo_online_menu),
+        SimpleOption(2, menu_strings['playerinfo_menu offline'], playerinfo_offline_menu),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], main_menu),
+        Text(' '),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -329,13 +388,40 @@ welcome_menu.extend(
         Text(menu_strings['welcome_menu line 3']),
         Text(menu_strings['welcome_menu line 4']),
         Text(' '),
+        Text(' '),
+        Text(' '),
+        SimpleOption(BUTTON_NEXT, menu_strings['next'], welcome2_menu),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['welcome_menu line 11']),
+    ]
+)
+
+welcome2_menu.extend(
+    [
+        Text(menu_strings['welcome_menu title']),
+        Text(' '),
         SimpleOption(2, menu_strings['welcome_menu line 5']),
         Text(menu_strings['welcome_menu line 6']),
         Text(menu_strings['welcome_menu line 7']),
         Text(menu_strings['welcome_menu line 8']),
         Text(menu_strings['welcome_menu line 9']),
         Text(' '),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], welcome_menu),
+        SimpleOption(BUTTON_NEXT, menu_strings['next'], welcome3_menu),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['welcome_menu line 11']),
+    ]
+)
+
+welcome3_menu.extend(
+    [
+        Text(menu_strings['welcome_menu title']),
+        Text(' '),
         SimpleOption(3, menu_strings['welcome_menu line 10']),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], welcome2_menu),
         Text(' '),
         SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['welcome_menu line 11']),
     ]
@@ -371,9 +457,17 @@ wcsadmin_menu.extend(
 
 wcsadmin_players_menu.extend(
     [
-        PagedOption(menu_strings['wcsadmin_players_menu all']),
-        Text(menu_strings['wcsadmin_players_menu online']),
-        Text(menu_strings['wcsadmin_players_menu offline']),
+        Text(menu_strings['wcsadmin_players_menu title']),
+        Text(' '),
+        SimpleOption(1, menu_strings['wcsadmin_players_menu all']),
+        SimpleOption(2, menu_strings['wcsadmin_players_menu online'], wcsadmin_players_online_menu),
+        SimpleOption(3, menu_strings['wcsadmin_players_menu offline'], wcsadmin_players_offline_menu),
+        Text(' '),
+        Text(' '),
+        Text(' '),
+        SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_menu),
+        Text(' '),
+        SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
     ]
 )
 
@@ -546,9 +640,9 @@ wcsadmin_github_races_options_menu.extend(
     [
         Text(menu_strings['wcsadmin_github_options_menu title']),
         Text(' '),
-        SimpleOption(1, menu_strings['wcsadmin_github_options_menu install'], GithubStatus.INSTALLING),
-        SimpleOption(2, menu_strings['wcsadmin_github_options_menu update'], GithubStatus.UPDATING),
-        SimpleOption(3, menu_strings['wcsadmin_github_options_menu uninstall'], GithubStatus.UNINSTALLING),
+        SimpleOption(1, menu_strings['wcsadmin_github_options_menu install'], GithubModuleStatus.INSTALLING),
+        SimpleOption(2, menu_strings['wcsadmin_github_options_menu update'], GithubModuleStatus.UPDATING),
+        SimpleOption(3, menu_strings['wcsadmin_github_options_menu uninstall'], GithubModuleStatus.UNINSTALLING),
         Text(menu_strings['wcsadmin_github_options_menu status 4']),
         Text(menu_strings['wcsadmin_github_options_menu last updated']),
         Text(menu_strings['wcsadmin_github_options_menu last modified']),
@@ -562,9 +656,9 @@ wcsadmin_github_items_options_menu.extend(
     [
         Text(menu_strings['wcsadmin_github_options_menu title']),
         Text(' '),
-        SimpleOption(1, menu_strings['wcsadmin_github_options_menu install'], GithubStatus.INSTALLING),
-        SimpleOption(2, menu_strings['wcsadmin_github_options_menu update'], GithubStatus.UPDATING),
-        SimpleOption(3, menu_strings['wcsadmin_github_options_menu uninstall'], GithubStatus.UNINSTALLING),
+        SimpleOption(1, menu_strings['wcsadmin_github_options_menu install'], GithubModuleStatus.INSTALLING),
+        SimpleOption(2, menu_strings['wcsadmin_github_options_menu update'], GithubModuleStatus.UPDATING),
+        SimpleOption(3, menu_strings['wcsadmin_github_options_menu uninstall'], GithubModuleStatus.UNINSTALLING),
         Text(menu_strings['wcsadmin_github_options_menu status 4']),
         Text(menu_strings['wcsadmin_github_options_menu last updated']),
         Text(menu_strings['wcsadmin_github_options_menu last modified']),
@@ -610,12 +704,33 @@ wcsadmin_github_info_confirm_menu.extend(
 # ============================================================================
 # >> MENU ENHANCEMENTS
 # ============================================================================
+wcshelp_menu[1].text.tokens['command'] = COMMANDS['wcshelp'][0]
+wcshelp_menu[2].text.tokens['command'] = COMMANDS['changerace'][0]
+wcshelp_menu[3].text.tokens['command'] = COMMANDS['raceinfo'][0]
+wcshelp_menu[4].text.tokens['command'] = COMMANDS['shopmenu'][0]
+wcshelp_menu[5].text.tokens['command'] = COMMANDS['shopinfo'][0]
+wcshelp_menu[6].text.tokens['command'] = COMMANDS['showxp'][0]
+wcshelp_menu[7].text.tokens['command'] = COMMANDS['showskills'][0]
+wcshelp_menu[8].text.tokens['command'] = COMMANDS['resetskills'][0]
+wcshelp_menu[9].text.tokens['command'] = COMMANDS['spendskills'][0]
+wcshelp_menu[10].text.tokens['command'] = COMMANDS['playerinfo'][0]
+wcshelp_menu[11].text.tokens['command'] = COMMANDS['wcsadmin'][0]
+wcshelp_menu[12].text.tokens['command'] = COMMANDS['wcstop'][0]
+wcshelp_menu[13].text.tokens['command'] = COMMANDS['wcsrank'][0]
+
 welcome_menu[3].text.tokens['game'] = 'CS:S' if GAME_NAME == 'cstrike' else 'CS:GO' if GAME_NAME == 'csgo' else GAME_NAME
-welcome_menu[15].text.tokens['slot'] = BUTTON_CLOSE_SLOT
+welcome_menu[10].text.tokens['slot'] = BUTTON_CLOSE_SLOT
+welcome2_menu[3].text.tokens['command'] = COMMANDS['wcshelp'][0]
+welcome2_menu[6].text.tokens['racecommand'] = COMMANDS['raceinfo'][0]
+welcome2_menu[6].text.tokens['shopcommand'] = COMMANDS['shopinfo'][0]
+welcome2_menu[10].text.tokens['slot'] = BUTTON_CLOSE_SLOT
+welcome3_menu[10].text.tokens['slot'] = BUTTON_CLOSE_SLOT
+
 wcsadmin_github_info_menu[2].text.tokens['version'] = info.version
 
 if BUTTON_BACK == 8:
     wcsadmin_menu.insert(-3, Text(' '))
+    wcsadmin_players_menu.insert(-3, Text(' '))
     wcsadmin_players_sub_menu.insert(-3, Text(' '))
     wcsadmin_players_sub_xp_menu.insert(-3, Text(' '))
     wcsadmin_players_sub_levels_menu.insert(-3, Text(' '))
@@ -635,6 +750,26 @@ for i in range(2, 7):
     wcsadmin_players_sub_xp_menu[i].text.tokens['value'] = wcsadmin_players_sub_xp_menu[i].value
     wcsadmin_players_sub_levels_menu[i].text.tokens['value'] = wcsadmin_players_sub_levels_menu[i].value
     wcsadmin_players_sub_bank_levels_menu[i].text.tokens['value'] = wcsadmin_players_sub_bank_levels_menu[i].value
+
+
+if GAME_NAME in ('hl2mp', ):
+    main_menu[0].text.tokens['command'] = COMMANDS['shopmenu'][0]
+    main_menu[1].text.tokens['command'] = COMMANDS['shopinfo'][0]
+    main_menu[2].text.tokens['command'] = COMMANDS['showskills'][0]
+    main_menu[3].text.tokens['command'] = COMMANDS['resetskills'][0]
+    main_menu[4].text.tokens['command'] = COMMANDS['spendskills'][0]
+    main2_menu[0].text.tokens['command'] = COMMANDS['changerace'][0]
+    main2_menu[1].text.tokens['command'] = COMMANDS['raceinfo'][0]
+    main2_menu[2].text.tokens['command'] = COMMANDS['playerinfo'][0]
+else:
+    main_menu[1].text.tokens['command'] = COMMANDS['shopmenu'][0]
+    main_menu[2].text.tokens['command'] = COMMANDS['shopinfo'][0]
+    main_menu[4].text.tokens['command'] = COMMANDS['showskills'][0]
+    main_menu[5].text.tokens['command'] = COMMANDS['resetskills'][0]
+    main_menu[6].text.tokens['command'] = COMMANDS['spendskills'][0]
+    main_menu[8].text.tokens['command'] = COMMANDS['changerace'][0]
+    main_menu[9].text.tokens['command'] = COMMANDS['raceinfo'][0]
+    main_menu[11].text.tokens['command'] = COMMANDS['playerinfo'][0]
 
 
 # ============================================================================
@@ -796,6 +931,20 @@ def on_github_new_version_installed():
     wcsadmin_github_info_menu._installing_cycle = None
     wcsadmin_github_info_menu[3] = SimpleOption(1, menu_strings['wcsadmin_github_info_menu check'])
     wcsadmin_github_info_menu[4] = Text(' ')
+
+
+@OnGithubNewVersionUpdating
+def on_github_new_version_updating(state, *data):
+    wcsadmin_github_info_menu[4] = Text(menu_strings[f'wcsadmin_github_info_menu updating {state}'])
+
+    if state == GithubStatus.DOWNLOADING:
+        wcsadmin_github_info_menu[4].text.tokens['progress'] = f'{round(data[0] / 1024)}KiB' if data[1] is None else f'{round(data[0] / data[1] * 100, 1)}%'
+    elif state == GithubStatus.EXTRACTING:
+        wcsadmin_github_info_menu[4].text.tokens['progress'] = f'{round(data[0] / data[1] * 100, 1)}%'
+
+    for index in wcsadmin_github_info_menu._player_pages:
+        if wcsadmin_github_info_menu.is_active_menu(index):
+            wcsadmin_github_info_menu._refresh(index)
 
 
 @OnPlayerQuery

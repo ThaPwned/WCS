@@ -83,6 +83,13 @@ __all__ = (
 
 
 # ============================================================================
+# >> GLOBAL VARIABLES
+# ============================================================================
+_models = {}
+_decals = {}
+
+
+# ============================================================================
 # >> CLASSES
 # ============================================================================
 # Emulates a real Command object (poorly)
@@ -149,6 +156,24 @@ def register(name=None):
     return decorator
 
 
+def get_model_instance(name):
+    model = _models.get(name)
+
+    if model is None:
+        model = _models[name] = Model(name, True)
+
+    return model
+
+
+def get_decal_instance(name):
+    decal = _decals.get(name)
+
+    if decal is None:
+        decal = _decals[name] = Decal(name, True)
+
+    return decal
+
+
 # ============================================================================
 # >> EFFECTS
 # ============================================================================
@@ -158,7 +183,7 @@ def effect101(model, position, direction):
     est_effect_01 <player filter> <delay> <model> <position x y z> <direction x y z>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(position, Vector):
         position = Vector(*position)
@@ -179,7 +204,7 @@ def effect102(model, start_entity_index, start_point, end_entity_index, end_poin
     est_effect_02 <player filter> <delay> <model> <start entity> <start position x y z> <end entity> <end position x y z> <framerate> <life> <start width> <end width> <fade distance> <amplitude> <red> <green> <blue> <alpha> <speed>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(start_point, Vector):
         start_point = Vector(*start_point)
@@ -215,7 +240,7 @@ def effect103(model, start_entity_index, end_entity_index, frame_rate, start_wid
     est_effect_03 <player filter> <delay> <model> <start entity> <end entity> <framerate> <life> <start width> <end width> <fade distance> <amplitude> <red> <green> <blue> <alpha> <speed>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     te = TempEntity('BeamEnts')
     te.model = model
@@ -242,7 +267,7 @@ def effect104(model, entity_index, life_time, start_width, end_width, fade_lengt
     est_effect_04 <player filter> <delay> <model> <follow entity> <life> <start width> <end width> <fade distance> <red> <green> <blue> <alpha>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     te = TempEntity('BeamFollow')
     te.model = model
@@ -266,7 +291,7 @@ def effect105(model, start_entity_index, end_entity_index, frame_rate, life_time
     est_effect_05 <player filter> <delay> <model> <start entity> <end entity> <framerate> <life> <start width> <end width> <fade distance> <amplitude> <red> <green> <blue> <alpha> <speed>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     te = TempEntity('BeamLaser')
     te.model = model
@@ -294,7 +319,7 @@ def effect106(model, start_point, end_point, frame_rate, life_time, start_width,
     est_effect_06 <player filter> <delay> <model> <start position x y z> <end position x y z> <framerate> <life> <start width> <end width> <fade distance> <amplitude> <red> <green> <blue> <alpha> <speed>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(start_point, Vector):
         start_point = Vector(*start_point)
@@ -328,7 +353,7 @@ def effect107(model, start_point, end_point, frame_rate, life_time, width, fade_
     est_effect_07 <player filter> <delay> <model> <start entity> <end entity> <framerate> <life> <width> <spread> <amplitude> <red> <green> <blue> <alpha> <speed>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(start_point, Vector):
         start_point = Vector(*start_point)
@@ -362,7 +387,7 @@ def effect108(model, center, start_radius, end_radius, frame_rate, life_time, wi
     est_effect_08 <player filter> <delay> <model> <middle x y z> <start radius> <end radius> <framerate> <life> <width> <spread> <amplitude> <red> <green> <blue> <alpha> <speed> <flags>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(center, Vector):
         center = Vector(*center)
@@ -395,7 +420,7 @@ def effect109(model, points_length, points):
     est_effect_09 <player filter> <delay> <model> <point count> <points x y z>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(points, Vector):
         points = Vector(*points)
@@ -413,7 +438,7 @@ def effect110(model, origin, direction, red, green, blue, alpha, size):
     est_effect_10 <player filter> <delay> <model> <origin x y z> <direction x y z> <red> <green> <blue> <alpha> <size>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(origin, Vector):
         origin = Vector(*origin)
@@ -441,7 +466,7 @@ def effect111(model, origin, direction, red, green, blue, alpha, amount):
     est_effect_11 <player filter> <delay> <model> <origin x y z> <direction x y z> <red> <green> <blue> <alpha> <amount>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(origin, Vector):
         origin = Vector(*origin)
@@ -468,7 +493,7 @@ def effect112(model, origin, angle, size, velocity, randomization, count, time, 
 
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(origin, Vector):
         origin = Vector(*origin)
@@ -502,7 +527,7 @@ def effect113(decal, origin, index):
     est_effect_13 <player filter> <delay> <decal> <origin x y z> <target entity index>
     """
     if not isinstance(decal, Decal):
-        decal = Decal(decal)
+        decal = get_decal_instance(decal)
 
     if not isinstance(origin, Vector):
         origin = Vector(*origin)
@@ -521,7 +546,7 @@ def effect114(model, mins, maxs, height, count, speed):
     est_effect_14 <player filter> <delay> <model> <min x y z> <max x y z> <height> <count> <speed>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(mins, Vector):
         mins = Vector(*mins)
@@ -547,7 +572,7 @@ def effect115(model, mins, maxs, height, count, speed):
     est_effect_15 <player filter> <delay> <model> <min x y z> <max x y z> <height> <count> <speed>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(mins, Vector):
         mins = Vector(*mins)
@@ -573,7 +598,7 @@ def effect116(decal, position, start, index, hitbox):
     est_effect_16 <player filter> <delay> <model> <position x y z> <start x y z> <entity index> <hitbox>
     """
     if not isinstance(decal, Decal):
-        decal = Decal(decal)
+        decal = get_decal_instance(decal)
 
     if not isinstance(position, Vector):
         position = Vector(*position)
@@ -690,7 +715,7 @@ def effect121(model, index, density, current):
     est_effect_21 <player filter> <delay> <model> <entity> <density> <current>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     te = TempEntity('Fizz')
     te.model = model
@@ -726,7 +751,7 @@ def effect123(model, position, life_time, size, brightness):
     est_effect_23 <player filter> <delay> <model> <position x y z> <life> <size> <brightness>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(position, Vector):
         position = Vector(*position)
@@ -747,7 +772,7 @@ def effect124(model, origin, reversed_):
     est_effect_24 <player filter> <delay> <model> <position x y z> <reversed>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(origin, Vector):
         origin = Vector(*origin)
@@ -804,7 +829,7 @@ def effect127(model, skin, position, angle, velocity, flags, effects):
     est_effect_27 <player filter> <delay> <model> <subtype/skin> <position x y z> <angle p y r> <velocity x y z> <flags> <effects>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(position, Vector):
         position = Vector(*position)
@@ -890,7 +915,7 @@ def effect131(model, position, scale, frame_rate):
     est_effect_31 <player filter> <delay> <model> <position x y z> <scale> <framerate>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(position, Vector):
         position = Vector(*position)
@@ -930,7 +955,7 @@ def effect133(model, position, size, brightness):
     est_effect_33 <player filter> <delay> <model> <position x y z> <size> <brightness>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(position, Vector):
         position = Vector(*position)
@@ -950,7 +975,7 @@ def effect134(model, position, direction, speed, noise, count):
     est_effect_34 <player filter> <delay> <model> <position x y z> <direction x y z> <speed> <noise> <count>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     if not isinstance(position, Vector):
         position = Vector(*position)
@@ -975,7 +1000,7 @@ def effect135(decal, position):
     est_effect_35 <player filter> <delay> <Decal> <Position x y z>
     """
     if not isinstance(decal, Decal):
-        decal = Decal(decal)
+        decal = get_decal_instance(decal)
 
     if not isinstance(position, Vector):
         position = Vector(*position)
@@ -993,7 +1018,7 @@ def effect1(model, x, y, z, dx, dy, dz):
     est_effect 1 <player filter> <delay> <model> (position <x> <y> <z>) (direction <x> <y> <z>)
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     te = TempEntity('Armor Ricochet')
     te.position = Vector(x, y, z)
@@ -1008,7 +1033,7 @@ def effect2(model, start_userid, end_userid, life_time, start_width, end_width, 
     est_effect 2 <player filter> <delay> <model> <start userid> <end userid> <life> <width> <end width> <red> <green> <blue> <alpha>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     te = TempEntity('BeamEntPoint')
     te.model = model
@@ -1032,7 +1057,7 @@ def effect3(model, x1, y1, z1, x2, y2, z2, life_time, start_width, end_width, re
     est_effect 3 <player filter> <delay> <model> (start <x> <y> <z>) (end <x> <y> <z>) <life> <width> <end width> <red> <green> <blue> <alpha>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     te = TempEntity('BeamPoints')
     te.model = model
@@ -1056,7 +1081,7 @@ def effect4(model, userid, life_time, start_width, end_width, fade_length, red, 
     est_effect 4 <player filter> <delay> <model> <userid> <life> <width> <end width> <time to fade> <red> <green> <blue> <alpha>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     te = TempEntity('BeamFollow')
     te.model = model
@@ -1080,7 +1105,7 @@ def effect5(model, start_userid, end_entity_index, life_time, width, fade_length
     est_effect 5 <player filter> <delay> <model> <userid> <end index> <life> <width> <spread> <amplitude> <red> <green> <blue> <alpha> <speed>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     te = TempEntity('BeamRing')
     te.model = model
@@ -1107,7 +1132,7 @@ def effect6(model, x, y, z, reversed_):
     est_effect 6 <player filter> <delay> <model> <x> <y> <z> <reversed>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     te = TempEntity('Large Funnel')
     te.model = model
@@ -1123,7 +1148,7 @@ def effect7(model, x, y, z, scale, frame_rate):
     est_effect 7 <player filter> <delay> <model> <x> <y> <z> <scale> <framerate>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     te = TempEntity('Smoke')
     te.model = model
@@ -1140,7 +1165,7 @@ def effect8(model, x, y, z, dx, dy, dz):
     est_effect 8 <player filter> <delay> <model> <x> <y> <z> (towards <x> <y> <z>)
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     te = TempEntity('Metal Sparks')
     te.position = Vector(x, y, z)
@@ -1155,7 +1180,7 @@ def effect9(model, x, y, z, dx, dy, dz, type_):
     est_effect 9 <player filter> <delay> <model> <x> <y> <z> (towards <x> <y> <z>) <type>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     te = TempEntity('GaussExplosion')
     te.origin = Vector(x, y, z)
@@ -1171,7 +1196,7 @@ def effect10(model, x, y, z, start_radius, end_radius, life_time, width, fade_le
     est_effect 10 <player filter> <delay> <model> <x> <y> <z> <start radius> <end radius> <life> <width> <spread> <amplitude> <red> <green> <blue> <alpha> <speed>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     te = TempEntity('BeamRingPoint')
     te.model = model
@@ -1199,7 +1224,7 @@ def effect11(model, x, y, z, life_time, scale, brightness):
     est_effect 11 <player filter> <delay> <model> <x> <y> <z> <life> <size> <brightness>
     """
     if not isinstance(model, Model):
-        model = Model(model)
+        model = get_model_instance(model)
 
     te = TempEntity('GlowSprite')
     te.model = model

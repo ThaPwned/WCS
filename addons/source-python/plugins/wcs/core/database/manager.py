@@ -126,6 +126,11 @@ def _query_settings(result):
             for statement in [x for x in statements if x.startswith(f'database upgrade {DatabaseVersion.UPDATE2.value}.')]:
                 database_manager.execute(statement)
 
+        # Create table 'stats' for custom player data
+        if version < DatabaseVersion.UPDATE3:
+            for statement in [x for x in statements if x.startswith(f'database upgrade {DatabaseVersion.UPDATE3.value}.')]:
+                database_manager.execute(statement)
+
         database_manager.execute('setting update', arguments=(str(DatabaseVersion.CURRENT.value), ), format_args=('version', ))
         settings['version'] = DatabaseVersion.CURRENT
 
@@ -146,7 +151,7 @@ if _driver == 'mysql':
 else:
     _queue.put(_Node(NodeType.CONNECT, query=lambda: sqlite_connect(DATA_PATH.joinpath('players.sqlite'))))
 
-for statement in ('create players', 'create races', 'create skills', 'create stats races', 'create stats items', 'create settings'):
+for statement in ('create players', 'create races', 'create skills', 'create stats', 'create stats races', 'create stats items', 'create settings'):
     database_manager.execute(statement)
 
 if _driver == 'mysql':

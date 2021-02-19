@@ -52,6 +52,8 @@ from events.hooks import PreEvent
 #   Filters
 from filters.players import PlayerIter
 from filters.weapons import WeaponClassIter
+#   Hooks
+from hooks.exceptions import except_hooks
 #   Keyvalues
 from _keyvalues import KeyValues
 # NOTE: Have to prefix it with a _ otherwise it'd import KeyValues from ES Emulator if it's loaded
@@ -78,6 +80,7 @@ from players.dictionary import PlayerDictionary
 from players.entity import Player
 from players.helpers import index_from_userid
 #   Translations
+from translations.manager import language_manager
 from translations.strings import LangStrings
 #   Weapons
 from weapons.dictionary import WeaponDictionary
@@ -134,11 +137,17 @@ from ...players.entity import Player as WCSPlayer
 _aliases = {}
 
 if (TRANSLATION_PATH / 'strings.ini').isfile():
-    _strings = LangStrings(TRANSLATION_PATH / 'strings')
+    try:
+        _strings = LangStrings(TRANSLATION_PATH / 'strings')
+    except:
+        warn("Unable to load the translation file 'resource/source-python/translations/wcs/strings.ini' due to the following exception:")
+        except_hooks.print_exception()
 
-    for key in _strings:
-        for language, message in _strings[key].items():
-            _strings[key][language] = message.replace('#default', COLOR_DEFAULT).replace('#green', COLOR_GREEN).replace('#lightgreen', COLOR_LIGHTGREEN).replace('#darkgreen', COLOR_DARKGREEN)
+        _strings = None
+    else:
+        for key in _strings:
+            for language, message in _strings[key].items():
+                _strings[key][language] = message.replace('#default', COLOR_DEFAULT).replace('#green', COLOR_GREEN).replace('#lightgreen', COLOR_LIGHTGREEN).replace('#darkgreen', COLOR_DARKGREEN)
 else:
     _strings = None
 
@@ -149,15 +158,21 @@ if (TRANSLATION_PATH / 'esc').isdir():
     for name in [x.basename().rsplit('.', 1)[0] for x in (TRANSLATION_PATH / 'esc').listdir() if x.endswith('.ini') and not x.endswith('_server.ini')]:
         shortname = name.rsplit('_', 1)[0]
 
-        _esc_strings[shortname] = LangStrings(TRANSLATION_PATH / 'esc' / name)
-
-        for key in _esc_strings[shortname]:
-            for language, message in _esc_strings[shortname][key].items():
-                _esc_strings[shortname][key][language] = message.replace('#default', COLOR_DEFAULT).replace('#green', COLOR_GREEN).replace('#lightgreen', COLOR_LIGHTGREEN).replace('#darkgreen', COLOR_DARKGREEN)
+        try:
+            _esc_strings[shortname] = LangStrings(TRANSLATION_PATH / 'esc' / name)
+        except:
+            warn(f"Unable to load the translation file 'resource/source-python/translations/wcs/esc/{name}.ini' due to the following exception:")
+            except_hooks.print_exception()
+        else:
+            for key in _esc_strings[shortname]:
+                for language, message in _esc_strings[shortname][key].items():
+                    _esc_strings[shortname][key][language] = message.replace('#default', COLOR_DEFAULT).replace('#green', COLOR_GREEN).replace('#lightgreen', COLOR_LIGHTGREEN).replace('#darkgreen', COLOR_DARKGREEN)
 
 
 _restrictions = WeaponRestrictionHandler()
-_all_weapons = set([x.basename for x in WeaponClassIter('all', ['melee', 'objective'])])
+
+_all_weapons = set([x.basename for x in WeaponClassIter('all', None if GAME_NAME in ('hl2mp', ) else 'objective')])
+_all_weapons_but_melee = set([x.basename for x in WeaponClassIter('all', 'melee' if GAME_NAME in ('hl2mp', ) else ['melee', 'objective'])])
 
 if (CFG_PATH / 'es_WCSlanguage_db.txt').isfile():
     _languages = KeyValues.load_from_file(CFG_PATH / 'es_WCSlanguage_db.txt').as_dict()
@@ -251,6 +266,17 @@ elif GAME_NAME == 'csgo':
         'localdata.m_Local.m_aimPunchAngleVel',
         'localdata.m_Local.m_viewPunchAngle'
     )
+else:
+    # TODO: I do not know anything about recoils for other games
+    _recoil_cvars_modified.clear()
+
+
+# ============================================================================
+# >> CLASSES
+# ============================================================================
+class Dict(dict):
+    def __missing__(self, key):
+        return '{' + key + '}'
 
 
 # ============================================================================
@@ -282,6 +308,8 @@ def _format_message(userid, name, args):
     if text is None:
         return tuple(), None
 
+    text = text.copy()  # Make sure we do not modify the original strings
+
     if args:
         tokens = {}
 
@@ -289,7 +317,7 @@ def _format_message(userid, name, args):
             tokens[args[i]] = args[i + 1]
 
         for language, message in text.items():
-            text[language] = Template(message).substitute(tokens)
+            text[language] = Template(message).substitute(tokens).format_map(Dict(tokens))
 
     return players, text
 
@@ -1397,7 +1425,18 @@ def wcs_xtell_command(command_info, userid:str, name:str, *args:str):
     players, message = _format_message(userid, name, args)
 
     for player in players:
-        SayText2(message[message.get(player.language, 'en')]).send(player.index)
+        # Try to get the text in the player's language
+        text = message.get(language_manager.get_language(player.language))
+
+        if text is None:
+            # Try to get the text in the server's default language
+            text = message.get(language_manager.default)
+
+            if text is None:
+                # Just get any text. I don't care if it's in Na'vi
+                text = message[list(message)[0]]
+
+        SayText2(text).send(player.index)
 
 
 @TypedServerCommand('wcs_xcentertell')
@@ -1405,7 +1444,18 @@ def wcs_xcentertell_command(command_info, userid:str, name:str, *args:str):
     players, message = _format_message(userid, name, args)
 
     for player in players:
-        HudMsg(message[message.get(player.language, 'en')], y=0.2).send(player.index)
+        # Try to get the text in the player's language
+        text = message.get(language_manager.get_language(player.language))
+
+        if text is None:
+            # Try to get the text in the server's default language
+            text = message.get(language_manager.default)
+
+            if text is None:
+                # Just get any text. I don't care if it's in Na'vi
+                text = message[list(message)[0]]
+
+        HudMsg(text, y=0.2).send(player.index)
 
 
 @TypedServerCommand('wcs_centermsg')
@@ -1489,13 +1539,13 @@ def wcs_restrict_command(command_info, player:convert_userid_to_player, weapons:
         return
 
     if weapons[0] == 'all':
-        _restrictions.add_player_restrictions(player, *_all_weapons)
+        _restrictions.add_player_restrictions(player, *_all_weapons_but_melee)
         return
 
     if 'only' in weapons:
         weapons.remove('only')
 
-        weapons = _all_weapons.difference(weapons)
+        weapons = _all_weapons_but_melee.difference(weapons)
 
         _restrictions.player_restrictions[player.userid].clear()
 
@@ -1526,7 +1576,7 @@ def wcs_getlanguage_command(command_info, var:ConVar, id_:str, language:str='en'
         else:
             _esc_strings_ids[identifier] = _esc_strings[module][id_]
 
-            var.set_int(identifier)
+            var.set_string(str(identifier))
 
 
 @TypedServerCommand('wcs_randplayer')
@@ -2068,6 +2118,10 @@ def wcs_dbgmsg_command(command_info, level:int, *message:str):
 # ============================================================================
 @PreEvent('player_hurt')
 def pre_player_hurt(event):
+    # TODO: Find a solution for games with no dmg_health
+    if event.is_empty('dmg_health'):
+        return
+
     if event['attacker']:
         wcsplayer = WCSPlayer.from_userid(event['userid'])
 
@@ -2259,3 +2313,9 @@ def on_take_damage_alive(wcsvictim, wcsattacker, info):
 
                 if reduced_damage > 0:
                     info.damage = info.damage * (1 - reduced_damage)
+
+    if info.type & DamageTypes.FALL:
+        fall_damage = wcsvictim.data.get('falldamage')
+
+        if fall_damage is not None and fall_damage != 1:
+            info.damage *= fall_damage

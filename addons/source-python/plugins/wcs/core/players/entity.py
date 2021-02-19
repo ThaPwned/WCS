@@ -24,6 +24,8 @@ from warnings import warn
 #   Commands
 from commands import CommandReturn
 from commands.say import SayFilter
+#   Core
+from core import GAME_NAME
 #   CVars
 from cvars import ConVar
 #   Engines
@@ -48,7 +50,8 @@ from listeners.tick import RepeatStatus
 #   Memory
 from memory import make_object
 #   Menus
-from menus import SimpleMenu
+from menus.base import _BaseMenu
+from menus.base import _PagedMenuBase
 #   Players
 from players.dictionary import PlayerDictionary
 from players.entity import Player as _Player
@@ -247,6 +250,9 @@ class _Stats(object):
         self._modified = set()
         self._not_added = set()
 
+    def __contains__(self, name):
+        return name in self._data
+
     def __getitem__(self, name):
         return self._data[name]
 
@@ -271,6 +277,7 @@ class Player(object, metaclass=_PlayerMeta):
 
         self._races = _RaceContainer(self)
         self._items = _ItemContainer(self)
+        self._stats = _Stats()
         self._ready = False
         self._retrieving = False
         self._privileges = {}
@@ -330,8 +337,9 @@ class Player(object, metaclass=_PlayerMeta):
 
         database_manager.execute('race get', (self.id, ), callback=self._query_get_races)
         database_manager.execute('skill get', (self.id, ), callback=self._query_get_skills)
-        database_manager.execute('stat get', (self._id, ), callback=self._query_get_stats, format_args=('races', ), type='races')
-        database_manager.execute('stat get', (self._id, ), callback=self._query_get_stats, format_args=('items', ), type='items')
+        database_manager.execute('stat get', (self._id, ), callback=self._query_get_stats)
+        database_manager.execute('stat module get', (self._id, ), callback=self._query_get_module_stats, format_args=('races', ), type='races')
+        database_manager.execute('stat module get', (self._id, ), callback=self._query_get_module_stats, format_args=('items', ), type='items')
         database_manager.callback(self._query_final)
 
     def _query_get_races(self, result):
@@ -370,6 +378,16 @@ class Player(object, metaclass=_PlayerMeta):
                         race.skills[skill_name]._type = settings.type
 
     def _query_get_stats(self, result):
+        if _thread.unloading:
+            return
+
+        data = result.fetchall()
+
+        if data:
+            for key, value in data:
+                self.stats._data[key] = value
+
+    def _query_get_module_stats(self, result):
         if _thread.unloading:
             return
 
@@ -474,6 +492,7 @@ class Player(object, metaclass=_PlayerMeta):
 
         races = []
         skills = []
+        stats = []
         stats_races = []
         stats_items = []
 
@@ -491,14 +510,17 @@ class Player(object, metaclass=_PlayerMeta):
                 stats_races.append((race_name, stat, race.stats[stat], self.id))
 
             race.stats._not_added.clear()
-            race.stats._modified.clear()
 
         for item_name, item in self._items.items():
             for stat in item.stats._not_added:
                 stats_items.append((item_name, stat, item.stats[stat], self.id))
 
             item.stats._not_added.clear()
-            item.stats._modified.clear()
+
+        for stat in self.stats._not_added:
+            stats.append((stat, self.stats[stat], self.id))
+
+        self.stats._not_added.clear()
 
         if races:
             database_manager.executemany('race insert', races)
@@ -506,11 +528,14 @@ class Player(object, metaclass=_PlayerMeta):
         if skills:
             database_manager.executemany('skill insert', skills)
 
+        if stats:
+            database_manager.executemany('stat insert', stats)
+
         if stats_races:
-            database_manager.executemany('stat insert', stats_races, format_args=('races', ))
+            database_manager.executemany('stat module insert', stats_races, format_args=('races', ))
 
         if stats_items:
-            database_manager.executemany('stat insert', stats_items, format_args=('items', ))
+            database_manager.executemany('stat module insert', stats_items, format_args=('items', ))
 
         reset = False
 
@@ -534,22 +559,31 @@ class Player(object, metaclass=_PlayerMeta):
 
             database_manager.execute('skill update', (self._id, ), format_args=(level, ))
 
-        if any([race.stats._modified for race in self._races.values()]):
+        if self.stats._modified:
             join = statements['stat join']
+
+            value = ' '.join([join.format(key, self.stats[key]) for key in self.stats._modified])
+
+            database_manager.execute('stat update', (self._id, ), format_args=(value, ))
+
+            self.stats._modified.clear()
+
+        if any([race.stats._modified for race in self._races.values()]):
+            join = statements['stat module join']
 
             value = ' '.join([join.format(race_name, key, race.stats[key]) for race_name, race in self._races.items() for key in race.stats._modified])
 
-            database_manager.execute('stat update', (self._id, ), format_args=('races', value))
+            database_manager.execute('stat module update', (self._id, ), format_args=('races', value))
 
             for race in self._races.values():
                 race.stats._modified.clear()
 
         if any([item.stats._modified for item in self._items.values()]):
-            join = statements['stat join']
+            join = statements['stat module join']
 
             value = ' '.join([join.format(item_name, key, item.stats[key]) for item_name, item in self._items.items() for key in item.stats._modified])
 
-            database_manager.execute('stat update', (self._id, ), format_args=('items', value))
+            database_manager.execute('stat module update', (self._id, ), format_args=('items', value))
 
             for item in self._items.values():
                 item.stats._modified.clear()
@@ -634,7 +668,7 @@ class Player(object, metaclass=_PlayerMeta):
         except:
             except_hooks.print_exception()
         else:
-            if isinstance(accepted, SimpleMenu):
+            if isinstance(accepted, (_BaseMenu, _PagedMenuBase)):
                 accepted.send(self.index)
 
                 self.data['_internal_input_menu'] = None
@@ -774,7 +808,7 @@ class Player(object, metaclass=_PlayerMeta):
 
     @property
     def stats(self):
-        return self.active_race.stats
+        return self._stats
 
     @property
     def skills(self):
@@ -1275,7 +1309,10 @@ class _Skill(object):
         if data['reason'] is not None:
             return data['reason']
 
-        if self.wcsplayer.player.team_index < 2:
+        if not self.level:
+            return SkillReason.LEVEL
+
+        if self.wcsplayer.player.team_index < 2 and GAME_NAME not in ('hl2mp', ):
             return SkillReason.TEAM
 
         if self.wcsplayer.player.dead:
@@ -1287,9 +1324,6 @@ class _Skill(object):
         if self.cooldown_seconds:
             if self.cooldown > time():
                 return SkillReason.COOLDOWN
-
-        if not self.level:
-            return SkillReason.LEVEL
 
         return SkillReason.ALLOWED
 

@@ -2,6 +2,7 @@
     "create players": "CREATE TABLE IF NOT EXISTS players (id INTEGER PRIMARY KEY AUTOINCREMENT, accountid INTEGER UNIQUE, name TEXT, current_race TEXT, lastconnect REAL, bank_level INTEGER, rested_xp INTEGER)",
     "create races": "CREATE TABLE IF NOT EXISTS races (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, playerid INTEGER, xp INTEGER DEFAULT 0, level INTEGER DEFAULT 0, unused INTEGER DEFAULT 0)",
     "create skills": "CREATE TABLE IF NOT EXISTS skills (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, race TEXT, playerid INTEGER, level INTEGER DEFAULT 0)",
+    "create stats": "CREATE TABLE IF NOT EXISTS stats (id INTEGER PRIMARY KEY AUTOINCREMENT, playerid INTEGER, key TEXT, value REAL)",
     "create stats races": "CREATE TABLE IF NOT EXISTS stats_races (id INTEGER PRIMARY KEY AUTOINCREMENT, playerid INTEGER, owner TEXT, key TEXT, value REAL)",
     "create stats items": "CREATE TABLE IF NOT EXISTS stats_items (id INTEGER PRIMARY KEY AUTOINCREMENT, playerid INTEGER, owner TEXT, key TEXT, value REAL)",
     "create settings": "CREATE TABLE IF NOT EXISTS settings (setting TEXT PRIMARY KEY NOT NULL, value TEXT NOT NULL)",
@@ -9,26 +10,31 @@
     "player offline": "SELECT IFNULL(accountid, name), name FROM players ORDER BY name ASC",
     "player get": "SELECT id, name, current_race, lastconnect, bank_level, rested_xp FROM players WHERE accountid = ?",
     "player get bot": "SELECT id, name, current_race, lastconnect, bank_level, rested_xp FROM players WHERE accountid IS NULL AND name = ?",
-    "player insert": "INSERT INTO players (accountid, name, current_race, lastconnect, bank_level, rested_xp) VALUES (?, ?, ?, ?, ?, ?)",
+    "player insert": "INSERT OR IGNORE INTO players (accountid, name, current_race, lastconnect, bank_level, rested_xp) VALUES (?, ?, ?, ?, ?, ?)",
     "player update": "UPDATE players SET name = ?, current_race = ?, lastconnect = ?, bank_level = ?, rested_xp = ? WHERE id = ?",
 
     "race get": "SELECT name, xp, level, unused FROM races WHERE playerid = ?",
-    "race insert": "INSERT INTO races (name, playerid) VALUES (?, ?)",
+    "race insert": "INSERT OR IGNORE INTO races (name, playerid) VALUES (?, ?)",
     "race update": "UPDATE races SET xp = CASE {} ELSE xp END, level = CASE {} ELSE level END, unused = CASE {} ELSE unused END WHERE playerid = ?",
     "race join": "WHEN name = '{}' THEN {}",
 
     "skill get": "SELECT name, race, level FROM skills WHERE playerid = ?",
-    "skill insert": "INSERT INTO skills (name, race, playerid) VALUES (?, ?, ?)",
+    "skill insert": "INSERT OR IGNORE INTO skills (name, race, playerid) VALUES (?, ?, ?)",
     "skill update": "UPDATE skills SET level = CASE {} ELSE level END WHERE playerid = ?",
     "skill join": "WHEN race = '{}' AND name = '{}' THEN {}",
 
-    "stat get": "SELECT owner, key, value FROM stats_{} WHERE playerid = ?",
-    "stat insert": "INSERT INTO stats_{} (owner, key, value, playerid) VALUES (?, ?, ?, ?)",
-    "stat update": "UPDATE stats_{} SET value = CASE {} ELSE value END WHERE playerid = ?",
-    "stat join": "WHEN owner = '{}' AND key = '{}' THEN {}",
+    "stat get": "SELECT key, value FROM stats WHERE playerid = ?",
+    "stat insert": "INSERT OR IGNORE INTO stats (key, value, playerid) VALUES (?, ?, ?)",
+    "stat update": "UPDATE stats SET value = CASE {} ELSE value END WHERE playerid = ?",
+    "stat join": "WHEN key = '{}' THEN {}",
+
+    "stat module get": "SELECT owner, key, value FROM stats_{} WHERE playerid = ?",
+    "stat module insert": "INSERT OR IGNORE INTO stats_{} (owner, key, value, playerid) VALUES (?, ?, ?, ?)",
+    "stat module update": "UPDATE stats_{} SET value = CASE {} ELSE value END WHERE playerid = ?",
+    "stat module join": "WHEN owner = '{}' AND key = '{}' THEN {}",
 
     "setting get": "SELECT setting, value FROM settings",
-    "setting insert": "INSERT INTO settings (setting, value) VALUES (?, ?)",
+    "setting insert": "INSERT OR IGNORE INTO settings (setting, value) VALUES (?, ?)",
     "setting update": "UPDATE settings SET value = ? WHERE setting = '{}'",
 
     "rank update": "SELECT IFNULL(p.accountid, p.name), p.name, p.current_race, IFNULL(SUM(r.level), 1) AS total_level FROM players p LEFT JOIN races r on r.playerid = p.id GROUP BY p.id ORDER BY total_level DESC",
@@ -41,5 +47,7 @@
     "database upgrade 1.5": "ALTER TABLE players_copy RENAME TO players",
 
     "database upgrade 2.0": "ALTER TABLE players ADD COLUMN bank_level INTEGER",
-    "database upgrade 2.1": "ALTER TABLE players ADD COLUMN rested_xp INTEGER"
+    "database upgrade 2.1": "ALTER TABLE players ADD COLUMN rested_xp INTEGER",
+
+    "database upgrade 3.0": "CREATE TABLE IF NOT EXISTS stats (id INTEGER PRIMARY KEY AUTOINCREMENT, playerid INTEGER, key TEXT, value REAL)"
 }

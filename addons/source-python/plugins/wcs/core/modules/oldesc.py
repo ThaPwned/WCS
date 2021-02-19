@@ -153,7 +153,7 @@ def parse_ini_races():
                 skills = settings.config['skills'] = {}
 
                 for i, skill_name in enumerate(skillnames):
-                    fixed_skill_name = FIX_NAME.sub('', (skill_name[8:] if skill_name.startswith('wcs_lng_') else skill_name).replace(' ', '_'))
+                    fixed_skill_name = FIX_NAME.sub('', (skill_name[8:] if skill_name.startswith('wcs_lng_') else skill_name).lower().replace(' ', '_'))
 
                     settings.strings[fixed_skill_name] = _esc_strings[fixed_name][fixed_skill_name] if skill_name.startswith('wcs_lng_') else _LanguageString(skill_name)
                     settings.strings[f'{fixed_skill_name} description'] = _esc_strings[fixed_name][f'{fixed_skill_name} description'] if skilldescr[i].startswith('wcs_lng_') else _LanguageString(skilldescr[i].replace(r'\n', ''))
@@ -197,6 +197,7 @@ def parse_ini_races():
 
                 settings.strings['name'] = _esc_strings[fixed_name]['name'] if name.startswith('wcs_lng_') else _LanguageString(name)
                 settings.strings['description'] = _esc_strings[fixed_name][data['desc'][8:]] if data['desc'].startswith('wcs_lng_') else _LanguageString(data['desc'].replace(r'\n', ''))
+                settings.strings['shortname'] = settings.strings['name'] if data.get('shortname') is None else _esc_strings[fixed_name][data['shortname'][8:]] if data['shortname'].startswith('wcs_lng_') else _LanguageString(data['shortname'])
 
                 categories = (data['category'].split('|') if data['category'] and not data['category'] == '0' else []) if 'category' in data else []
 
