@@ -280,6 +280,7 @@ class Player(object, metaclass=_PlayerMeta):
         self._stats = _Stats()
         self._ready = False
         self._retrieving = False
+        self._inserting = False
         self._privileges = {}
 
         self._id = None
@@ -312,8 +313,14 @@ class Player(object, metaclass=_PlayerMeta):
         data = result.fetchone()
 
         if data is None:
+            if self._inserting:
+                raise RuntimeError(f'Tried to insert a player\'s data more than once ({self.accountid} - {result["name"]}')
+
+            self._inserting = True
+
             database_manager.execute('player insert', (None if isinstance(self.accountid, str) else self.accountid, result['name'], race_manager.default_race, time(), cfg_new_player_bank_bonus.get_int(), 0))
             database_manager.execute('player get' + (' bot' if isinstance(self.accountid, str) else ''), (self.accountid, ), callback=self._query_get_player, name=result['name'])
+
             return
 
         self._id = data[0]
