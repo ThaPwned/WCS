@@ -992,19 +992,6 @@ def on_level_init(map_name):
     item_manager._refresh_config.clear()
 
 
-# Is ESC supported?
-if IS_ESC_SUPPORT_ENABLED:
-    #  Used to clean up loading/unloading of wcs
-    @OnServerOutput
-    def on_server_output(severity, msg):
-        if msg.startswith(('[EventScripts] Loaded wcs/modules/races/', 'Unloading wcs/modules/races/')) or (msg.startswith('wcs/modules/races/') and msg.endswith(' has been unloaded\n')):
-            return OutputReturn.BLOCK
-        if msg.startswith(('[EventScripts] Loaded wcs/modules/items/', 'Unloading wcs/modules/items/')) or (msg.startswith('wcs/modules/items/') and msg.endswith(' has been unloaded\n')):
-            return OutputReturn.BLOCK
-
-        return OutputReturn.CONTINUE
-
-
 # TODO: Should probably find a less demanding solution
 @OnTick
 def on_tick():
