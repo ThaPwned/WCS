@@ -1135,6 +1135,18 @@ def on_player_level_up(wcsplayer, race, old_level):
                     _delays[wcsplayer].add(delay)
                     break
 
+        if cfg_level_up_sound.get_int():
+            player = wcsplayer.player
+
+            ##The new level up sound which is part of the Eventscripts Emulator that is modified for Warcraft-Source
+            ## - https://github.com/ManifestManah/EventScripts-Emulator-For-WCS/tree/master/sound/wcs
+            if SOURCE_ENGINE_BRANCH == 'csgo':
+                player.play_sound('wcs/levelup.mp3')
+            
+            ##The level up sound that was originally used in the older versions of Warcraft-Source
+            if SOURCE_ENGINE_BRANCH == 'css':
+                player.play_sound('ambient/machines/teleport1.wav')
+
         if cfg_level_up_effect.get_int():
             player = wcsplayer.player
 
