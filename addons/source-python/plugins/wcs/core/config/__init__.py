@@ -44,7 +44,7 @@ __all__ = (
     'cfg_welcome_text',
     'cfg_new_player_bank_bonus',
     'cfg_debug_alias_duplicate',
-    'cfg_level_up_sound'
+    'cfg_level_up_sound',
     'cfg_level_up_effect',
     'cfg_rank_gain_effect',
     'cfg_rested_xp_gained_base',
