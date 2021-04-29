@@ -86,6 +86,7 @@ from .core.config import cfg_rested_xp_offline_duration
 from .core.config import cfg_welcome_text
 from .core.config import cfg_welcome_gui_text
 from .core.config import cfg_level_up_effect
+from .core.config import cfg_level_up_sound
 from .core.config import cfg_rank_gain_effect
 from .core.config import cfg_spawn_text
 from .core.config import cfg_hinttext_cooldown
