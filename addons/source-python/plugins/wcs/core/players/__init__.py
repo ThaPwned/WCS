@@ -3,6 +3,8 @@
 # ============================================================================
 # >> IMPORTS
 # ============================================================================
+import warnings
+
 # Source.Python Imports
 from engines.server import engine_server
 from engines.server import global_vars
@@ -322,3 +324,35 @@ def _initialize(baseplayer):
             OnClientAuthorized.manager.notify(baseplayer)
 
         _bots.clear()
+
+
+def add_race_limit(team, race, userid):
+    key = f'_internal_{race}_limit_allowed'
+
+    if key not in team_data[team]:
+        team_data[team][key] = []
+
+    team_data[team][key].append(userid)
+
+
+def remove_race_limit(team, race, userid):
+    key = f'_internal_{race}_limit_allowed'
+
+    try:
+        team_data[team][key].remove(userid)
+
+        if not team_data[team][key]:
+            del team_data[team][key]
+
+    except KeyError as e:
+        # Try the other team TODO: does this work in other games?
+        try:
+            other_team = 5-team
+            team_data[other_team][key].remove(userid)
+
+            if not team_data[other_team][key]:
+                del team_data[other_team][key]
+        except KeyError:
+            warnings.warn("Error while trying to remove userid:%s from teamlimit:\n %s" % (userid, e))
+        else:
+            warnings.warn("While removing userid:%s from teamlimit, they were found counting toward the enemy's limit" % (userid,))
