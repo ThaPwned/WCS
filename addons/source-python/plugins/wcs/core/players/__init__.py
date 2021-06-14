@@ -344,7 +344,7 @@ def remove_race_limit(team, race, userid):
         if not team_data[team][key]:
             del team_data[team][key]
 
-    except KeyError as e:
+    except (KeyError, ValueError) as e:
         # Try the other team TODO: does this work in other games?
         try:
             other_team = 5-team
@@ -352,7 +352,7 @@ def remove_race_limit(team, race, userid):
 
             if not team_data[other_team][key]:
                 del team_data[other_team][key]
-        except KeyError:
+        except (KeyError, ValueError):
             warnings.warn("Error while trying to remove userid:%s from teamlimit:\n %s" % (userid, e))
         else:
             warnings.warn("While removing userid:%s from teamlimit, they were found counting toward the enemy's limit" % (userid,))
