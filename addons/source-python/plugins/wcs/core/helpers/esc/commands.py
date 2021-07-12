@@ -500,17 +500,21 @@ def wcs_setfx_health_command(command_info, player:convert_userid_to_player, oper
         return
 
     if operator == '=':
-        old_value = player.health
-        player.health = value
-        value = old_value - value
+        value = value - player.health
     elif operator == '+':
-        player.health = max(player.health + value, 1)
+        pass 
+    elif operator == '-':
         value *= -1
+    
+    if player.health > 0:
+        # If the player is still alive, we don't want setfx health to kill them (or rather freeze them on <= 0 hp)
+        player.health = max(player.health+value, 1)
     else:
-        player.health = max(player.health - value, 1)
+        # If the player is already dying we only want to give them a chance to heal back up above 0.
+        player.health += value
 
     if time > 0:
-        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_health_command, player.userid, '+', value))
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_health_command, player.userid, '-', value))
         delay.args += (delay, )
         _delays[player.userid].append(delay)
 
