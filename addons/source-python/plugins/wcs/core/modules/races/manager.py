@@ -187,8 +187,10 @@ class RaceSetting(_BaseSetting):
 
         required = self.config.get('required')
 
-        if required:
-            if wcsplayer.total_level < required:
+        if required and wcsplayer.total_level < required:
+            if wcsplayer.fake_client and cfg_bot_ignore_level_requirement:
+                pass
+            else:
                 return RaceReason.REQUIRED_LEVEL
 
         return RaceReason.ALLOWED

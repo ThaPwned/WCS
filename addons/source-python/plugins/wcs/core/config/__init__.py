@@ -68,7 +68,8 @@ __all__ = (
     'cfg_bot_bomb_explode_xp',
     'cfg_bot_bomb_defuse_xp',
     'cfg_bot_hostage_rescue_xp',
-    'cfg_bot_ability_chance'
+    'cfg_bot_ability_chance',
+    'cfg_bot_ignore_level_requirement'
 )
 
 
@@ -130,3 +131,4 @@ with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as co
     cfg_bot_bomb_defuse_xp = config.cvar('bot_bomb_defuse_xp', '-1', config_strings['bot_bomb_defuse_xp'])
     cfg_bot_hostage_rescue_xp = config.cvar('bot_hostage_rescue_xp', '-1', config_strings['bot_hostage_rescue_xp'])
     cfg_bot_ability_chance = config.cvar('bot_ability_chance', '0.15', config_strings['bot_ability_chance'])
+    cfg_bot_ignore_level_requirement = config.cvar('bot_ignore_level_requirement', '0', config_strings['bot_ignore_level_requirement'])
