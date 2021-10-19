@@ -1371,6 +1371,14 @@ def wcs_givelevel_command(command_info, wcsplayer:convert_userid_to_wcsplayer, v
     wcsplayer.level += value
 
 
+@TypedServerCommand('wcs_levelbank_givelevel')
+def wcs_levelbank_givelevel_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:int):
+    if wcsplayer is None:
+        return
+
+    wcsplayer.bank_level += value
+
+
 @TypedServerCommand('wcs_xalias')
 def wcs_xalias_command(command_info, alias:str, command:str=None):
     if command is None:
