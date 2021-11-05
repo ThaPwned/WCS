@@ -40,6 +40,7 @@ __all__ = (
     'cfg_top_min_rank_announcement',
     'cfg_top_public_announcement',
     'cfg_top_stolen_notify',
+    'cfg_top_bot_prefix',
     'cfg_welcome_gui_text',
     'cfg_welcome_text',
     'cfg_new_player_bank_bonus',
@@ -114,6 +115,7 @@ with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as co
     cfg_top_public_announcement = config.cvar('top_public_announcement', '1', config_strings['top_public_announcement'])
     cfg_top_min_rank_announcement = config.cvar('top_min_rank_announcement', '10', config_strings['top_min_rank_announcement'])
     cfg_top_stolen_notify = config.cvar('top_stolen_notify', '1', config_strings['top_stolen_notify'])
+    cfg_top_bot_prefix = config.cvar('top_bot_prefix', '[BOT]', config_strings['top_bot_prefix'])
     cfg_bot_random_race = config.cvar('bot_random_race', '1', config_strings['bot_random_race'])
     cfg_unlock_race_notification = config.cvar('unlock_race_notification', '1', config_strings['unlock_race_notification'])
     cfg_assist_xp = config.cvar('assist_xp', '15', config_strings['assist_xp'])

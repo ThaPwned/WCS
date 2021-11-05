@@ -99,6 +99,7 @@ from .core.config import cfg_top_announcement_enable
 from .core.config import cfg_top_public_announcement
 from .core.config import cfg_top_min_rank_announcement
 from .core.config import cfg_top_stolen_notify
+from .core.config import cfg_top_bot_prefix
 from .core.config import cfg_bot_random_race
 from .core.config import cfg_unlock_race_notification
 from .core.config import cfg_assist_xp
@@ -382,6 +383,8 @@ def _query_refresh_offline(result):
 def _query_refresh_ranks(result):
     players = []
 
+    bot_prefix = cfg_top_bot_prefix.get_string()
+
     for accountid, name, current_race, total_level in result.fetchall():
         if current_race not in race_manager:
             current_race = race_manager.default_race
@@ -394,7 +397,7 @@ def _query_refresh_ranks(result):
         rank_manager._data[accountid] = {'name':name, 'current_race':current_race, 'total_level':total_level}
 
         option = PagedOption(deepcopy(menu_strings['wcstop_menu line']), accountid, show_index=False)
-        option.text.tokens['name'] = name
+        option.text.tokens['name'] = name if isinstance(accountid, int) or not bot_prefix else f'{bot_prefix} {name}'
 
         wcstop_menu.append(option)
 
