@@ -49,12 +49,19 @@ if _path.isfile():
 else:
     _database = {}
     _database['driver'] = 'sqlite'
+    _database['prioritize_blocking'] = 1
     _database['host'] = 'localhost'
     _database['database'] = 'wcs_database'
     _database['user'] = 'root'
     _database['password'] = ''
     _database['timeout'] = 60
     _database['port'] = 3306
+
+    with open(_path, 'w') as outputfile:
+        json_dump(_database, outputfile, indent=4)
+
+if 'prioritize_blocking' not in _database:
+    _database['prioritize_blocking'] = 1
 
     with open(_path, 'w') as outputfile:
         json_dump(_database, outputfile, indent=4)
@@ -67,6 +74,8 @@ _driver = _database['driver'] if _database['driver'] in ('sqlite', 'mysql') else
 
 with open(STRUCTURE_PATH / f'{_driver}.json') as inputfile:
     statements = json_load(inputfile)
+
+_prioritize_blocking = _database['prioritize_blocking']
 
 settings = {}
 

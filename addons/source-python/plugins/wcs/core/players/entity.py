@@ -73,6 +73,7 @@ from ..constants import RaceReason
 from ..constants import SkillReason
 from ..constants.paths import CFG_PATH
 #   Database
+from ..database.manager import _prioritize_blocking
 from ..database.manager import database_manager
 from ..database.manager import statements
 from ..database.thread import _thread
@@ -304,7 +305,7 @@ class Player(object, metaclass=_PlayerMeta):
             name = None
 
         if not _thread.unloading:
-            database_manager.execute('player get' + (' bot' if isinstance(self.accountid, str) else ''), (self.accountid, ), callback=self._query_get_player, name=name)
+            database_manager.execute('player get' + (' bot' if isinstance(self.accountid, str) else ''), (self.accountid, ), callback=self._query_get_player, blocking=_prioritize_blocking, name=name)
 
     def _query_get_player(self, result):
         if _thread.unloading:
@@ -318,8 +319,8 @@ class Player(object, metaclass=_PlayerMeta):
 
             self._inserting = True
 
-            database_manager.execute('player insert', (None if isinstance(self.accountid, str) else self.accountid, result['name'], race_manager.default_race, time(), cfg_new_player_bank_bonus.get_int(), 0))
-            database_manager.execute('player get' + (' bot' if isinstance(self.accountid, str) else ''), (self.accountid, ), callback=self._query_get_player, name=result['name'])
+            database_manager.execute('player insert', (None if isinstance(self.accountid, str) else self.accountid, result['name'], race_manager.default_race, time(), cfg_new_player_bank_bonus.get_int(), 0), blocking=_prioritize_blocking)
+            database_manager.execute('player get' + (' bot' if isinstance(self.accountid, str) else ''), (self.accountid, ), callback=self._query_get_player, blocking=_prioritize_blocking, name=result['name'])
 
             return
 
