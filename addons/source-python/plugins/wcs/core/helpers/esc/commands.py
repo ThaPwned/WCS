@@ -1352,6 +1352,9 @@ def wcs_givexp_command(command_info, wcsplayer:convert_userid_to_wcsplayer, valu
     if wcsplayer is None:
         return
 
+    if wcsplayer.xp + value < 0:
+        raise ValueError('Unable to set xp below 0')
+
     active_race = wcsplayer.active_race
     maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
 
@@ -1366,6 +1369,9 @@ def wcs_givelevel_command(command_info, wcsplayer:convert_userid_to_wcsplayer, v
     if wcsplayer is None:
         return
 
+    if wcsplayer.level + value < 0:
+        raise ValueError('Unable to set level below 0')
+
     active_race = wcsplayer.active_race
     maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
 
@@ -1379,6 +1385,9 @@ def wcs_givelevel_command(command_info, wcsplayer:convert_userid_to_wcsplayer, v
 def wcs_levelbank_givelevel_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:int):
     if wcsplayer is None:
         return
+
+    if wcsplayer.bank_level + value < 0:
+        raise ValueError('Unable to set levelbank below 0')
 
     wcsplayer.bank_level += value
 

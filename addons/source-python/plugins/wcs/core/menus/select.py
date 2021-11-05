@@ -442,6 +442,10 @@ def wcstop_detail_menu_select(menu, client, option):
 def levelbank_menu_select(menu, client, option):
     if isinstance(option.value, int):
         wcsplayer = Player(client)
+
+        if wcsplayer._bank_level < option.value:
+            return menu
+
         active_race = wcsplayer.active_race
 
         maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
