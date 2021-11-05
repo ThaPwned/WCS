@@ -450,7 +450,11 @@ def levelbank_menu_select(menu, client, option):
 
         maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
 
-        value = option.value if not maximum_race_level else min(maximum_race_level, active_race.level + option.value)
+        value = option.value
+
+        if maximum_race_level:
+            if active_race.level + value > maximum_race_level:
+                value = maximum_race_level - active_race.level
 
         wcsplayer.bank_level -= value
         active_race.level += value
