@@ -1345,6 +1345,11 @@ def on_player_ready(wcsplayer):
 
 @OnSettingsLoaded
 def on_settings_loaded(settings):
+    # Is WCS currently trying to unload?
+    if _thread.unloading:
+        # Stop this function
+        return
+
     # TODO: Please, PLEASE, tell me why this is near instant with "blocking=True"
     #       Without it, it takes 15+ seconds to complete for some servers
     #       (the location it takes this long is "self.cur.fetchall()" in thread.py)
