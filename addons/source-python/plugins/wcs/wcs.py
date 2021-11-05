@@ -85,6 +85,7 @@ from .core.config import cfg_rested_xp_offline_value
 from .core.config import cfg_rested_xp_offline_duration
 from .core.config import cfg_welcome_text
 from .core.config import cfg_welcome_gui_text
+from .core.config import cfg_playerinfo_show_offline
 from .core.config import cfg_level_up_effect
 from .core.config import cfg_level_up_sound
 from .core.config import cfg_rank_gain_effect
@@ -164,6 +165,7 @@ from .core.menus import raceinfo_menu
 from .core.menus import raceinfo_search_menu
 from .core.menus import raceinfo_detail_menu
 from .core.menus import playerinfo_menu
+from .core.menus import playerinfo_online_menu
 from .core.menus import playerinfo_offline_menu
 from .core.menus import playerinfo_detail_menu
 from .core.menus import wcstop_menu
@@ -1610,7 +1612,10 @@ def say_command_myraceinfo(command, index, team=None):
 @ClientCommand(COMMANDS['playerinfo'])
 @SayCommand(COMMANDS['playerinfo'])
 def say_command_playerinfo(command, index, team=None):
-    playerinfo_menu.send(index)
+    if cfg_playerinfo_show_offline.get_float():
+        playerinfo_menu.send(index)
+    else:
+        playerinfo_online_menu.send(index)
 
     return CommandReturn.BLOCK
 

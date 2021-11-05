@@ -12,6 +12,8 @@ from textwrap import wrap
 # Source.Python Imports
 #   Core
 from core import GAME_NAME
+#   Listeners
+from listeners import OnConVarChanged
 #   Menus
 from menus import PagedOption
 from menus import SimpleOption
@@ -21,6 +23,8 @@ from menus.radio import BUTTON_CLOSE_SLOT
 from menus.radio import BUTTON_NEXT
 
 # WCS Imports
+#   Config
+from ..config import cfg_playerinfo_show_offline
 #   Constants
 from ..constants import COMMANDS
 from ..constants import GithubStatus
@@ -775,6 +779,25 @@ else:
 # ============================================================================
 # >> LISTENERS
 # ============================================================================
+@OnConVarChanged
+def on_convar_changed(convar, old_value):
+    if convar.name == cfg_playerinfo_show_offline.name:
+        if convar.get_float():
+            for option in (main2_menu if GAME_NAME in ('hl2mp', ) else main_menu):
+                if isinstance(option, SimpleOption):
+                    if option.value is playerinfo_online_menu:
+                        option.value = playerinfo_menu
+
+            playerinfo_online_menu.parent_menu = playerinfo_menu
+        else:
+            for option in (main2_menu if GAME_NAME in ('hl2mp', ) else main_menu):
+                if isinstance(option, SimpleOption):
+                    if option.value is playerinfo_menu:
+                        option.value = playerinfo_online_menu
+
+            playerinfo_online_menu.parent_menu = main_menu
+
+
 @OnGithubCommitsRefresh
 def on_github_commits_refresh():
     wcsadmin_github_info_commits_menu.clear()
