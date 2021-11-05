@@ -45,6 +45,7 @@ __all__ = (
     'cfg_welcome_text',
     'cfg_new_player_bank_bonus',
     'cfg_playerinfo_show_offline',
+    'cfg_raceinfo_old_style',
     'cfg_debug_alias_duplicate',
     'cfg_level_up_sound',
     'cfg_level_up_effect',
@@ -101,6 +102,7 @@ with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as co
     cfg_welcome_gui_text = config.cvar('welcome_gui_text', '0', config_strings['welcome_gui_text'])
     cfg_new_player_bank_bonus = config.cvar('new_player_bank_bonus', '15', config_strings['new_player_bank_bonus'])
     cfg_playerinfo_show_offline = config.cvar('playerinfo_show_offline', '1', config_strings['playerinfo_show_offline'])
+    cfg_raceinfo_old_style = config.cvar('raceinfo_old_style', '0', config_strings['raceinfo_old_style'])
     cfg_debug_alias_duplicate = config.cvar('debug_alias_duplicate', '1', config_strings['debug_alias_duplicate'])
     cfg_level_up_sound = config.cvar('level_up_sound', '0', config_strings['level_up_sound'])
     cfg_level_up_effect = config.cvar('level_up_effect', '1', config_strings['level_up_effect'])

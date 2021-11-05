@@ -8,6 +8,8 @@
 from core import GAME_NAME
 
 # WCS Imports
+#   Config
+from ..config import cfg_playerinfo_show_offline
 #   Menus
 from .base import MAX_ITEM_COUNT
 from .base import PagedMenu
@@ -38,6 +40,7 @@ raceinfo_menu = PagedPageCountMenu()
 raceinfo_search_menu = PagedPageCountMenu()
 raceinfo_detail_menu = SimpleMenu()
 raceinfo_skills_menu = PagedMenu()
+raceinfo_skills_single_menu = PagedMenu()
 raceinfo_skills_detail_menu = SimpleMenu()
 raceinfo_race_detail_menu = SimpleMenu()
 playerinfo_menu = SimpleMenu()
@@ -94,7 +97,8 @@ spendskills_menu.parent_menu = main_menu
 changerace_menu.parent_menu = main_menu
 raceinfo_menu.parent_menu = main_menu
 raceinfo_skills_menu.parent_menu = raceinfo_detail_menu
-playerinfo_online_menu.parent_menu = playerinfo_menu
+raceinfo_skills_single_menu.parent_menu = raceinfo_detail_menu
+playerinfo_online_menu.parent_menu = playerinfo_menu if cfg_playerinfo_show_offline.get_float() else (main2_menu if GAME_NAME in ('hl2mp', ) else main_menu)
 playerinfo_offline_menu.parent_menu = playerinfo_menu
 playerinfo_detail_skills_menu.parent_menu = playerinfo_detail_menu
 playerinfo_detail_stats_menu.parent_menu = playerinfo_detail_menu

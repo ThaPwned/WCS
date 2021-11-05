@@ -55,6 +55,7 @@ from . import changerace_search_menu
 from . import raceinfo_search_menu
 from . import raceinfo_detail_menu
 from . import raceinfo_skills_menu
+from . import raceinfo_skills_single_menu
 from . import raceinfo_skills_detail_menu
 from . import raceinfo_race_detail_menu
 from . import playerinfo_menu
@@ -491,6 +492,54 @@ def raceinfo_skills_menu_build(menu, client):
             option = PagedOption(settings.strings[name], name)
 
         menu.append(option)
+
+
+@raceinfo_skills_single_menu.register_build_callback
+def raceinfo_skills_single_menu_build(menu, client):
+    menu.clear()
+
+    wcsplayer = Player(client)
+    name = wcsplayer.data['_internal_raceinfo']
+    settings = race_manager[name]
+
+    menu.title.tokens['name'] = settings.strings['name']
+
+    current_skill = wcsplayer.data.get('_internal_raceinfo_viewing_skill')
+
+    i = 1
+
+    for name in settings.config['skills']:
+        events = settings.config['skills'][name]['event']
+
+        if 'player_ultimate' in events:
+            option = PagedOption(menu_strings['raceinfo_skills_menu ultimate'], name)
+            option.text.tokens['name'] = settings.strings[name]
+        elif 'player_ability' in events:
+            option = PagedOption(menu_strings['raceinfo_skills_menu ability'], name)
+            option.text.tokens['name'] = settings.strings[name]
+        elif 'player_ability_on' in events or 'player_ability_off' in events:
+            option = PagedOption(menu_strings['raceinfo_skills_menu ability_on'], name)
+            option.text.tokens['name'] = settings.strings[name]
+            option.text.tokens['index'] = i
+
+            i += 1
+        else:
+            option = PagedOption(settings.strings[name], name)
+
+        menu.append(option)
+
+        if name == current_skill:
+            kwargs = {}
+
+            settings.execute('on_skill_desc', wcsplayer, name, kwargs)
+
+            info = settings.strings[f'{name} description']
+
+            if info:
+                info = info.get_string(get_client_language(client), **kwargs)
+
+                for text in wrap(info, 30):
+                    menu.append(text)
 
 
 @raceinfo_skills_detail_menu.register_build_callback

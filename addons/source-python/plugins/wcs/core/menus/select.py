@@ -50,6 +50,7 @@ from . import raceinfo_menu
 from . import raceinfo_search_menu
 from . import raceinfo_detail_menu
 from . import raceinfo_skills_menu
+from . import raceinfo_skills_single_menu
 from . import raceinfo_skills_detail_menu
 from . import raceinfo_race_detail_menu
 from . import playerinfo_menu
@@ -372,6 +373,18 @@ def raceinfo_skills_menu_select(menu, client, option):
     wcsplayer.data['_internal_raceinfo_skill'] = option.value
 
     return raceinfo_skills_detail_menu
+
+
+@raceinfo_skills_single_menu.register_select_callback
+def raceinfo_skills_single_menu_select(menu, client, option):
+    wcsplayer = Player(client)
+
+    if wcsplayer.data.get('_internal_raceinfo_viewing_skill') == option.value:
+        del wcsplayer.data['_internal_raceinfo_viewing_skill']
+    else:
+        wcsplayer.data['_internal_raceinfo_viewing_skill'] = option.value
+
+    return menu
 
 
 @raceinfo_skills_detail_menu.register_select_callback
