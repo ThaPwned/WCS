@@ -57,6 +57,8 @@ from players.dictionary import PlayerDictionary
 from players.entity import Player as _Player
 from players.helpers import index_from_userid
 from players.helpers import userid_from_index
+#   Steam
+from steam import SteamID
 #   Weapons
 from weapons.manager import weapon_manager
 from weapons.restrictions import WeaponRestrictionHandler
@@ -138,16 +140,32 @@ __all__ = (
 if (CFG_PATH / 'privileges.json').isfile():
     with open(CFG_PATH / 'privileges.json') as inputfile:
         try:
-            privileges = json_load(inputfile)
+            data = json_load(inputfile)
         except:
             warn('Unable to load the privileges.json file.')
             except_hooks.print_exception()
 
-            privileges = {}
+            data = {}
 
     for x in ('players', ):
-        if x not in privileges:
-            privileges[x] = {}
+        if x not in data:
+            data[x] = {}
+
+    # Remove our dummy steamid, so we don't get complains about it
+    data['players'].pop('STEAMID_EXAMPLE1', None)
+
+    privileges = {'players': {}}
+
+    # Make sure all the steamids are in the same format (accountid)
+    for id_, values in data['players'].items():
+        try:
+            steamid = SteamID.parse(id_)
+        except ValueError:
+            except_hooks.print_exception()
+        else:
+            account_id = steamid.account_id
+
+            privileges['players'][account_id] = values
 else:
     privileges = {
         'players':{
@@ -1459,7 +1477,7 @@ def on_client_authorized(baseplayer):
 
             wcsplayer = Player(baseplayer.index)
 
-            wcsplayer._privileges = privileges['players'].get(baseplayer.steamid2, {}) or privileges['players'].get(baseplayer.steamid3, {})
+            wcsplayer._privileges = privileges['players'].get(baseplayer._accountid, {})
 
             wcsplayer._retrieve_data()
         else:
