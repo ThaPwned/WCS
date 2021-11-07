@@ -500,17 +500,21 @@ def wcs_setfx_health_command(command_info, player:convert_userid_to_player, oper
         return
 
     if operator == '=':
-        old_value = player.health
-        player.health = value
-        value = old_value - value
+        value = value - player.health
     elif operator == '+':
-        player.health = max(player.health + value, 1)
+        pass 
+    elif operator == '-':
         value *= -1
+    
+    if player.health > 0:
+        # If the player is still alive, we don't want setfx health to kill them (or rather freeze them on <= 0 hp)
+        player.health = max(player.health+value, 1)
     else:
-        player.health = max(player.health - value, 1)
+        # If the player is already dying we only want to give them a chance to heal back up above 0.
+        player.health += value
 
     if time > 0:
-        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_health_command, player.userid, '+', value))
+        delay = Delay(time, validate_userid_after_delay, (wcs_setfx_health_command, player.userid, '-', value))
         delay.args += (delay, )
         _delays[player.userid].append(delay)
 
@@ -1348,6 +1352,9 @@ def wcs_givexp_command(command_info, wcsplayer:convert_userid_to_wcsplayer, valu
     if wcsplayer is None:
         return
 
+    if wcsplayer.xp + value < 0:
+        raise ValueError('Unable to set xp below 0')
+
     active_race = wcsplayer.active_race
     maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
 
@@ -1362,6 +1369,9 @@ def wcs_givelevel_command(command_info, wcsplayer:convert_userid_to_wcsplayer, v
     if wcsplayer is None:
         return
 
+    if wcsplayer.level + value < 0:
+        raise ValueError('Unable to set level below 0')
+
     active_race = wcsplayer.active_race
     maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
 
@@ -1369,6 +1379,17 @@ def wcs_givelevel_command(command_info, wcsplayer:convert_userid_to_wcsplayer, v
         return
 
     wcsplayer.level += value
+
+
+@TypedServerCommand('wcs_levelbank_givelevel')
+def wcs_levelbank_givelevel_command(command_info, wcsplayer:convert_userid_to_wcsplayer, value:int):
+    if wcsplayer is None:
+        return
+
+    if wcsplayer.bank_level + value < 0:
+        raise ValueError('Unable to set levelbank below 0')
+
+    wcsplayer.bank_level += value
 
 
 @TypedServerCommand('wcs_xalias')

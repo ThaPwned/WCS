@@ -17,8 +17,7 @@ from translations.strings import TranslationStrings
 
 # WCS Imports
 #   Config
-from ...config import cfg_default_race
-from ...config import cfg_ffa_enabled
+from ...config import cfg_default_race, cfg_ffa_enabled, cfg_bot_ignore_level_requirement
 #   Constants
 from ...constants import IS_ESC_SUPPORT_ENABLED
 from ...constants import RaceReason
@@ -187,8 +186,10 @@ class RaceSetting(_BaseSetting):
 
         required = self.config.get('required')
 
-        if required:
-            if wcsplayer.total_level < required:
+        if required and wcsplayer.total_level < required:
+            if wcsplayer.fake_client and cfg_bot_ignore_level_requirement:
+                pass
+            else:
                 return RaceReason.REQUIRED_LEVEL
 
         return RaceReason.ALLOWED

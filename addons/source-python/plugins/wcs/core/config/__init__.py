@@ -40,9 +40,12 @@ __all__ = (
     'cfg_top_min_rank_announcement',
     'cfg_top_public_announcement',
     'cfg_top_stolen_notify',
+    'cfg_top_bot_prefix',
     'cfg_welcome_gui_text',
     'cfg_welcome_text',
     'cfg_new_player_bank_bonus',
+    'cfg_playerinfo_show_offline',
+    'cfg_raceinfo_old_style',
     'cfg_debug_alias_duplicate',
     'cfg_level_up_sound',
     'cfg_level_up_effect',
@@ -68,7 +71,8 @@ __all__ = (
     'cfg_bot_bomb_explode_xp',
     'cfg_bot_bomb_defuse_xp',
     'cfg_bot_hostage_rescue_xp',
-    'cfg_bot_ability_chance'
+    'cfg_bot_ability_chance',
+    'cfg_bot_ignore_level_requirement'
 )
 
 
@@ -97,6 +101,8 @@ with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as co
     cfg_welcome_text = config.cvar('welcome_text', '0', config_strings['welcome_text'])
     cfg_welcome_gui_text = config.cvar('welcome_gui_text', '0', config_strings['welcome_gui_text'])
     cfg_new_player_bank_bonus = config.cvar('new_player_bank_bonus', '15', config_strings['new_player_bank_bonus'])
+    cfg_playerinfo_show_offline = config.cvar('playerinfo_show_offline', '1', config_strings['playerinfo_show_offline'])
+    cfg_raceinfo_old_style = config.cvar('raceinfo_old_style', '0', config_strings['raceinfo_old_style'])
     cfg_debug_alias_duplicate = config.cvar('debug_alias_duplicate', '1', config_strings['debug_alias_duplicate'])
     cfg_level_up_sound = config.cvar('level_up_sound', '0', config_strings['level_up_sound'])
     cfg_level_up_effect = config.cvar('level_up_effect', '1', config_strings['level_up_effect'])
@@ -113,6 +119,7 @@ with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as co
     cfg_top_public_announcement = config.cvar('top_public_announcement', '1', config_strings['top_public_announcement'])
     cfg_top_min_rank_announcement = config.cvar('top_min_rank_announcement', '10', config_strings['top_min_rank_announcement'])
     cfg_top_stolen_notify = config.cvar('top_stolen_notify', '1', config_strings['top_stolen_notify'])
+    cfg_top_bot_prefix = config.cvar('top_bot_prefix', '[BOT]', config_strings['top_bot_prefix'])
     cfg_bot_random_race = config.cvar('bot_random_race', '1', config_strings['bot_random_race'])
     cfg_unlock_race_notification = config.cvar('unlock_race_notification', '1', config_strings['unlock_race_notification'])
     cfg_assist_xp = config.cvar('assist_xp', '15', config_strings['assist_xp'])
@@ -130,3 +137,4 @@ with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as co
     cfg_bot_bomb_defuse_xp = config.cvar('bot_bomb_defuse_xp', '-1', config_strings['bot_bomb_defuse_xp'])
     cfg_bot_hostage_rescue_xp = config.cvar('bot_hostage_rescue_xp', '-1', config_strings['bot_hostage_rescue_xp'])
     cfg_bot_ability_chance = config.cvar('bot_ability_chance', '0.15', config_strings['bot_ability_chance'])
+    cfg_bot_ignore_level_requirement = config.cvar('bot_ignore_level_requirement', '0', config_strings['bot_ignore_level_requirement'])

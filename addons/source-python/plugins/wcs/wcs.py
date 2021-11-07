@@ -85,6 +85,7 @@ from .core.config import cfg_rested_xp_offline_value
 from .core.config import cfg_rested_xp_offline_duration
 from .core.config import cfg_welcome_text
 from .core.config import cfg_welcome_gui_text
+from .core.config import cfg_playerinfo_show_offline
 from .core.config import cfg_level_up_effect
 from .core.config import cfg_level_up_sound
 from .core.config import cfg_rank_gain_effect
@@ -99,6 +100,7 @@ from .core.config import cfg_top_announcement_enable
 from .core.config import cfg_top_public_announcement
 from .core.config import cfg_top_min_rank_announcement
 from .core.config import cfg_top_stolen_notify
+from .core.config import cfg_top_bot_prefix
 from .core.config import cfg_bot_random_race
 from .core.config import cfg_unlock_race_notification
 from .core.config import cfg_assist_xp
@@ -163,6 +165,7 @@ from .core.menus import raceinfo_menu
 from .core.menus import raceinfo_search_menu
 from .core.menus import raceinfo_detail_menu
 from .core.menus import playerinfo_menu
+from .core.menus import playerinfo_online_menu
 from .core.menus import playerinfo_offline_menu
 from .core.menus import playerinfo_detail_menu
 from .core.menus import wcstop_menu
@@ -329,8 +332,8 @@ def unload():
 
         # Did they have a clan tag stored?
         if clan_tag is not None:
-            # Restore the clan tag to what it was previously (add 4 spaces to fix a display issue)
-            wcsplayer.player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + clan_tag
+            # Restore the clan tag to what it was previously (the race's name is in the server's language)
+            wcsplayer.player.clan_tag = clan_tag
 
         OnPlayerDelete.manager.notify(wcsplayer)
 
@@ -382,6 +385,8 @@ def _query_refresh_offline(result):
 def _query_refresh_ranks(result):
     players = []
 
+    bot_prefix = cfg_top_bot_prefix.get_string()
+
     for accountid, name, current_race, total_level in result.fetchall():
         if current_race not in race_manager:
             current_race = race_manager.default_race
@@ -394,7 +399,7 @@ def _query_refresh_ranks(result):
         rank_manager._data[accountid] = {'name':name, 'current_race':current_race, 'total_level':total_level}
 
         option = PagedOption(deepcopy(menu_strings['wcstop_menu line']), accountid, show_index=False)
-        option.text.tokens['name'] = name
+        option.text.tokens['name'] = name if isinstance(accountid, int) or not bot_prefix else f'{bot_prefix} {name}'
 
         wcstop_menu.append(option)
 
@@ -517,8 +522,8 @@ def _toggle_ffa(enable):
 
 
 def _update_player_clan_tag(wcsplayer, delay):
-    # Change the clan tag to the player's current race (add 4 spaces to fix a display issue)
-    wcsplayer.player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + wcsplayer.active_race.settings.strings['shortname'].get_string()
+    # Change the clan tag to the player's current race (the race's name is in the server's language)
+    wcsplayer.player.clan_tag = wcsplayer.active_race.settings.strings['shortname'].get_string()
 
     # Remove the delay from the container
     _delays[wcsplayer].remove(delay)
@@ -636,10 +641,14 @@ def player_team(event):
                 else:
                     force_change_team_limit_message.send(wcsplayer.index, count=len(team_data[team][key]), old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
 
-        # Update the clan tag 0.2 seconds later otherwise it won't be set
-        delay = Delay(0.2, _update_player_clan_tag, (wcsplayer, ))
-        delay.args += (delay, )
-        _delays[wcsplayer].add(delay)
+        # Is the current game CSS or CSGO?
+        if GAME_NAME in ('cstrike', 'csgo'):
+            # Are we allowed to change the clan tag?
+            if cfg_race_clan_tag.get_float():
+                # Update the clan tag 0.5 seconds later otherwise it won't be set
+                delay = Delay(0.5, _update_player_clan_tag, (wcsplayer, ))
+                delay.args += (delay, )
+                _delays[wcsplayer].add(delay)
 
 
 @Event('player_spawn')
@@ -682,6 +691,15 @@ def player_spawn(event):
             delay = Delay(0, _fire_post_player_spawn, (wcsplayer, ))
             delay.args += (delay, )
             _delays[wcsplayer].add(delay)
+
+        # Is the current game CSS or CSGO?
+        if GAME_NAME in ('cstrike', 'csgo'):
+            # Are we allowed to change the clan tag?
+            if cfg_race_clan_tag.get_float():
+                # Update the clan tag 0.5 seconds later otherwise it won't be set
+                delay = Delay(0.5, _update_player_clan_tag, (wcsplayer, ))
+                delay.args += (delay, )
+                _delays[wcsplayer].add(delay)
 
 
 @Event('player_hurt')
@@ -948,8 +966,8 @@ def on_con_var_changed(convar, old_value):
                     # Store the original clan tag for later
                     wcsplayer.data['_internal_clan_tag'] = player.clan_tag
 
-                    # Change the clan tag to the player's current race (add 4 spaces to fix a display issue)
-                    player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + wcsplayer.active_race.settings.strings['shortname'].get_string()
+                    # Change the clan tag to the player's current race (the race's name is in the server's language)
+                    player.clan_tag = wcsplayer.active_race.settings.strings['shortname'].get_string()
             # Is the variable set to disabled, and it's not already disabled?
             elif old_value != '0' and not cfg_race_clan_tag.get_float():
                 # Loop through all players who's ready
@@ -959,8 +977,8 @@ def on_con_var_changed(convar, old_value):
 
                     # Did they have a clan tag stored?
                     if clan_tag is not None:
-                        # Restore the clan tag to what it was previously (add 4 spaces to fix a display issue)
-                        player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + clan_tag
+                        # Restore the clan tag to what it was previously (the race's name is in the server's language)
+                        player.clan_tag = clan_tag
 
 
 
@@ -1059,9 +1077,9 @@ def on_player_change_race(wcsplayer, old, new):
     # Is the current game CSS or CSGO?
     if GAME_NAME in ('cstrike', 'csgo'):
         # Are we allowed to change the clan tag?
-        if cfg_race_clan_tag.get_int():
-            # Change the clan tag to the player's current race (add 4 spaces to fix a display issue)
-            wcsplayer.player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + wcsplayer.active_race.settings.strings['shortname'].get_string()
+        if cfg_race_clan_tag.get_float():
+            # Change the clan tag to the player's current race (the race's name is in the server's language)
+            wcsplayer.player.clan_tag = wcsplayer.active_race.settings.strings['shortname'].get_string()
 
 
 @OnPlayerDelete
@@ -1288,12 +1306,12 @@ def on_player_ready(wcsplayer):
     # Is the current game CSS or CSGO?
     if GAME_NAME in ('cstrike', 'csgo'):
         # Are we allowed to change the clan tag?
-        if cfg_race_clan_tag.get_int():
+        if cfg_race_clan_tag.get_float():
             # Store the original clan tag for later
             wcsplayer.data['_internal_clan_tag'] = wcsplayer.player.clan_tag
 
-            # Change the clan tag to the player's current race (add 4 spaces to fix a display issue)
-            wcsplayer.player.clan_tag = ('    ' if GAME_NAME == 'csgo' else '') + wcsplayer.active_race.settings.strings['shortname'].get_string()
+            # Change the clan tag to the player's current race (the race's name is in the server's language)
+            wcsplayer.player.clan_tag = wcsplayer.active_race.settings.strings['shortname'].get_string()
 
     if not wcsplayer.fake_client:
         if wcsplayer.total_level <= cfg_disable_text_on_level.get_int():
@@ -1332,6 +1350,11 @@ def on_player_ready(wcsplayer):
 
 @OnSettingsLoaded
 def on_settings_loaded(settings):
+    # Is WCS currently trying to unload?
+    if _thread.unloading:
+        # Stop this function
+        return
+
     # TODO: Please, PLEASE, tell me why this is near instant with "blocking=True"
     #       Without it, it takes 15+ seconds to complete for some servers
     #       (the location it takes this long is "self.cur.fetchall()" in thread.py)
@@ -1589,7 +1612,10 @@ def say_command_myraceinfo(command, index, team=None):
 @ClientCommand(COMMANDS['playerinfo'])
 @SayCommand(COMMANDS['playerinfo'])
 def say_command_playerinfo(command, index, team=None):
-    playerinfo_menu.send(index)
+    if cfg_playerinfo_show_offline.get_float():
+        playerinfo_menu.send(index)
+    else:
+        playerinfo_online_menu.send(index)
 
     return CommandReturn.BLOCK
 

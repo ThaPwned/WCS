@@ -50,6 +50,7 @@ from . import raceinfo_menu
 from . import raceinfo_search_menu
 from . import raceinfo_detail_menu
 from . import raceinfo_skills_menu
+from . import raceinfo_skills_single_menu
 from . import raceinfo_skills_detail_menu
 from . import raceinfo_race_detail_menu
 from . import playerinfo_menu
@@ -374,6 +375,18 @@ def raceinfo_skills_menu_select(menu, client, option):
     return raceinfo_skills_detail_menu
 
 
+@raceinfo_skills_single_menu.register_select_callback
+def raceinfo_skills_single_menu_select(menu, client, option):
+    wcsplayer = Player(client)
+
+    if wcsplayer.data.get('_internal_raceinfo_viewing_skill') == option.value:
+        del wcsplayer.data['_internal_raceinfo_viewing_skill']
+    else:
+        wcsplayer.data['_internal_raceinfo_viewing_skill'] = option.value
+
+    return menu
+
+
 @raceinfo_skills_detail_menu.register_select_callback
 def raceinfo_skills_detail_menu_select(menu, client, option):
     return option.value
@@ -442,11 +455,19 @@ def wcstop_detail_menu_select(menu, client, option):
 def levelbank_menu_select(menu, client, option):
     if isinstance(option.value, int):
         wcsplayer = Player(client)
+
+        if wcsplayer._bank_level < option.value:
+            return menu
+
         active_race = wcsplayer.active_race
 
         maximum_race_level = active_race.settings.config.get('maximum_race_level', 0)
 
-        value = option.value if not maximum_race_level else min(maximum_race_level, active_race.level + option.value)
+        value = option.value
+
+        if maximum_race_level:
+            if active_race.level + value > maximum_race_level:
+                value = maximum_race_level - active_race.level
 
         wcsplayer.bank_level -= value
         active_race.level += value

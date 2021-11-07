@@ -12,6 +12,8 @@ from textwrap import wrap
 # Source.Python Imports
 #   Core
 from core import GAME_NAME
+#   Listeners
+from listeners import OnConVarChanged
 #   Menus
 from menus import PagedOption
 from menus import SimpleOption
@@ -21,6 +23,9 @@ from menus.radio import BUTTON_CLOSE_SLOT
 from menus.radio import BUTTON_NEXT
 
 # WCS Imports
+#   Config
+from ..config import cfg_playerinfo_show_offline
+from ..config import cfg_raceinfo_old_style
 #   Constants
 from ..constants import COMMANDS
 from ..constants import GithubStatus
@@ -53,6 +58,7 @@ from . import raceinfo_menu
 from . import raceinfo_search_menu
 from . import raceinfo_detail_menu
 from . import raceinfo_skills_menu
+from . import raceinfo_skills_single_menu
 from . import raceinfo_skills_detail_menu
 from . import raceinfo_race_detail_menu
 from . import playerinfo_menu
@@ -133,6 +139,7 @@ changerace_search_menu.title = menu_strings['changerace_menu title']
 raceinfo_menu.title = menu_strings['raceinfo_menu title']
 raceinfo_search_menu.title = menu_strings['raceinfo_menu title']
 raceinfo_skills_menu.title = menu_strings['raceinfo_skills_menu title']
+raceinfo_skills_single_menu.title = menu_strings['raceinfo_skills_menu title']
 playerinfo_online_menu.title = menu_strings['playerinfo_menu title']
 playerinfo_offline_menu.title = menu_strings['playerinfo_menu title']
 playerinfo_detail_skills_menu.title = menu_strings['playerinfo_detail_skills_menu title']
@@ -182,7 +189,7 @@ if GAME_NAME in ('hl2mp', ):
         [
             SimpleOption(1, menu_strings['main_menu line 6'], changerace_menu),
             SimpleOption(2, menu_strings['main_menu line 7'], raceinfo_menu),
-            SimpleOption(3, menu_strings['main_menu line 8'], playerinfo_menu),
+            SimpleOption(3, menu_strings['main_menu line 8'], playerinfo_menu if cfg_playerinfo_show_offline.get_float() else playerinfo_online_menu),
             SimpleOption(4, '', main2_menu),
             SimpleOption(5, '', main2_menu),
             SimpleOption(6, menu_strings['back'], main_menu),
@@ -205,7 +212,7 @@ else:
             SimpleOption(6, menu_strings['main_menu line 6'], changerace_menu),
             SimpleOption(7, menu_strings['main_menu line 7'], raceinfo_menu),
             Text('-------------------'),
-            SimpleOption(8, menu_strings['main_menu line 8'], playerinfo_menu),
+            SimpleOption(8, menu_strings['main_menu line 8'], playerinfo_menu if cfg_playerinfo_show_offline.get_float() else playerinfo_online_menu),
             Text('-------------------'),
             SimpleOption(BUTTON_CLOSE_SLOT, menu_strings['close'], highlight=False)
         ]
@@ -246,7 +253,7 @@ raceinfo_detail_menu.extend(
         Text(menu_strings['raceinfo_detail_menu maximum']),
         Text(menu_strings['raceinfo_detail_menu author']),
         Text(menu_strings['raceinfo_detail_menu public']),
-        SimpleOption(1, menu_strings['raceinfo_detail_menu skills'], raceinfo_skills_menu),
+        SimpleOption(1, menu_strings['raceinfo_detail_menu skills'], raceinfo_skills_single_menu if cfg_raceinfo_old_style.get_float() else raceinfo_skills_menu),
         SimpleOption(2, menu_strings['raceinfo_detail_menu description'], raceinfo_race_detail_menu),
         SimpleOption(3, menu_strings['raceinfo_detail_menu back'], -1),
         SimpleOption(4, menu_strings['raceinfo_detail_menu next'], 1),
@@ -775,6 +782,41 @@ else:
 # ============================================================================
 # >> LISTENERS
 # ============================================================================
+@OnConVarChanged
+def on_convar_changed(convar, old_value):
+    if convar.name == cfg_playerinfo_show_offline.name:
+        if convar.get_float():
+            for option in (main2_menu if GAME_NAME in ('hl2mp', ) else main_menu):
+                if isinstance(option, SimpleOption):
+                    if option.value is playerinfo_online_menu:
+                        option.value = playerinfo_menu
+                        break
+
+            playerinfo_online_menu.parent_menu = playerinfo_menu
+        else:
+            for option in (main2_menu if GAME_NAME in ('hl2mp', ) else main_menu):
+                if isinstance(option, SimpleOption):
+                    if option.value is playerinfo_menu:
+                        option.value = playerinfo_online_menu
+                        break
+
+            playerinfo_online_menu.parent_menu = main_menu
+
+    if convar.name == cfg_raceinfo_old_style.name:
+        if convar.get_float():
+            for option in raceinfo_detail_menu:
+                if isinstance(option, SimpleOption):
+                    if option.value is raceinfo_skills_menu:
+                        option.value = raceinfo_skills_single_menu
+                        break
+        else:
+            for option in raceinfo_detail_menu:
+                if isinstance(option, SimpleOption):
+                    if option.value is raceinfo_skills_single_menu:
+                        option.value = raceinfo_skills_menu
+                        break
+
+
 @OnGithubCommitsRefresh
 def on_github_commits_refresh():
     wcsadmin_github_info_commits_menu.clear()
