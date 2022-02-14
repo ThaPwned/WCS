@@ -174,6 +174,9 @@ class DamageWard(BaseWard):
         if modified is not None:
             wcsplayer.player.speed += modified
 
+    def on_disconnect(self, wcsplayer):
+        self.speed.pop(wcsplayer)
+
 
 class _WardManager(AutoUnload, list):
     def __init__(self):
