@@ -327,32 +327,34 @@ def _initialize(baseplayer):
 
 
 def add_race_limit(team, race, userid):
-    key = f'_internal_{race}_limit_allowed'
+    race_key = f'_internal_{race}_limit_allowed'
 
-    if key not in team_data[team]:
-        team_data[team][key] = []
+    if race_key not in team_data[team]:
+        team_data[team][race_key] = []
 
-    team_data[team][key].append(userid)
+    team_data[team][race_key].append(userid)
 
+def _remove_race_limit_key(team, race_key, userid):
+    team_data[team][race_key].remove(userid)
+
+    if not team_data[team][race_key]:
+        del team_data[team][race_key]
 
 def remove_race_limit(team, race, userid):
-    key = f'_internal_{race}_limit_allowed'
+    race_key = f'_internal_{race}_limit_allowed'
 
     try:
-        team_data[team][key].remove(userid)
-
-        if not team_data[team][key]:
-            del team_data[team][key]
+        _remove_race_limit_key(team, race_key, userid)
 
     except (KeyError, ValueError) as e:
-        # Try the other team TODO: does this work in other games?
-        try:
-            other_team = 5-team
-            team_data[other_team][key].remove(userid)
-
-            if not team_data[other_team][key]:
-                del team_data[other_team][key]
-        except (KeyError, ValueError):
-            warnings.warn("Error while trying to remove userid:%s from teamlimit:\n %s" % (userid, e))
+        other_teams = (x for x in team_data.keys() if x != team)
+        for t in other_teams:
+            if race_key in team_data[t] and userid in team_data[t][race_key]:
+                _remove_race_limit_key(t, race_key, userid)
+                warnings.warn(
+                    "While removing userid:%s from teamlimit, "
+                    "they were found counting toward the enemy's (team:%s) limit" % (userid, t)
+                )
+                break
         else:
-            warnings.warn("While removing userid:%s from teamlimit, they were found counting toward the enemy's limit" % (userid,))
+            warnings.warn("Could not remove userid:%s from teamlimit for any team:" % (userid,))
