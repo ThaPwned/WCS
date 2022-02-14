@@ -24,6 +24,7 @@ __all__ = (
     'cfg_default_race',
     'cfg_race_clan_tag',
     'cfg_disable_text_on_level',
+    'cfg_give_weapon_on_bot_takeover',
     'cfg_headshot_xp',
     'cfg_headshot_bot_xp',
     'cfg_interval',
@@ -122,6 +123,7 @@ with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as co
     cfg_top_bot_prefix = config.cvar('top_bot_prefix', '[BOT]', config_strings['top_bot_prefix'])
     cfg_bot_random_race = config.cvar('bot_random_race', '1', config_strings['bot_random_race'])
     cfg_unlock_race_notification = config.cvar('unlock_race_notification', '1', config_strings['unlock_race_notification'])
+    cfg_give_weapon_on_bot_takeover = config.cvar('give_weapon_on_bot_takeover', '0', config_strings['give_weapon_on_bot_takeover'])
     cfg_assist_xp = config.cvar('assist_xp', '15', config_strings['assist_xp'])
     cfg_round_survival_xp = config.cvar('round_survival_xp', '10', config_strings['round_survival_xp'])
     cfg_round_win_xp = config.cvar('round_win_xp', '20', config_strings['round_win_xp'])

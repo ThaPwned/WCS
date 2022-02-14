@@ -103,6 +103,7 @@ from .core.config import cfg_top_stolen_notify
 from .core.config import cfg_top_bot_prefix
 from .core.config import cfg_bot_random_race
 from .core.config import cfg_unlock_race_notification
+from .core.config import cfg_give_weapon_on_bot_takeover
 from .core.config import cfg_assist_xp
 from .core.config import cfg_round_survival_xp
 from .core.config import cfg_round_win_xp
@@ -944,6 +945,37 @@ def player_jump(event):
             velocity[1] *= value
 
             player.set_property_vector('m_vecBaseVelocity', velocity)
+
+
+@Event('bot_takeover')
+def bot_takeover(event):
+    if not cfg_give_weapon_on_bot_takeover.get_float():
+        return
+
+    userid = event['userid']
+    wcsplayer = Player.from_userid(userid)
+
+    weapons = wcsplayer.player.weapons()
+    weaponless = True
+
+    for weapon_name in [x.weapon_name for x in weapons]:
+        weapon = weapon_manager[weapon_name]
+
+        if 'primary' in weapon.tags or 'secondary' in weapon.tags:
+            weaponless = False
+            break
+
+    if not weaponless:
+        return
+
+    available = [x.name for x in weapon_manager.values() if 'pistol' in x.tags]
+
+    if not available:
+        available = [x.name for x in weapon_manager.values() if 'primary' in x.tags or 'secondary' in x.tags]
+
+    weapon = choice(available)
+
+    wcsplayer.player.give_named_item(weapon)
 
 
 # ============================================================================
