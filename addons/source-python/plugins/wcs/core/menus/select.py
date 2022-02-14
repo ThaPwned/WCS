@@ -238,7 +238,7 @@ def resetskills_menu_select(menu, client, option):
             if not player.dead:
                 player.godmode = False
 
-                player.client_command('kill', True)
+                wcsplayer.take_damage(player.health, player.index, weapon='changerace')
 
             skills_reset_message.send(client, unused=wcsplayer.unused)
 
@@ -301,7 +301,7 @@ def changerace_menu_select(menu, client, option):
 
                 player.godmode = False
 
-                player.client_command('kill', True)
+                wcsplayer.take_damage(player.health, player.index, weapon='changerace')
     else:
         return menu
 
@@ -667,7 +667,7 @@ def wcsadmin_players_sub_changerace_menu_select(menu, client, option):
 
             player.godmode = False
 
-            player.client_command('kill', True)
+            wcsplayer.take_damage(player.health, player.index, weapon='changerace')
 
         if wcstarget is wcsplayer:
             admin_changerace_self_message.send(client, value=race_manager[option.value].strings['name'])
