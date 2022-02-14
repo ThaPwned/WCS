@@ -641,7 +641,7 @@ class Player(object, metaclass=_PlayerMeta):
             take_damage_info.weapon = index
             take_damage_info.inflictor = index
             take_damage_info.damage = damage
-            take_damage_info.type = DamageTypes.GENERIC
+            take_damage_info.type = DamageTypes.ENERGYBEAM
 
             try:
                 self.player.on_take_damage(take_damage_info)
