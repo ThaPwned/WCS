@@ -37,8 +37,12 @@ from ..listeners import OnGithubCommitsRefreshed
 from ..listeners import OnGithubModuleInstalled
 from ..listeners import OnGithubModuleUpdated
 from ..listeners import OnGithubModuleUninstalled
-from ..listeners import OnGithubModulesRefresh
-from ..listeners import OnGithubModulesRefreshed
+from ..listeners import OnGithubRaceModulesRefresh
+from ..listeners import OnGithubRaceModulesRefreshed
+from ..listeners import OnGithubRaceModuleUpdate
+from ..listeners import OnGithubItemModulesRefresh
+from ..listeners import OnGithubItemModulesRefreshed
+from ..listeners import OnGithubItemModuleUpdate
 from ..listeners import OnGithubNewVersionChecked
 from ..listeners import OnGithubNewVersionInstalled
 from ..listeners import OnGithubNewVersionUpdating
@@ -160,7 +164,8 @@ wcsadmin_github_items_repository_menu.title = menu_strings['wcsadmin_github_item
 wcsadmin_github_info_confirm_commits_menu.title = menu_strings['wcsadmin_github_info_confirm_commits_menu title']
 wcsadmin_github_info_commits_menu.title = menu_strings['wcsadmin_github_info_commits_menu title']
 
-wcsadmin_github_menu._last_update = None
+wcsadmin_github_menu._last_race_update = None
+wcsadmin_github_menu._last_item_update = None
 wcsadmin_github_races_menu._cycle = None
 wcsadmin_github_items_menu._cycle = None
 wcsadmin_github_info_menu._checking_cycle = None
@@ -651,6 +656,7 @@ wcsadmin_github_races_options_menu.extend(
         SimpleOption(2, menu_strings['wcsadmin_github_options_menu update'], GithubModuleStatus.UPDATING),
         SimpleOption(3, menu_strings['wcsadmin_github_options_menu uninstall'], GithubModuleStatus.UNINSTALLING),
         Text(menu_strings['wcsadmin_github_options_menu status 4']),
+        Text(menu_strings['wcsadmin_github_options_menu repository']),
         Text(menu_strings['wcsadmin_github_options_menu last updated']),
         Text(menu_strings['wcsadmin_github_options_menu last modified']),
         SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_github_races_menu),
@@ -667,6 +673,7 @@ wcsadmin_github_items_options_menu.extend(
         SimpleOption(2, menu_strings['wcsadmin_github_options_menu update'], GithubModuleStatus.UPDATING),
         SimpleOption(3, menu_strings['wcsadmin_github_options_menu uninstall'], GithubModuleStatus.UNINSTALLING),
         Text(menu_strings['wcsadmin_github_options_menu status 4']),
+        Text(menu_strings['wcsadmin_github_options_menu repository']),
         Text(menu_strings['wcsadmin_github_options_menu last updated']),
         Text(menu_strings['wcsadmin_github_options_menu last modified']),
         SimpleOption(BUTTON_BACK, menu_strings['back'], wcsadmin_github_items_menu),
@@ -746,8 +753,6 @@ if BUTTON_BACK == 8:
     wcsadmin_management_races_editor_menu.insert(-3, Text(' '))
     wcsadmin_management_items_editor_menu.insert(-3, Text(' '))
     wcsadmin_github_menu.insert(-3, Text(' '))
-    wcsadmin_github_races_options_menu.insert(-3, Text(' '))
-    wcsadmin_github_items_options_menu.insert(-3, Text(' '))
     wcsadmin_github_info_menu.insert(-3, Text(' '))
     wcsadmin_github_info_confirm_menu.insert(-3, Text(' '))
 
@@ -854,63 +859,91 @@ def on_github_commits_refreshed(commits):
             wcsadmin_github_info_commits_menu._refresh(index)
 
 
-@OnGithubModulesRefresh
-def on_github_modules_refresh():
+@OnGithubRaceModulesRefresh
+def on_github_race_modules_refresh():
     wcsadmin_github_races_menu.clear()
-    wcsadmin_github_items_menu.clear()
 
     wcsadmin_github_races_menu._cycle = 0
-    wcsadmin_github_items_menu._cycle = 0
-    wcsadmin_github_races_menu.append(menu_strings['wcsadmin_github_races_menu querying'])
-    wcsadmin_github_items_menu.append(menu_strings['wcsadmin_github_items_menu querying'])
+    wcsadmin_github_races_menu.top_separator = None
+    wcsadmin_github_races_menu.description = menu_strings['wcsadmin_github_races_menu querying']
 
     for index in wcsadmin_github_races_menu._player_pages:
         if wcsadmin_github_races_menu.is_active_menu(index):
             wcsadmin_github_races_menu._refresh(index)
+
+
+@OnGithubItemModulesRefresh
+def on_github_item_modules_refresh():
+    wcsadmin_github_items_menu.clear()
+
+    wcsadmin_github_items_menu._cycle = 0
+    wcsadmin_github_items_menu.top_separator = None
+    wcsadmin_github_items_menu.description = menu_strings['wcsadmin_github_items_menu querying']
 
     for index in wcsadmin_github_items_menu._player_pages:
         if wcsadmin_github_items_menu.is_active_menu(index):
             wcsadmin_github_items_menu._refresh(index)
 
 
-@OnGithubModulesRefreshed
-def on_github_modules_refreshed(races, items):
-    wcsadmin_github_races_menu.clear()
-    wcsadmin_github_items_menu.clear()
+@OnGithubRaceModuleUpdate
+def on_github_race_module_update(name, data):
+    option = PagedOption(name, name)
+    repository = data['repository']
+
+    if repository is None or data['last_updated'] is None:
+        option.text = f'+{option.text}'
+    else:
+        if data['last_updated'] < data['repositories'][repository]['last_modified']:
+            option.text = f'*{option.text}'
+
+    wcsadmin_github_races_menu.append(option)
+
+    for index in wcsadmin_github_races_menu._player_pages:
+        if wcsadmin_github_races_menu.is_active_menu(index):
+            wcsadmin_github_races_menu._refresh(index)
+
+
+@OnGithubItemModuleUpdate
+def on_github_item_module_update(name, data):
+    option = PagedOption(name, name)
+    repository = data['repository']
+
+    if repository is None or data['last_updated'] is None:
+        option.text = f'+{option.text}'
+    else:
+        if data['last_updated'] < data['repositories'][repository]['last_modified']:
+            option.text = f'*{option.text}'
+
+    wcsadmin_github_items_menu.append(option)
+
+    for index in wcsadmin_github_items_menu._player_pages:
+        if wcsadmin_github_items_menu.is_active_menu(index):
+            wcsadmin_github_items_menu._refresh(index)
+
+
+@OnGithubRaceModulesRefreshed
+def on_github_race_modules_refreshed(races):
+    wcsadmin_github_races_menu.description = None
+    wcsadmin_github_races_menu.top_separator = ' '
+
     wcsadmin_github_races_menu._cycle = None
-    wcsadmin_github_items_menu._cycle = None
-
-    for name, data in races.items():
-        option = PagedOption(name, name)
-        repository = data['repository']
-
-        if repository is None or data['last_updated'] is None:
-            option.text = f'+{option.text}'
-        else:
-            if data['last_updated'] < data['repositories'][repository]['last_modified']:
-                option.text = f'*{option.text}'
-
-        wcsadmin_github_races_menu.append(option)
-
-    for name, data in items.items():
-        option = PagedOption(name, name)
-        repository = data['repository']
-
-        if repository is None or data['last_updated'] is None:
-            option.text = f'+{option.text}'
-        else:
-            if data['last_updated'] < data['repositories'][repository]['last_modified']:
-                option.text = f'*{option.text}'
-
-        wcsadmin_github_items_menu.append(option)
 
     wcsadmin_github_menu[2].selectable = wcsadmin_github_menu[2].highlight = bool(races)
-    wcsadmin_github_menu[3].selectable = wcsadmin_github_menu[3].highlight = bool(items)
 
     if not races:
         wcsadmin_github_menu.send([*wcsadmin_github_races_menu._player_pages])
 
         wcsadmin_github_races_menu.close([*wcsadmin_github_races_menu._player_pages])
+
+
+@OnGithubItemModulesRefreshed
+def on_github_item_modules_refreshed(items):
+    wcsadmin_github_items_menu.description = None
+    wcsadmin_github_items_menu.top_separator = ' '
+
+    wcsadmin_github_items_menu._cycle = None
+
+    wcsadmin_github_menu[3].selectable = wcsadmin_github_menu[3].highlight = bool(items)
 
     if not items:
         wcsadmin_github_menu.send([*wcsadmin_github_items_menu._player_pages])

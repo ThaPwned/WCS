@@ -22,8 +22,12 @@ __all__ = (
     'OnGithubModuleInstalled',
     'OnGithubModuleUpdated',
     'OnGithubModuleUninstalled',
-    'OnGithubModulesRefresh',
-    'OnGithubModulesRefreshed',
+    'OnGithubRaceModulesRefresh',
+    'OnGithubRaceModulesRefreshed',
+    'OnGithubRaceModuleUpdate',
+    'OnGithubItemModulesRefresh',
+    'OnGithubItemModulesRefreshed',
+    'OnGithubItemModuleUpdate',
     'OnGithubNewVersionChecked',
     'OnGithubNewVersionInstalled',
     'OnGithubNewVersionUpdating',
@@ -77,11 +81,27 @@ class OnGithubModuleFailed(ListenerManagerDecorator):
     manager = ListenerManager()
 
 
-class OnGithubModulesRefresh(ListenerManagerDecorator):
+class OnGithubRaceModulesRefresh(ListenerManagerDecorator):
     manager = ListenerManager()
 
 
-class OnGithubModulesRefreshed(ListenerManagerDecorator):
+class OnGithubRaceModulesRefreshed(ListenerManagerDecorator):
+    manager = ListenerManager()
+
+
+class OnGithubRaceModuleUpdate(ListenerManagerDecorator):
+    manager = ListenerManager()
+
+
+class OnGithubItemModulesRefresh(ListenerManagerDecorator):
+    manager = ListenerManager()
+
+
+class OnGithubItemModulesRefreshed(ListenerManagerDecorator):
+    manager = ListenerManager()
+
+
+class OnGithubItemModuleUpdate(ListenerManagerDecorator):
     manager = ListenerManager()
 
 

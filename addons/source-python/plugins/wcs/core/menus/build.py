@@ -992,7 +992,7 @@ def wcsadmin_management_races_editor_modify_restricted_team_menu_build(menu, cli
 @wcsadmin_github_races_menu.register_build_callback
 def wcsadmin_github_races_menu_build(menu, client):
     if menu._cycle is not None:
-        menu[0].tokens['cycle'] = '.' * (menu._cycle % 3 + 1)
+        menu.description.tokens['cycle'] = '.' * (menu._cycle % 3 + 1)
 
         menu._cycle += 1
 
@@ -1000,7 +1000,7 @@ def wcsadmin_github_races_menu_build(menu, client):
 @wcsadmin_github_items_menu.register_build_callback
 def wcsadmin_github_items_menu_build(menu, client):
     if menu._cycle is not None:
-        menu[0].tokens['cycle'] = '.' * (menu._cycle % 3 + 1)
+        menu.description.tokens['cycle'] = '.' * (menu._cycle % 3 + 1)
 
         menu._cycle += 1
 
@@ -1031,19 +1031,26 @@ def wcsadmin_github_races_options_menu_build(menu, client):
 
         wcsplayer.data['_internal_wcsadmin_github_cycle'] = cycle
 
+    menu[6].text.tokens['repository'] = menu_strings['none'] if status is GithubModuleStatus.UNINSTALLED else git_option['repository']
+
     if git_option['last_updated'] is None:
-        menu[6].text = menu_strings['wcsadmin_github_options_menu last updated never']
+        menu[7].text = menu_strings['wcsadmin_github_options_menu last updated never']
     else:
-        menu[6].text = menu_strings['wcsadmin_github_options_menu last updated']
-        menu[6].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['last_updated']))
+        menu[7].text = menu_strings['wcsadmin_github_options_menu last updated']
+        menu[7].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['last_updated']))
 
     if len(git_option['repositories']) == 1:
-        menu[7].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['repositories'][list(git_option['repositories'])[0]]['last_modified']))
+        last_modified = git_option['repositories'][list(git_option['repositories'])[0]]['last_modified']
+
+        if last_modified is None:
+            menu[8].text.tokens['time'] = 0
+        else:
+            menu[8].text.tokens['time'] = strftime(TIME_FORMAT, localtime(last_modified))
     else:
         if git_option['repository'] is None:
-            menu[7].text.tokens['time'] = 0
+            menu[8].text.tokens['time'] = 0
         else:
-            menu[7].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['repositories'][git_option['repository']]['last_modified']))
+            menu[8].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['repositories'][git_option['repository']]['last_modified']))
 
 
 @wcsadmin_github_races_repository_menu.register_build_callback
@@ -1093,20 +1100,26 @@ def wcsadmin_github_items_options_menu_build(menu, client):
 
         wcsplayer.data['_internal_wcsadmin_github_cycle'] = cycle
 
+    menu[6].text.tokens['repository'] = menu_strings['none'] if status is GithubModuleStatus.UNINSTALLED else git_option['repository']
+
     if git_option['last_updated'] is None:
-        menu[6].text = menu_strings['wcsadmin_github_options_menu last updated never']
-        menu[7].text.tokens['time'] = 0
+        menu[7].text = menu_strings['wcsadmin_github_options_menu last updated never']
     else:
-        menu[6].text = menu_strings['wcsadmin_github_options_menu last updated']
-        menu[6].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['last_updated']))
+        menu[7].text = menu_strings['wcsadmin_github_options_menu last updated']
+        menu[7].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['last_updated']))
 
     if len(git_option['repositories']) == 1:
-        menu[7].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['repositories'][list(git_option['repositories'])[0]]['last_modified']))
+        last_modified = git_option['repositories'][list(git_option['repositories'])[0]]['last_modified']
+
+        if last_modified is None:
+            menu[8].text.tokens['time'] = 0
+        else:
+            menu[8].text.tokens['time'] = strftime(TIME_FORMAT, localtime(last_modified))
     else:
         if git_option['repository'] is None:
-            menu[7].text.tokens['time'] = 0
+            menu[8].text.tokens['time'] = 0
         else:
-            menu[7].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['repositories'][git_option['repository']]['last_modified']))
+            menu[8].text.tokens['time'] = strftime(TIME_FORMAT, localtime(git_option['repositories'][git_option['repository']]['last_modified']))
 
 
 @wcsadmin_github_items_repository_menu.register_build_callback

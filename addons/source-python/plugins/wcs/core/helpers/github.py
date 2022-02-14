@@ -10,6 +10,7 @@ from collections import OrderedDict
 from distutils.dir_util import copy_tree
 #   Github
 from github import Github
+from github import UnknownObjectException
 #   IO
 from io import BytesIO
 #   JSON
@@ -65,8 +66,12 @@ from ..listeners import OnGithubModuleFailed
 from ..listeners import OnGithubModuleInstalled
 from ..listeners import OnGithubModuleUpdated
 from ..listeners import OnGithubModuleUninstalled
-from ..listeners import OnGithubModulesRefresh
-from ..listeners import OnGithubModulesRefreshed
+from ..listeners import OnGithubRaceModulesRefresh
+from ..listeners import OnGithubRaceModulesRefreshed
+from ..listeners import OnGithubRaceModuleUpdate
+from ..listeners import OnGithubItemModulesRefresh
+from ..listeners import OnGithubItemModulesRefreshed
+from ..listeners import OnGithubItemModuleUpdate
 from ..listeners import OnGithubNewVersionChecked
 from ..listeners import OnGithubNewVersionInstalled
 from ..listeners import OnGithubNewVersionUpdating
@@ -112,7 +117,8 @@ class _GithubManager(dict):
         self._repeat = Repeat(self._tick)
         self._checking_new_version = False
         self._installing_new_version = False
-        self._refreshing_modules = False
+        self._refreshing_race_modules = False
+        self._refreshing_item_modules = False
         self._refreshing_commits = False
 
         self._threads = []
@@ -188,7 +194,7 @@ class _GithubManager(dict):
                 if current_version is None:
                     sha = list(commits)[-1].sha
                 else:
-                    for commit in commits:
+                    for i, commit in enumerate(commits):
                         for file_ in commit.files:
                             if file_.filename == 'addons/source-python/plugins/wcs/info.ini':
                                 for line in file_.patch.splitlines():
@@ -204,6 +210,15 @@ class _GithubManager(dict):
 
                         if sha is not None:
                             break
+
+                        # Couldn't find the correct version after 10 tries, so just set the sha code to the first ever commit
+                        # This is done to avoid spending too much time here since it's not realy important
+                        if i == 9:
+                            sha = '8892447b0d00d65158c6ad908fe0e06289394211'
+                            break
+                    else:
+                        # Couldn't find the correct version, so just set the sha code to the first ever commit
+                        sha = '8892447b0d00d65158c6ad908fe0e06289394211'
 
                 valid_version = current_version is not None
 
@@ -349,77 +364,87 @@ class _GithubManager(dict):
             _output.put((True, None))
             raise
 
-    def _refresh_modules(self):
+    def _refresh_modules(self, module_type_name, update_listener):
+        github = self._connect()
+
+        for i, repository in enumerate(GITHUB_REPOSITORIES, 1):
+            repo = github.get_repo(repository)
+
+            # Try to get the modules from the repository
+            try:
+                contents = repo.get_contents(module_type_name)
+            # Did not find any modules
+            except UnknownObjectException:
+                continue
+
+            path = MODULE_PATH / module_type_name
+
+            # The modules from the repository
+            modules = list([x.name for x in contents])
+
+            # Are we in the last repository?
+            if i == len(GITHUB_REPOSITORIES):
+                # Loop through all the modules that has been added, and is not in the modules
+                for name in [name for name in self[module_type_name] if name not in modules]:
+                    # Send the module to the listener since there's no more repositories that has it
+                    _output.put((False, update_listener.manager.notify, name, self[module_type_name][name]))
+
+            for name in modules:
+                if module_type_name not in self or name not in self[module_type_name]:
+                    wcs_install_path_old = path / name / '.wcs_install'
+                    wcs_install_path = path / name / 'metadata.wcs_install'
+
+                    if wcs_install_path_old.isfile():
+                        with open(wcs_install_path_old) as inputfile:
+                            repository_installed = inputfile.read()
+
+                        with open(wcs_install_path, 'w') as outputfile:
+                            dump({'last_updated':wcs_install_path_old.mtime, 'repository':repository_installed}, outputfile, indent=4)
+
+                        wcs_install_path_old.remove()
+
+                    if wcs_install_path.isfile():
+                        status = GithubModuleStatus.INSTALLED
+
+                        with open(wcs_install_path) as inputfile:
+                            data = load(inputfile)
+
+                        last_updated = data['last_updated']
+                        repository_installed = data['repository']
+                    else:
+                        status = GithubModuleStatus.UNINSTALLED
+
+                        last_updated = None
+                        repository_installed = None
+
+                    self[module_type_name][name] = {'status':status, 'last_updated':last_updated, 'repository':repository_installed, 'repositories':{repository:{}}}
+
+                    # TODO: Move this out of here (takes over twice as long with this)
+                    commits = repo.get_commits(path=module_type_name + '/' + name + '/')
+
+                    try:
+                        self[module_type_name][name]['repositories'][repository]['last_modified'] = commits[0].commit.committer.date.timestamp()
+                    except IndexError:
+                        self[module_type_name][name]['repositories'][repository]['last_modified'] = None
+
+                # Are we in the last repository?
+                if i == len(GITHUB_REPOSITORIES):
+                    _output.put((False, update_listener.manager.notify, name, self[module_type_name][name]))
+
+    def _refresh_race_modules(self):
         try:
-            github = self._connect()
+            self._refresh_modules('races', OnGithubRaceModuleUpdate)
 
-            for repository in GITHUB_REPOSITORIES:
-                repo = github.get_repo(repository)
-                modules = repo.get_contents('')
+            _output.put((True, OnGithubRaceModulesRefreshed.manager.notify, self['races']))
+        except:
+            _output.put((True, None))
+            raise
 
-                modules_left = {}
+    def _refresh_item_modules(self):
+        try:
+            self._refresh_modules('items', OnGithubItemModuleUpdate)
 
-                for module in [x.name for x in modules if x.name in self]:
-                    contents = repo.get_contents(module)
-                    path = MODULE_PATH / module
-                    modules_left[module] = []
-
-                    for content in contents:
-                        modules_left[module].append(content.name)
-
-                        if module not in self or content.name not in self[module]:
-                            wcs_install_path_old = path / content.name / '.wcs_install'
-                            wcs_install_path = path / content.name / 'metadata.wcs_install'
-
-                            # Update the metadata file to use JSON as well as storing last updated and repository
-                            if wcs_install_path_old.isfile():
-                                with open(wcs_install_path_old) as inputfile:
-                                    repository_installed = inputfile.read()
-
-                                with open(wcs_install_path, 'w') as outputfile:
-                                    dump({'last_updated':wcs_install_path_old.mtime, 'repository':repository_installed}, outputfile, indent=4)
-
-                                wcs_install_path_old.remove()
-
-                            if wcs_install_path.isfile():
-                                status = GithubModuleStatus.INSTALLED
-
-                                with open(wcs_install_path) as inputfile:
-                                    data = load(inputfile)
-
-                                last_updated = data['last_updated']
-                                repository_installed = data['repository']
-                            else:
-                                status = GithubModuleStatus.UNINSTALLED
-
-                                last_updated = None
-                                repository_installed = None
-
-                            self[module][content.name] = {'status':status, 'last_updated':last_updated, 'repository':repository_installed, 'repositories':{repository:{}}}
-
-                commits = repo.get_commits()
-
-                for commit in commits:
-                    last_modified = commit.commit.committer.date.timestamp()
-
-                    for file_ in commit.files:
-                        tmp = file_.filename.split('/')
-                        module = tmp[0]
-
-                        if module in modules_left:
-                            name = tmp[1]
-
-                            if name in modules_left[module]:
-                                self[module][name]['repositories'][repository]['last_modified'] = last_modified
-                                modules_left[module].remove(name)
-
-                                if not modules_left[module]:
-                                    del modules_left[module]
-
-                    if not modules_left:
-                        break
-
-            _output.put((True, OnGithubModulesRefreshed.manager.notify, self['races'], self['items']))
+            _output.put((True, OnGithubItemModulesRefreshed.manager.notify, self['items']))
         except:
             _output.put((True, None))
             raise
@@ -597,15 +622,25 @@ class _GithubManager(dict):
 
         self._start_thread(self._install_new_version, 'wcs.installing')
 
-    def refresh_modules(self):
-        if self._refreshing_modules:
+    def refresh_race_modules(self):
+        if self._refreshing_race_modules:
             return
 
-        self._refreshing_modules = True
+        self._refreshing_race_modules = True
 
-        OnGithubModulesRefresh.manager.notify()
+        OnGithubRaceModulesRefresh.manager.notify()
 
-        self._start_thread(self._refresh_modules, 'wcs.refresh.modules')
+        self._start_thread(self._refresh_race_modules, 'wcs.refresh.race.modules')
+
+    def refresh_item_modules(self):
+        if self._refreshing_item_modules:
+            return
+
+        self._refreshing_itemmodules = True
+
+        OnGithubItemModulesRefresh.manager.notify()
+
+        self._start_thread(self._refresh_item_modules, 'wcs.refresh.item.modules')
 
     def install_module(self, repository, module, name, userid=None):
         assert self[module][name]['status'] is GithubModuleStatus.UNINSTALLED
@@ -674,9 +709,14 @@ def on_github_new_version_installed():
     github_manager._installing_new_version = False
 
 
-@OnGithubModulesRefreshed
-def on_github_modules_refreshed(races, items):
-    github_manager._refreshing_modules = False
+@OnGithubRaceModulesRefreshed
+def on_github_race_modules_refreshed(races):
+    github_manager._refreshing_race_modules = False
+
+
+@OnGithubItemModulesRefreshed
+def on_github_item_modules_refreshed(items):
+    github_manager._refreshing_item_modules = False
 
 
 @OnGithubModuleInstalled

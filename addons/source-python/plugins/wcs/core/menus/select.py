@@ -923,10 +923,16 @@ def wcsadmin_github_menu_select(menu, client, option):
     if option.choice_index in (1, 2):
         now = time()
 
-        if menu._last_update is None or now >= menu._last_update + 60 * 15:
-            github_manager.refresh_modules()
+        if option.choice_index == 1:
+            if menu._last_race_update is None or now >= menu._last_race_update + 60 * 15:
+                github_manager.refresh_race_modules()
 
-            menu._last_update = now
+                menu._last_race_update = now
+        else:
+            if menu._last_item_update is None or now >= menu._last_item_update + 60 * 15:
+                github_manager.refresh_item_modules()
+
+                menu._last_item_update = now
 
     return option.value
 
