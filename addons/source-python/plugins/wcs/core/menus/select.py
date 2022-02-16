@@ -236,7 +236,7 @@ def resetskills_menu_select(menu, client, option):
             player = wcsplayer.player
 
             if not player.dead:
-                player.godmode = False
+                wcsplayer.disable_take_damage_preventions()
 
                 wcsplayer.take_damage(player.health, player.index, weapon='changerace')
 
@@ -299,7 +299,7 @@ def changerace_menu_select(menu, client, option):
             if not player.dead:
                 wcsplayer.data['_internal_block_changerace_execution'] = True
 
-                player.godmode = False
+                wcsplayer.disable_take_damage_preventions()
 
                 wcsplayer.take_damage(player.health, player.index, weapon='changerace')
     else:
@@ -665,7 +665,7 @@ def wcsadmin_players_sub_changerace_menu_select(menu, client, option):
                     # Set a key, so the bot doesn't change to a random race next time they die
                     wcstarget.data['_internal_ignore_bot_random_race'] = True
 
-            player.godmode = False
+            wcsplayer.disable_take_damage_preventions()
 
             wcsplayer.take_damage(player.health, player.index, weapon='changerace')
 

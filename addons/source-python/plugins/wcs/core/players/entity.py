@@ -34,6 +34,8 @@ from engines.server import execute_server_command
 #   Entities
 from entities import TakeDamageInfo
 from entities.constants import DamageTypes
+from entities.constants import EntityStates
+from entities.constants import MoveType
 from entities.helpers import index_from_pointer
 from entities.hooks import EntityCondition
 from entities.hooks import EntityPreHook
@@ -132,6 +134,13 @@ if IS_ESC_SUPPORT_ENABLED:
 __all__ = (
     'Player',
 )
+
+
+# ============================================================================
+# >> CONSTANT VARIABLES
+# ============================================================================
+# https://github.com/alliedmodders/hl2sdk/blob/csgo/game/server/baseentity.h#L185
+OVERLAY_BUDDHA_MODE = 0x02000000
 
 
 # ============================================================================
@@ -620,6 +629,20 @@ class Player(object, metaclass=_PlayerMeta):
 
                 for skill in race.skills.values():
                     skill._modified = False
+
+    def disable_take_damage_preventions(self):
+        # https://github.com/alliedmodders/hl2sdk/blob/csgo/game/server/client.cpp#L852
+        value = self.player.get_property_int('m_debugOverlays')
+
+        if value and value & OVERLAY_BUDDHA_MODE:
+            self.player.set_property_int('m_debugOverlays', value & ~OVERLAY_BUDDHA_MODE)
+
+        # https://github.com/alliedmodders/hl2sdk/blob/csgo/game/server/client.cpp#L1291
+        if self.player.flags and self.player.flags & EntityStates.GODMODE:
+            self.player.flags &= ~EntityStates.GODMODE
+
+        self.player.godmode = False
+        self.player.move_type = MoveType.WALK
 
     def take_damage(self, damage, attacker, weapon=None, skip_hooks=True):
         # TODO: This method should not have been called if the victim is already dead
