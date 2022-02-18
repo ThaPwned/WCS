@@ -25,6 +25,8 @@ from hooks.exceptions import except_hooks
 #   Keyvalues
 from _keyvalues import KeyValues
 # NOTE: Have to prefix it with a _ otherwise it'd import KeyValues from ES Emulator if it's loaded
+#   Translations
+from translations.strings import TranslationStrings
 
 # WCS Imports
 #   Config
@@ -144,20 +146,55 @@ def parse_ini_races():
                 settings.config['author'] = data['author']
                 settings.config['allowonly'] = data['allowonly'].split('|') if data['allowonly'] else []
 
-                skillnames = (_esc_strings[fixed_name][data['skillnames'][8:]].get_string('en') if data['skillnames'].startswith('wcs_lng_') else data['skillnames']).split('|')
-                skilldescr = (_esc_strings[fixed_name][data['skilldescr'][8:]].get_string('en') if data['skilldescr'].startswith('wcs_lng_') else data['skilldescr']).split('|')
+                strings_skillnames = _esc_strings[fixed_name][data['skillnames'][8:]] if data['skillnames'].startswith('wcs_lng_') else data['skillnames']
+                strings_skilldescr = _esc_strings[fixed_name][data['skilldescr'][8:]] if data['skilldescr'].startswith('wcs_lng_') else data['skilldescr']
+
+                skillnames = (strings_skillnames.get_string('en') if isinstance(strings_skillnames, TranslationStrings) else strings_skillnames).split('|')
+                skilldescr = (strings_skilldescr.get_string('en') if isinstance(strings_skilldescr, TranslationStrings) else strings_skilldescr).split('|')
                 skillcfg = data['skillcfg'].split('|')
                 skillneeded = data['skillneeded'].split('|')
                 numberoflevels = map(int, data['numberoflevels'].split('|')) if '|' in data['numberoflevels'] else [int(data['numberoflevels'])] * len(skillnames)
 
+                # Create a list of the skill names with simplified formatting
+                fixed_skill_names = []
+
+                for skill_name in skillnames:
+                    fixed_skill_names.append(FIX_NAME.sub('', (skill_name[8:] if skill_name.startswith('wcs_lng_') else skill_name).lower().replace(' ', '_')))
+
+                # Update the strings with the translated names
+                if isinstance(strings_skillnames, TranslationStrings):
+                    for lang, names in strings_skillnames.items():
+                        for i, value in enumerate(names.split('|')):
+                            fixed_skill_name = fixed_skill_names[i]
+
+                            if fixed_skill_name not in settings.strings:
+                                settings.strings[fixed_skill_name] = TranslationStrings()
+
+                            settings.strings[fixed_skill_name][lang] = value
+                else:
+                    for i, skill_name in enumerate(strings_skillnames.split('|')):
+                        settings.strings[fixed_skill_names[i]] = _esc_strings[fixed_name][fixed_skill_names[i]] if skill_name.startswith('wcs_lng_') else _LanguageString(skill_name)
+
+                # Update the strings with the translated descriptions
+                if isinstance(strings_skilldescr, TranslationStrings):
+                    for lang, descrs in strings_skilldescr.items():
+                        for i, value in enumerate(descrs.split('|')):
+                            fixed_skill_name_descr = f'{fixed_skill_names[i]} description'
+
+                            if fixed_skill_name_descr not in settings.strings:
+                                settings.strings[fixed_skill_name_descr] = TranslationStrings()
+
+                            settings.strings[fixed_skill_name_descr][lang] = value
+                else:
+                    for i, skill_descr in enumerate(strings_skilldescr.split('|')):
+                        fixed_skill_name_descr = f'{fixed_skill_names[i]} description'
+
+                        settings.strings[fixed_skill_name_descr] = _esc_strings[fixed_name][fixed_skill_name_descr] if skill_descr.startswith('wcs_lng_') else _LanguageString(skill_descr)
+
                 skills = settings.config['skills'] = {}
 
-                for i, skill_name in enumerate(skillnames):
-                    fixed_skill_name = FIX_NAME.sub('', (skill_name[8:] if skill_name.startswith('wcs_lng_') else skill_name).lower().replace(' ', '_'))
-
-                    settings.strings[fixed_skill_name] = _esc_strings[fixed_name][fixed_skill_name] if skill_name.startswith('wcs_lng_') else _LanguageString(skill_name)
-                    settings.strings[f'{fixed_skill_name} description'] = _esc_strings[fixed_name][f'{fixed_skill_name} description'] if skilldescr[i].startswith('wcs_lng_') else _LanguageString(skilldescr[i].replace(r'\n', ''))
-
+                # Loop through all the skills
+                for i, fixed_skill_name in enumerate(fixed_skill_names):
                     skill = skills[fixed_skill_name] = {}
 
                     skill['event'] = [skillcfg[i]]
