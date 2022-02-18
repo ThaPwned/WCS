@@ -171,7 +171,7 @@ class RaceSetting(_BaseSetting):
 
                 # If FFA is enabled the limit is considered to be for all the players on the server
                 if ffa_enabled:
-                    limit = list(chain.from_iterable([team_data[i][f'_internal_{self.name}_limit_allowed'] for i in team_data]))
+                    limit = list(chain.from_iterable([team_data[i].get(f'_internal_{self.name}_limit_allowed', []) for i in team_data]))
                 else:
                     limit = team_data[team].get(f'_internal_{self.name}_limit_allowed', [])
 

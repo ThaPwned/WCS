@@ -106,7 +106,7 @@ from ..modules.races.manager import race_manager
 #   Players
 from . import BasePlayer
 from . import index_from_accountid
-from . import team_data
+from . import team_data, add_race_limit, remove_race_limit
 from . import set_weapon_name
 #   Ranks
 from ..ranks import rank_manager
@@ -464,12 +464,7 @@ class Player(object, metaclass=_PlayerMeta):
             team = self.player.team_index
 
             if team >= 2:
-                key = f'_internal_{self._current_race}_limit_allowed'
-
-                if key not in team_data[team]:
-                    team_data[team][key] = []
-
-                team_data[team][key].append(self.userid)
+                add_race_limit(team, self._current_race, self.userid)
 
             OnPlayerReady.manager.notify(self)
 
@@ -509,12 +504,7 @@ class Player(object, metaclass=_PlayerMeta):
                 team = self.player.team_index
 
                 if team >= 2:
-                    key = f'_internal_{self._current_race}_limit_allowed'
-
-                    if key not in team_data[team]:
-                        team_data[team][key] = []
-
-                    team_data[team][key].append(self.userid)
+                    add_race_limit(team, self._current_race, self.userid)
 
                 OnPlayerReady.manager.notify(self)
 
@@ -809,15 +799,8 @@ class Player(object, metaclass=_PlayerMeta):
         team = self.player.team
 
         if team >= 2:
-            team_data[team][f'_internal_{old}_limit_allowed'].remove(self.userid)
-
-            if not team_data[team][f'_internal_{old}_limit_allowed']:
-                del team_data[team][f'_internal_{old}_limit_allowed']
-
-            if f'_internal_{value}_limit_allowed' not in team_data[team]:
-                team_data[team][f'_internal_{value}_limit_allowed'] = []
-
-            team_data[team][f'_internal_{value}_limit_allowed'].append(self.userid)
+            remove_race_limit(team, old, self.userid)
+            add_race_limit(team, value, self.userid)
 
         _restrictions.player_restrictions[self.userid].clear()
 

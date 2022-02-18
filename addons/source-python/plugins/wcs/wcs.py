@@ -186,7 +186,7 @@ from .core.modules.races.manager import race_manager
 #   Players
 from .core.players import _initialize_players
 from .core.players import index_from_accountid
-from .core.players import team_data
+from .core.players import team_data, add_race_limit, remove_race_limit
 from .core.players.entity import Player
 from .core.players.filters import PlayerIter
 from .core.players.filters import PlayerReadyIter
@@ -568,21 +568,13 @@ def player_team(event):
         team = event['team']
         oldteam = event['oldteam']
 
-        key = f'_internal_{wcsplayer.current_race}_limit_allowed'
-
         # Remove the reservation from the old team
         if oldteam >= 2:
-            team_data[oldteam][key].remove(userid)
-
-            if not team_data[oldteam][key]:
-                del team_data[oldteam][key]
+            remove_race_limit(oldteam, wcsplayer.current_race, userid)
 
         if team >= 2:
             # Start by adding the reservation to the new team (even if we shouldn't be allowed to be this race now)
-            if key not in team_data[team]:
-                team_data[team][key] = []
-            if userid not in team_data[team][key]:
-                team_data[team][key].append(userid)
+            add_race_limit(team, wcsplayer.current_race, userid)
 
             reason = RaceReason.ALLOWED
 
@@ -1124,27 +1116,17 @@ def on_player_delete(wcsplayer):
             # Try to get the player's team
             team = wcsplayer.player.team
         except ValueError:
-            key = f'_internal_{wcsplayer.current_race}_limit_allowed'
 
             # Let's just search for the player and remove them
             for team in team_data:
                 if key in team_data[team]:
                     if wcsplayer.userid in team_data[team][key]:
-                        team_data[team][key].remove(wcsplayer.userid)
-
-                        if not team_data[team][key]:
-                            del team_data[team][key]
-
+                        remove_race_limit(team, wcsplayer.current_race, wcsplayer.userid)
                         break
         else:
             # Remove the player from the counter tracking the team limit for races
             if team >= 2:
-                key = f'_internal_{wcsplayer.current_race}_limit_allowed'
-
-                team_data[team][key].remove(wcsplayer.userid)
-
-                if not team_data[team][key]:
-                    del team_data[team][key]
+                remove_race_limit(team, wcsplayer.current_race, wcsplayer.userid)
 
         tick = cfg_rested_xp_online_tick.get_int()
 
