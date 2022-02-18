@@ -329,8 +329,6 @@ def _initialize(baseplayer):
 def add_race_limit(team, race, userid):
     race_key = f'_internal_{race}_limit_allowed'
 
-    # print("[DEBUG] add_race_limit t:%s %s u:%s" % (team, race, userid))
-
     if race_key not in team_data[team]:
         team_data[team][race_key] = []
 
@@ -344,8 +342,6 @@ def _remove_race_limit_key(team, race_key, userid):
 
 def remove_race_limit(team, race, userid):
     race_key = f'_internal_{race}_limit_allowed'
-
-    # print("[DEBUG] remove_race_limit t:%s %s u:%s" % (team, race, userid))
 
     try:
         _remove_race_limit_key(team, race_key, userid)
@@ -361,4 +357,4 @@ def remove_race_limit(team, race, userid):
                 )
                 break
         else:
-            warnings.warn("Could not remove userid:%s from teamlimit from any team:" % (userid,))
+            warnings.warn("Could not remove userid:%s from teamlimit for any team:\n %s" % (userid, e))
