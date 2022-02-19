@@ -1010,12 +1010,19 @@ def on_github_new_version_installed():
 
 @OnGithubNewVersionUpdating
 def on_github_new_version_updating(state, *data):
-    wcsadmin_github_info_menu[4] = Text(menu_strings[f'wcsadmin_github_info_menu updating {state}'])
+    if state == GithubStatus.OPTIMIZING:
+        wcsadmin_github_info_menu[4] = Text(menu_strings[f'wcsadmin_github_info_menu updating {state} {data[0]}'])
+    else:
+        wcsadmin_github_info_menu[4] = Text(menu_strings[f'wcsadmin_github_info_menu updating {state}'])
 
     if state == GithubStatus.DOWNLOADING:
         wcsadmin_github_info_menu[4].text.tokens['progress'] = f'{round(data[0] / 1024)}KiB' if data[1] is None else f'{round(data[0] / data[1] * 100, 1)}%'
     elif state == GithubStatus.EXTRACTING:
         wcsadmin_github_info_menu[4].text.tokens['progress'] = f'{round(data[0] / data[1] * 100, 1)}%'
+    elif state == GithubStatus.OPTIMIZING:
+        wcsadmin_github_info_menu[4].text.tokens['file_count'] = data[1]
+        wcsadmin_github_info_menu[4].text.tokens['count'] = data[2]
+        wcsadmin_github_info_menu[4].text.tokens['total'] = data[3]
 
     for index in wcsadmin_github_info_menu._player_pages:
         if wcsadmin_github_info_menu.is_active_menu(index):

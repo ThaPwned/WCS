@@ -93,12 +93,13 @@ class RaceReason(IntEnum):
 
 class GithubStatus(IntEnum):
     PREPARING = 0
-    CONNECTING = 1
-    DOWNLOADING = 2
-    UNZIPPING = 3
-    EXTRACTING = 4
-    COPYING = 5
-    FINISHING = 6
+    OPTIMIZING = 1
+    CONNECTING = 2
+    DOWNLOADING = 3
+    UNZIPPING = 4
+    EXTRACTING = 5
+    COPYING = 6
+    FINISHING = 7
 
 
 class GithubModuleStatus(IntEnum):

@@ -21,6 +21,8 @@ from json import load
 from path import Path
 #   Queue
 from queue import Queue
+#   Re
+from re import findall
 #   Tempfile
 from tempfile import TemporaryDirectory
 #   Threading
@@ -88,6 +90,12 @@ from ..translations import chat_strings
 __all__ = (
     'github_manager',
 )
+
+
+# ============================================================================
+# >> CONSTANTS
+# ============================================================================
+RE_PULL_REQUEST = r'\#(\d+)'
 
 
 # ============================================================================
@@ -227,9 +235,27 @@ class _GithubManager(dict):
 
             if response.totalCount > 1:
                 commits = []
+                pull_requests = set()
 
                 for response in (list(response)[:-1] if valid_version else list(response)):
                     commits.append({'date':response.commit.author.date, 'author':response.commit.author.name, 'messages':response.commit.message})
+
+                    pr_numbers = findall(RE_PULL_REQUEST, response.commit.message)
+
+                    pull_requests.update(pr_numbers)
+
+                while pull_requests:
+                    pr_number = int(pull_requests.pop())
+
+                    pr = repo.get_pull(pr_number)
+
+                    for response in reversed(list(pr.get_commits())):
+                        # TODO: For some reason 'response.commit.author.date' return the wrong value for certain commits (test: set sha in metadata.wcs_install to bff42a5d0546c95d87f053c94284cb9afa133007)
+                        commits.append({'date':response.commit.author.date, 'author':response.commit.author.name, 'messages':response.commit.message})
+
+                        pr_numbers = findall(RE_PULL_REQUEST, response.commit.message)
+
+                        pull_requests.update(pr_numbers)
 
                 # Just in case something goes wrong when retrieving the version
                 try:
@@ -278,16 +304,48 @@ class _GithubManager(dict):
             else:
                 metadata = {}
 
-            updated_files = []
+            _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.CONNECTING))
+
+            updated_files = set()
 
             most_recent_commit_sha = repo.get_branch('master').commit.sha
 
             if metadata.get('sha') is not None:
-                difference = repo.compare(metadata['sha'], most_recent_commit_sha)
+                _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.OPTIMIZING, 0, len(updated_files), 0, 0))
+                pull_requests = set()
 
-                updated_files.extend([x.filename for x in difference.files])
+                commit = repo.get_commit(metadata['sha'])
 
-            _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.CONNECTING))
+                commits = list(repo.get_commits(since=commit.commit.committer.date))
+
+                for i, response in enumerate(commits[:-1], 1):
+                    updated_files.update([x.filename for x in response.files])
+
+                    pr_numbers = findall(RE_PULL_REQUEST, response.commit.message)
+
+                    pull_requests.update(pr_numbers)
+
+                    _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.OPTIMIZING, 0, len(updated_files), i, len(commits) - 1))
+
+                _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.OPTIMIZING, 1, len(updated_files), 0, 0))
+
+                while pull_requests:
+                    pr_number = int(pull_requests.pop())
+
+                    pr = repo.get_pull(pr_number)
+
+                    commits = list(pr.get_commits())
+
+                    for i, response in enumerate(commits, 1):
+                        updated_files.update([x.filename for x in response.files])
+
+                        pr_numbers = findall(RE_PULL_REQUEST, response.commit.message)
+
+                        pull_requests.update(pr_numbers)
+
+                        _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.OPTIMIZING, 1, len(updated_files), i, len(commits)))
+
+                _output.put((False, OnGithubNewVersionUpdating.manager.notify, GithubStatus.CONNECTING))
 
             with urlopen(repo.get_archive_link('zipball', 'master')) as response:
                 size = response.headers['Content-Length'] or None
