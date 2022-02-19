@@ -20,6 +20,7 @@ __all__ = (
     'chat_strings',
     'config_strings',
     'menu_strings',
+    'hud_strings'
 )
 
 
@@ -34,3 +35,5 @@ chat_strings = LangStrings(TRANSLATION_PATH / 'chat_strings')
 config_strings = LangStrings(TRANSLATION_PATH / 'config_strings')
 # Language strings for the menus
 menu_strings = LangStrings(TRANSLATION_PATH / 'menu_strings')
+# Language strings for the menus
+hud_strings = LangStrings(TRANSLATION_PATH / 'hud_strings')

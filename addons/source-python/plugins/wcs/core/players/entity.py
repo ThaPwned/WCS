@@ -15,6 +15,11 @@ from json import load as json_load
 from random import choice
 from random import randint
 from random import uniform
+#   Shlex
+from shlex import split
+#   Textwrap
+from textwrap import shorten
+from textwrap import wrap
 #   Time
 from time import time
 #   Warnings
@@ -54,9 +59,12 @@ from memory import make_object
 #   Menus
 from menus.base import _BaseMenu
 from menus.base import _PagedMenuBase
+#   Messages
+from messages import HintText
 #   Players
 from players.dictionary import PlayerDictionary
 from players.entity import Player as _Player
+from players.helpers import get_client_language
 from players.helpers import index_from_userid
 from players.helpers import userid_from_index
 #   Steam
@@ -72,6 +80,9 @@ from ..config import cfg_bot_random_race
 from ..config import cfg_new_player_bank_bonus
 #   Constants
 from ..constants import IS_ESC_SUPPORT_ENABLED
+from ..constants import MAX_INFO_BUFFER_LENGTH
+from ..constants import MAX_INFO_LINES
+from ..constants import MAX_INFO_LINE_LENGTH
 from ..constants import ModuleType
 from ..constants import RaceReason
 from ..constants import SkillReason
@@ -310,6 +321,7 @@ class Player(object, metaclass=_PlayerMeta):
         self._retrieving = False
         self._inserting = False
         self._privileges = {}
+        self._nodes = []
 
         self._id = None
         self._name = None
@@ -729,6 +741,81 @@ class Player(object, metaclass=_PlayerMeta):
         del self.data['_internal_input_menu']
         del self.data['_internal_input_repeat']
         del self.data['_internal_input_delay']
+
+    def queue_message(self, message, duration=3, callback=None, kwargs=None, data=None):
+        if callback is None:
+            language = get_client_language(self.index)
+
+            message = message.get_string(language, **kwargs or {})
+
+        node = _Node(message, duration, callback, kwargs, data, self)
+
+        self._nodes.append(node)
+
+        return node
+
+    def queue_refresh(self):
+        if not self._nodes:
+            return
+
+        messages = []
+        now = time()
+
+        language = get_client_language(self.index)
+
+        for node in [*self._nodes]:
+            if node._start is not None and node.duration + node._start <= now:
+                self._nodes.remove(node)
+                continue
+
+            if node.callback is None:
+                message = node.message
+            else:
+                try:
+                    kwargs = node.callback(self, now, node)
+
+                    assert kwargs is not None, "Callback of node must return a dictionary or False (to stop node)"
+                except:
+                    except_hooks.print_exception()
+
+                    self._nodes.remove(node)
+                    continue
+                else:
+                    if kwargs is False:
+                        self._nodes.remove(node)
+                        continue
+
+                    original_kwargs = (node.kwargs or {}).copy()
+
+                    original_kwargs.update(kwargs)
+
+                    try:
+                        message = node.message.get_string(language, **original_kwargs)
+                    except:
+                        except_hooks.print_exception()
+
+                        self._nodes.remove(node)
+                        continue
+
+            index = len(messages)
+
+            if len(message) > MAX_INFO_LINE_LENGTH:
+                if len(message) > MAX_INFO_BUFFER_LENGTH:
+                    messages.extend(wrap(shorten(message, MAX_INFO_BUFFER_LENGTH), MAX_INFO_LINE_LENGTH))
+                else:
+                    messages.extend(wrap(message, MAX_INFO_LINE_LENGTH))
+            else:
+                messages.append(message)
+
+            if len(messages) > MAX_INFO_LINES or len('\n'.join(messages)) > MAX_INFO_BUFFER_LENGTH:
+                del messages[index:]
+                break
+
+            if node._start is None and node.duration is not None:
+                node._start = now
+
+        if messages:
+            HintText('\n'.join(messages)).send(self.index)
 
     @property
     def userid(self):
@@ -1465,6 +1552,21 @@ class _Item(object):
     @property
     def stats(self):
         return self._stats
+
+
+class _Node(object):
+    def __init__(self, message, duration, callback, kwargs, data, wcsplayer):
+        self.message = message
+        self.duration = duration
+        self.callback = callback
+        self.kwargs = kwargs
+        self.data = data
+        self._wcsplayer = wcsplayer
+
+        self._start = None
+
+    def remove(self):
+        self._wcsplayer._nodes.remove(self)
 
 
 # ============================================================================

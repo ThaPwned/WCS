@@ -37,6 +37,7 @@ __all__ = (
     'cfg_ffa_enabled',
     'cfg_changerace_next_round',
     'cfg_resetskills_next_round',
+    'cfg_minimal_chat_spam',
     'cfg_top_announcement_enable',
     'cfg_top_min_rank_announcement',
     'cfg_top_public_announcement',
@@ -113,6 +114,7 @@ with ConfigManager(f'{info.name}/config.cfg', cvar_prefix=f'{info.name}_') as co
     cfg_ffa_enabled = config.cvar('ffa_enabled', '0', config_strings['ffa_enabled'])
     cfg_changerace_next_round = config.cvar('changerace_next_round', '0', config_strings['changerace_next_round'])
     cfg_resetskills_next_round = config.cvar('resetskills_next_round', '0', config_strings['resetskills_next_round'])
+    cfg_minimal_chat_spam = config.cvar('minimal_chat_spam', '0', config_strings['minimal_chat_spam'])
     cfg_disable_text_on_level = config.cvar('disable_text_on_level', '20', config_strings['disable_text_on_level'])
     cfg_default_race = config.cvar('default_race', '', config_strings['default_race'])
     cfg_race_clan_tag = config.cvar('race_clan_tag', '1', config_strings['race_clan_tag'])

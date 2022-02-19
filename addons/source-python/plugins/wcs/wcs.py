@@ -95,6 +95,7 @@ from .core.config import cfg_ffa_enabled
 from .core.config import cfg_race_clan_tag
 from .core.config import cfg_changerace_next_round
 from .core.config import cfg_resetskills_next_round
+from .core.config import cfg_minimal_chat_spam
 from .core.config import cfg_disable_text_on_level
 from .core.config import cfg_top_announcement_enable
 from .core.config import cfg_top_public_announcement
@@ -194,6 +195,7 @@ from .core.players.filters import PlayerReadyIter
 from .core.ranks import rank_manager
 #   Translations
 from .core.translations import chat_strings
+from .core.translations import hud_strings
 from .core.translations import menu_strings
 
 # Is ESC supported?
@@ -413,7 +415,7 @@ def _query_refresh_ranks(result):
         wcsadmin_players_offline_menu.append(PagedOption(name, accountid))
 
 
-def _give_xp_if_set(userid, config, bot_config, message):
+def _give_xp_if_set(userid, config, bot_config, message, hud_message):
     if not 0 < userid <= global_vars.max_clients:
         return
 
@@ -446,22 +448,30 @@ def _give_xp_if_set(userid, config, bot_config, message):
 
             active_race.xp += value
 
-            delay = Delay(1, _send_message_and_remove, (message, wcsplayer), {'value':value})
-            delay.args += (delay, )
-            _delays[wcsplayer].add(delay)
+            if cfg_minimal_chat_spam.get_int():
+                wcsplayer.queue_message(hud_strings[hud_message], kwargs={'value': value})
 
-            if active_race.level > old_level:
-                delay = Delay(1.01, _send_message_and_remove, (gain_level_message, wcsplayer), {'level':active_race.level, 'xp':active_race.xp, 'required':active_race.required_xp})
+                if active_race.level > old_level:
+                    wcsplayer.queue_message(hud_strings['gain level'], kwargs={'level':active_race.level, 'xp':active_race.xp, 'required':active_race.required_xp})
+            else:
+                delay = Delay(1, _send_message_and_remove, (message, wcsplayer), {'value':value})
                 delay.args += (delay, )
                 _delays[wcsplayer].add(delay)
 
+                if active_race.level > old_level:
+                    delay = Delay(1.01, _send_message_and_remove, (gain_level_message, wcsplayer), {'level':active_race.level, 'xp':active_race.xp, 'required':active_race.required_xp})
+                    delay.args += (delay, )
+                    _delays[wcsplayer].add(delay)
 
-def _give_players_xp_if_set(wcsplayers, config, bot_config, message):
+
+def _give_players_xp_if_set(wcsplayers, config, bot_config, message, hud_message):
     value = config.get_int()
     bot_value = bot_config.get_int()
 
     if bot_value == -1:
         bot_value = value
+
+    minimal_chat_spam = bool(cfg_minimal_chat_spam.get_int())
 
     for _, wcsplayer in wcsplayers:
         active_race = wcsplayer.active_race
@@ -477,14 +487,20 @@ def _give_players_xp_if_set(wcsplayers, config, bot_config, message):
 
                     active_race.xp += value
 
-                    delay = Delay(1, _send_message_and_remove, (message, wcsplayer), {'value':value})
-                    delay.args += (delay, )
-                    _delays[wcsplayer].add(delay)
+                    if minimal_chat_spam:
+                        wcsplayer.queue_message(hud_strings[hud_message], kwargs={'value':value})
 
-                    if active_race.level > old_level:
-                        delay = Delay(1.01, _send_message_and_remove, (gain_level_message, wcsplayer), {'level':active_race.level, 'xp':active_race.xp, 'required':active_race.required_xp})
+                        if active_race.level > old_level:
+                            wcsplayer.queue_message(hud_strings['gain level'], kwargs={'level=':active_race.level, 'xp':active_race.xp, 'required':active_race.required_xp})
+                    else:
+                        delay = Delay(1, _send_message_and_remove, (message, wcsplayer), {'value':value})
                         delay.args += (delay, )
                         _delays[wcsplayer].add(delay)
+
+                        if active_race.level > old_level:
+                            delay = Delay(1.01, _send_message_and_remove, (gain_level_message, wcsplayer), {'level':active_race.level, 'xp':active_race.xp, 'required':active_race.required_xp})
+                            delay.args += (delay, )
+                            _delays[wcsplayer].add(delay)
 
 
 def _fire_post_player_spawn(wcsplayer, delay):
@@ -530,6 +546,40 @@ def _update_player_clan_tag(wcsplayer, delay):
     _delays[wcsplayer].remove(delay)
 
 
+def _add_skill_to_message_queue_if_set(wcsplayer, skill, index):
+    if not cfg_hinttext_cooldown.get_int():
+        return
+
+    if not skill.cooldown_seconds:
+        return
+
+    now = time()
+
+    if skill.cooldown > now:
+        for node_name in (f'_internal_hinttext_cooldown_node_{index}', f'_internal_hinttext_cooldown_node_{index}_ready'):
+            node = wcsplayer.data.pop(node_name, None)
+
+            if node is not None:
+                try:
+                    node.remove()
+                except ValueError:
+                    pass
+
+        wcsplayer.data[f'_internal_hinttext_cooldown_node_{index}'] = wcsplayer.queue_message(menu_strings['hinttext_cooldown'], duration=skill.cooldown - now + skill.cooldown_seconds, callback=_skill_hinttext_callback, kwargs={'name':wcsplayer.active_race.settings.strings[skill.name]}, data={'skill': skill, 'index': index})
+
+
+# ============================================================================
+# >> QUEUE MESSAGE CALLBACKS
+# ============================================================================
+def _skill_hinttext_callback(wcsplayer, now, node):
+    if node.data['skill'].cooldown - now < 0:
+        wcsplayer.data[f'_internal_hinttext_cooldown_node_{node.data["index"]}_ready'] = wcsplayer.queue_message(menu_strings['hinttext_cooldown ready'], kwargs={'name':node.kwargs['name']})
+
+        return False
+
+    return {'seconds': node.data['skill'].cooldown - now}
+
+
 # ============================================================================
 # >> EVENTS
 # ============================================================================
@@ -539,6 +589,28 @@ def round_start(event):
 
     for _, wcsplayer in PlayerReadyIter(not_filters=['un', 'spec']):
         wcsplayer.execute('roundstartcmd', event, define=True)
+
+    if not cfg_hinttext_cooldown.get_int():
+        return
+
+    now = time()
+
+    for _, wcsplayer in PlayerReadyIter(['human', 'alive']):
+        for command in ('player_ultimate', 'player_ability'):
+            for index, skill in enumerate(wcsplayer.skills.values()):
+                if command in skill.config['event']:
+                    for node_name in (f'_internal_hinttext_cooldown_node_{index}', f'_internal_hinttext_cooldown_node_{index}_ready'):
+                        node = wcsplayer.data.pop(node_name, None)
+
+                        if node is not None:
+                            try:
+                                node.remove()
+                            except ValueError:
+                                pass
+
+                    wcsplayer.data[f'_internal_hinttext_cooldown_node_{index}'] = wcsplayer.queue_message(menu_strings['hinttext_cooldown'], duration=skill.cooldown - now, callback=_skill_hinttext_callback, kwargs={'name':wcsplayer.active_race.settings.strings[skill.name]}, data={'skill': skill, 'index': index})
+
+                    break
 
 
 @Event('round_end')
@@ -555,8 +627,8 @@ def round_end(event):
     winner = event['winner']
 
     if winner in (2, 3):
-        _give_players_xp_if_set(PlayerReadyIter(['alive', 't' if winner == 3 else 'ct']), cfg_round_survival_xp, cfg_bot_round_survival_xp, gain_xp_round_survival_message)
-        _give_players_xp_if_set(PlayerReadyIter('t' if winner == 2 else 'ct'), cfg_round_win_xp, cfg_bot_round_win_xp, gain_xp_round_win_message)
+        _give_players_xp_if_set(PlayerReadyIter(['alive', 't' if winner == 3 else 'ct']), cfg_round_survival_xp, cfg_bot_round_survival_xp, gain_xp_round_survival_message, 'gain xp round survival')
+        _give_players_xp_if_set(PlayerReadyIter('t' if winner == 2 else 'ct'), cfg_round_win_xp, cfg_bot_round_win_xp, gain_xp_round_win_message, 'gain xp round win')
 
 
 @Event('player_team')
@@ -676,7 +748,10 @@ def player_spawn(event):
 
                 active_race = wcsplayer.active_race
 
-                xp_required_message.send(wcsplayer.index, name=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
+                if cfg_minimal_chat_spam.get_int():
+                    wcsplayer.queue_message(hud_strings['xp required'], kwargs={'name':active_race.settings.strings['name'], 'level':active_race.level, 'xp':active_race.xp, 'required':active_race.required_xp})
+                else:
+                    xp_required_message.send(wcsplayer.index, name=active_race.settings.strings['name'], level=active_race.level, xp=active_race.xp, required=active_race.required_xp)
 
             wcsplayer.execute('spawncmd', event)
             wcsplayer.notify(event)
@@ -793,69 +868,112 @@ def player_death(event):
                     if not maximum_race_level or active_race.level < maximum_race_level:
                         value = kill_xp = (cfg_kill_bot_xp if wcsvictim.fake_client else cfg_kill_xp).get_int()
 
-                        if not event.is_empty('headshot') and event['headshot']:
-                            headshot_xp = (cfg_headshot_bot_xp if wcsvictim.fake_client else cfg_headshot_xp).get_int()
+                        if cfg_minimal_chat_spam.get_int():
+                            if not event.is_empty('headshot') and event['headshot']:
+                                headshot_xp = cfg_headshot_xp.get_int()
 
-                            if headshot_xp:
-                                value += headshot_xp
-
-                                if not wcsattacker.fake_client:
-                                    delay = Delay(1, _send_message_and_remove, (gain_xp_headshot_message, wcsattacker), {'value':headshot_xp})
-                                    delay.args += (delay, )
-                                    _delays[wcsattacker].add(delay)
-
-                        if wcsvictim.ready:
-                            difference = wcsvictim.level - active_race.level
-
-                            if difference > 0:
-                                bonus_xp = (cfg_bonus_bot_xp if wcsvictim.fake_client else cfg_bonus_xp).get_int()
-
-                                if bonus_xp:
-                                    cap = cfg_bonus_xp_level_cap.get_int()
-
-                                    gained = (min(cap, difference) if cap > 0 else difference) * bonus_xp
-                                    value += gained
+                                if headshot_xp:
+                                    value += headshot_xp
 
                                     if not wcsattacker.fake_client:
-                                        delay = Delay(1, _send_message_and_remove, (gain_xp_killed_higher_level_message, wcsattacker), {'value':gained, 'difference':difference})
+                                        wcsattacker.queue_message(hud_strings['gain xp headshot'], kwargs={'value':headshot_xp})
+
+                            if wcsvictim.ready:
+                                difference = wcsvictim.level - active_race.level
+
+                                if difference > 0:
+                                    bonus_xp = cfg_bonus_xp.get_int()
+
+                                    if bonus_xp:
+                                        gained = difference * bonus_xp
+                                        value += gained
+
+                                        if not wcsattacker.fake_client:
+                                            wcsattacker.queue_message(hud_strings['gain xp killed higher level'], kwargs={'value':gained, 'difference':difference})
+
+                            if event['weapon'] in _melee_weapons:
+                                knife_xp = cfg_knife_xp.get_int()
+
+                                if knife_xp:
+                                    value += knife_xp
+
+                                    if not wcsattacker.fake_client:
+                                        wcsattacker.queue_message(hud_strings['gain xp knife'], kwargs={'value':knife_xp})
+
+                            if value:
+                                if not wcsattacker.fake_client:
+                                    wcsattacker.queue_message(hud_strings['gain xp killed'], kwargs={'value':kill_xp})
+
+                                old_level = active_race.level
+
+                                active_race.xp += value
+
+                                if active_race.level > old_level:
+                                    wcsattacker.queue_message(hud_strings['gain level'], kwargs={'level':active_race.level, 'xp':active_race.xp, 'required':active_race.required_xp})
+                        else:
+                            if not event.is_empty('headshot') and event['headshot']:
+                                headshot_xp = (cfg_headshot_bot_xp if wcsvictim.fake_client else cfg_headshot_xp).get_int()
+
+                                if headshot_xp:
+                                    value += headshot_xp
+
+                                    if not wcsattacker.fake_client:
+                                        delay = Delay(1, _send_message_and_remove, (gain_xp_headshot_message, wcsattacker), {'value':headshot_xp})
                                         delay.args += (delay, )
                                         _delays[wcsattacker].add(delay)
 
-                        if event['weapon'] in _melee_weapons:
-                            knife_xp = (cfg_knife_bot_xp if wcsvictim.fake_client else cfg_knife_xp).get_int()
+                            if wcsvictim.ready:
+                                difference = wcsvictim.level - active_race.level
 
-                            if knife_xp:
-                                value += knife_xp
+                                if difference > 0:
+                                    bonus_xp = (cfg_bonus_bot_xp if wcsvictim.fake_client else cfg_bonus_xp).get_int()
 
+                                    if bonus_xp:
+                                        cap = cfg_bonus_xp_level_cap.get_int()
+
+                                        gained = (min(cap, difference) if cap > 0 else difference) * bonus_xp
+                                        value += gained
+
+                                        if not wcsattacker.fake_client:
+                                            delay = Delay(1, _send_message_and_remove, (gain_xp_killed_higher_level_message, wcsattacker), {'value':gained, 'difference':difference})
+                                            delay.args += (delay, )
+                                            _delays[wcsattacker].add(delay)
+
+                            if event['weapon'] in _melee_weapons:
+                                knife_xp = (cfg_knife_bot_xp if wcsvictim.fake_client else cfg_knife_xp).get_int()
+
+                                if knife_xp:
+                                    value += knife_xp
+
+                                    if not wcsattacker.fake_client:
+                                        delay = Delay(1, _send_message_and_remove, (gain_xp_knife_message, wcsattacker), {'value':knife_xp})
+                                        delay.args += (delay, )
+                                        _delays[wcsattacker].add(delay)
+
+                            if value:
                                 if not wcsattacker.fake_client:
-                                    delay = Delay(1, _send_message_and_remove, (gain_xp_knife_message, wcsattacker), {'value':knife_xp})
+                                    rested_xp_gained_base = cfg_rested_xp_gained_base.get_int()
+                                    rested_xp_gained_percentage = cfg_rested_xp_gained_percentage.get_float()
+
+                                    rested_xp = min(rested_xp_gained_base, wcsattacker.rested_xp)
+
+                                    if rested_xp_gained_percentage > 0:
+                                        rested_xp += floor((wcsattacker.rested_xp - rested_xp) * rested_xp_gained_percentage)
+
+                                    if rested_xp > 0:
+                                        wcsattacker.rested_xp -= rested_xp
+                                        value += rested_xp
+
+                                    for delay in _delays[wcsattacker]:
+                                        if delay.callback is _xp_gained:
+                                            delay.kwargs['_allow'] = False
+
+                                    # I want this to be the last one
+                                    delay = Delay(1.01, _xp_gained, (wcsattacker, active_race, active_race.level, kill_xp, rested_xp))
                                     delay.args += (delay, )
                                     _delays[wcsattacker].add(delay)
 
-                        if value:
-                            if not wcsattacker.fake_client:
-                                rested_xp_gained_base = cfg_rested_xp_gained_base.get_int()
-                                rested_xp_gained_percentage = cfg_rested_xp_gained_percentage.get_float()
-
-                                rested_xp = min(rested_xp_gained_base, wcsattacker.rested_xp)
-
-                                if rested_xp_gained_percentage > 0:
-                                    rested_xp += floor((wcsattacker.rested_xp - rested_xp) * rested_xp_gained_percentage)
-
-                                if rested_xp > 0:
-                                    wcsattacker.rested_xp -= rested_xp
-                                    value += rested_xp
-
-                                for delay in _delays[wcsattacker]:
-                                    if delay.callback is _xp_gained:
-                                        delay.kwargs['_allow'] = False
-
-                                # I want this to be the last one
-                                delay = Delay(1.01, _xp_gained, (wcsattacker, active_race, active_race.level, kill_xp, rested_xp))
-                                delay.args += (delay, )
-                                _delays[wcsattacker].add(delay)
-
-                            active_race.xp += value
+                                active_race.xp += value
 
     if wcsvictim.ready:
         for item in wcsvictim.items.values():
@@ -884,7 +1002,7 @@ def player_death(event):
         except ValueError:
             pass
         else:
-            _give_xp_if_set(assister, cfg_assist_xp, cfg_bot_assist_xp, gain_xp_assist_message)
+            _give_xp_if_set(assister, cfg_assist_xp, cfg_bot_assist_xp, gain_xp_assist_message, 'gain xp assist')
 
 
 @Event('player_say')
@@ -902,22 +1020,22 @@ def player_say(event):
 
 @Event('bomb_planted')
 def bomb_planted(event):
-    _give_xp_if_set(event['userid'], cfg_bomb_plant_xp, cfg_bot_bomb_plant_xp, gain_xp_bomb_plant_message)
+    _give_xp_if_set(event['userid'], cfg_bomb_plant_xp, cfg_bot_bomb_plant_xp, gain_xp_bomb_plant_message, 'gain xp bomb plant')
 
 
 @Event('bomb_defused')
 def bomb_defused(event):
-    _give_xp_if_set(event['userid'], cfg_bomb_defuse_xp, cfg_bot_bomb_defuse_xp, gain_xp_bomb_defuse_message)
+    _give_xp_if_set(event['userid'], cfg_bomb_defuse_xp, cfg_bot_bomb_defuse_xp, gain_xp_bomb_defuse_message, 'gain xp bomb defuse')
 
 
 @Event('bomb_exploded')
 def bomb_exploded(event):
-    _give_xp_if_set(event['userid'], cfg_bomb_explode_xp, cfg_bot_bomb_explode_xp, gain_xp_bomb_explode_message)
+    _give_xp_if_set(event['userid'], cfg_bomb_explode_xp, cfg_bot_bomb_explode_xp, gain_xp_bomb_explode_message, 'gain xp bomb explode')
 
 
 @Event('hostage_rescued')
 def hostage_rescued(event):
-    _give_xp_if_set(event['userid'], cfg_hostage_rescue_xp, cfg_bot_hostage_rescue_xp, gain_xp_hostage_rescue_message)
+    _give_xp_if_set(event['userid'], cfg_hostage_rescue_xp, cfg_bot_hostage_rescue_xp, gain_xp_hostage_rescue_message, 'gain xp hostage rescue')
 
 
 @Event('player_jump')
@@ -1808,7 +1926,7 @@ def client_ability_command(command):
     if wcsplayer.ready:
         active_race = wcsplayer.active_race
 
-        for skill in active_race.skills.values():
+        for i, skill in enumerate(active_race.skills.values()):
             if 'player_ability' in skill.config['event']:
                 reason = skill.is_executable()
 
@@ -1819,6 +1937,8 @@ def client_ability_command(command):
                         skill.reset_cooldown()
 
                     skill.execute('player_ability', define=True)
+
+                    _add_skill_to_message_queue_if_set(wcsplayer, skill, i)
                 elif reason is SkillReason.TEAM:
                     ability_team_message.send(command.index)
                 elif reason is SkillReason.DEAD:
@@ -1851,7 +1971,7 @@ def client_ultimate_command(command):
     if wcsplayer.ready:
         active_race = wcsplayer.active_race
 
-        for skill in active_race.skills.values():
+        for i, skill in enumerate(active_race.skills.values()):
             if 'player_ultimate' in skill.config['event']:
                 reason = skill.is_executable()
 
@@ -1862,6 +1982,8 @@ def client_ultimate_command(command):
                         skill.reset_cooldown()
 
                     skill.execute('player_ultimate', define=True)
+
+                    _add_skill_to_message_queue_if_set(wcsplayer, skill, i)
                 elif reason is SkillReason.TEAM:
                     ability_team_message.send(command.index)
                 elif reason is SkillReason.DEAD:
@@ -1897,34 +2019,8 @@ save_data_repeat.start(60 * 1)
 
 
 @Repeat
-def hinttext_repeat():
-    now = time()
-
-    for _, wcsplayer in PlayerReadyIter():
-        messages = []
-        language = get_client_language(wcsplayer.index)
-
-        for i, skill in enumerate(wcsplayer.active_race.skills.values()):
-            if 'player_ability' in skill.config['event'] or 'player_ultimate' in skill.config['event']:
-                if skill.level > 0:
-                    if skill.cooldown_seconds:
-                        if skill.cooldown > now:
-                            messages.append(menu_strings['hinttext_cooldown'].get_string(language, name=wcsplayer.active_race.settings.strings[skill.name], seconds=skill.cooldown - now))
-
-                            wcsplayer.data[f'_internal_hinttext_cooldown_showing_{i}'] = True
-                            wcsplayer.data[f'_internal_hinttext_cooldown_duration_{i}'] = None
-                        elif wcsplayer.data.get(f'_internal_hinttext_cooldown_showing_{i}', False):
-                            if wcsplayer.data[f'_internal_hinttext_cooldown_duration_{i}'] is None:
-                                wcsplayer.data[f'_internal_hinttext_cooldown_duration_{i}'] = now + 3
-
-                            if wcsplayer.data[f'_internal_hinttext_cooldown_duration_{i}'] > now:
-                                messages.append(menu_strings['hinttext_cooldown ready'].get_string(language, name=wcsplayer.active_race.settings.strings[skill.name]))
-                            else:
-                                wcsplayer.data[f'_internal_hinttext_cooldown_showing_{i}'] = False
-
-        if messages:
-            HintText('\n'.join(messages)).send(wcsplayer.index)
-
-
-if cfg_hinttext_cooldown.get_int():
-    hinttext_repeat.start(0.1)
+def info_repeat():
+    if cfg_minimal_chat_spam.get_int() or cfg_hinttext_cooldown.get_int():
+        for _, wcsplayer in PlayerReadyIter('human'):
+            wcsplayer.queue_refresh()
+info_repeat.start(0.1)
