@@ -526,11 +526,11 @@ def raceinfo_skills_single_menu_build(menu, client):
         else:
             option = PagedOption(settings.strings[name], name)
 
-        menu.append(option)
+        # Perform translation of the ultimate/ability part right now, so we can append the description.
+        option.text = option.text.get_string(get_client_language(client))
 
         if name == current_skill:
             kwargs = {}
-
             settings.execute('on_skill_desc', wcsplayer, name, kwargs)
 
             info = settings.strings[f'{name} description']
@@ -539,7 +539,10 @@ def raceinfo_skills_single_menu_build(menu, client):
                 info = info.get_string(get_client_language(client), **kwargs)
 
                 for text in wrap(info, 30):
-                    menu.append(text)
+                    option.text += '\n' + text
+
+        menu.append(option)
+
 
 
 @raceinfo_skills_detail_menu.register_build_callback
