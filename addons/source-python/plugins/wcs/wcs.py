@@ -590,10 +590,13 @@ def player_team(event):
                 teamlimit = wcsplayer.active_race.settings.config.get('teamlimit')
 
                 if teamlimit:
-                    limit = team_data[team].get(key, [])
+                    limit = team_data[team].get(f'_internal_{wcsplayer.current_race}_limit_allowed', [])
 
                     # If there are now too many players with this race (fx. limit+1 if counting the switching player)
-                    if len(limit) > teamlimit and userid not in limit:
+                    if len(limit) > teamlimit:
+                        if userid in limit:
+                            remove_race_limit(team, wcsplayer.current_race, userid)
+
                         reason = RaceReason.TEAM_LIMIT
 
             if reason is not RaceReason.ALLOWED:
@@ -632,7 +635,7 @@ def player_team(event):
                 if reason is RaceReason.TEAM:
                     force_change_team_message.send(wcsplayer.index, old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
                 else:
-                    force_change_team_limit_message.send(wcsplayer.index, count=len(team_data[team][key]), old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
+                    force_change_team_limit_message.send(wcsplayer.index, count=race_manager[old_race].config.get('teamlimit'), old=race_manager[old_race].strings['name'], new=race_manager[new_race].strings['name'])
 
         # Is the current game CSS or CSGO?
         if GAME_NAME in ('cstrike', 'csgo'):
