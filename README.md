@@ -3,8 +3,8 @@
 ## Introduction
 Warcraft: Source is a modification for Counter-Strike: Source and Counter-Strike: Global Offensive running on [Source.Python](https://github.com/Source-Python-Dev-Team/Source.Python). It changes the gameplay, where each player have a race with unique skills and abilities to that specific race, as well as having a shop to further change the playing field.
 
+* The official Discord server can be found [here](https://discord.gg/NsBHz9j).
 * The official Source.Python forum thread can be found [here](https://forums.sourcepython.com/viewtopic.php?f=7&t=1925).
-* The official website can be found [here](http://warcraft-source.com/board/).
 * The content repository can be found [here](https://github.com/ThaPwned/WCS-Contents).
 
 
