@@ -119,6 +119,8 @@ def parse_ini_races():
                     else:
                         _aliases[alias] = value
 
+            errors = []
+
             try:
                 fixed_name = FIX_NAME.sub('', (name[8:] if name.startswith('wcs_lng_') else name).lower().replace(' ', '_'))
 
@@ -178,7 +180,12 @@ def parse_ini_races():
                 # Update the strings with the translated descriptions
                 if isinstance(strings_skilldescr, TranslationStrings):
                     for lang, descrs in strings_skilldescr.items():
-                        for i, value in enumerate(descrs.split('|')):
+                        items = descrs.split('|')
+
+                        if len(items) != len(skillnames):
+                            errors.append(f'{name}: "skilldescr" expected {len(skillnames)} different items but found only {len(items)}')
+
+                        for i, value in enumerate(items):
                             fixed_skill_name_descr = f'{fixed_skill_names[i]} description'
 
                             if fixed_skill_name_descr not in settings.strings:
@@ -186,7 +193,12 @@ def parse_ini_races():
 
                             settings.strings[fixed_skill_name_descr][lang] = value
                 else:
-                    for i, skill_descr in enumerate(strings_skilldescr.split('|')):
+                    items = strings_skilldescr.split('|')
+
+                    if len(items) != len(skillnames):
+                        errors.append(f'{name}: "skilldescr" expected {len(skillnames)} different items but found only {len(items)}')
+
+                    for i, skill_descr in enumerate(items):
                         fixed_skill_name_descr = f'{fixed_skill_names[i]} description'
 
                         settings.strings[fixed_skill_name_descr] = _esc_strings[fixed_name][fixed_skill_name_descr] if skill_descr.startswith('wcs_lng_') else _LanguageString(skill_descr)
@@ -211,6 +223,9 @@ def parse_ini_races():
 
                     skill['cmds'] = {}
                     skill['cmds']['setting'] = data[f'skill{i + 1}']['setting'].split('|')
+
+                    if data[f'skill{i + 1}']['setting'] != "" and len(skill['cmds']['setting']) != numberoflevels[i]:
+                        errors.append(f'{name}: "skill{i + 1}:setting" expected {numberoflevels[i]} different items but found {len(skill["cmds"]["setting"])}')
 
                     if 'block' in data[f'skill{i + 1}']:
                         skill['cmds']['cmd'] = 'es_xdoblock ' + data[f'skill{i + 1}']['block']
@@ -257,6 +272,14 @@ def parse_ini_races():
                 except_hooks.print_exception()
                 continue
             else:
+                if errors:
+                    warn(f'Unable to properly parse the race "{name}" due to the following errors:')
+
+                    for error in errors:
+                        warn(error)
+
+                    continue
+
                 races[fixed_name] = settings
 
         for settings in no_category:
