@@ -16,6 +16,7 @@ Warcraft: Source is a modification for Counter-Strike: Source and Counter-Strike
 
 If you're going to use races or items from 0.77 (and prior) or 0.78, you also have to install [EventScripts Emulator for WCS](https://github.com/ManifestManah/EventScripts-Emulator-For-WCS). This have to be loaded **before** WCS, otherwise your races and items will not be loaded.
 
+If you're going to use SourceMod, it is recommended to use version 1.10 (download for [Windows](https://www.sourcemod.net/smdrop/1.10/sourcemod-1.10.0-git6545-windows.zip) and [Linux](https://www.sourcemod.net/smdrop/1.10/sourcemod-1.10.0-git6545-linux.tar.gz)). You'd also try your luck with the [dev-branch](https://www.sourcemod.net/downloads.php?branch=dev) (at your own risk). The reason for this recommendation is due to an issue with menus ([WCS issue #93](https://github.com/ThaPwned/WCS/issues/93), [Source.Python issue #451](https://github.com/Source-Python-Dev-Team/Source.Python/issues/451) and [SourceMod issue #1806](https://github.com/alliedmodders/sourcemod/issues/1806)) that has been fixed in a recent [commit](https://github.com/alliedmodders/sourcemod/pull/1812). However, as it's not currently available in a stable release, for the best experience, you'd go with 1.10 of SourceMod.
 
 ## Administrator
 You can make yourself an administrator by editing `cfg/source-python/wcs/privileges.json` and adding your steamid there. Replace `STEAMID` with your own steamid to gain full access. By default, it'll look like this:
